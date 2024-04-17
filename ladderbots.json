@@ -1,0 +1,12 @@
+{
+  "Bots": {
+    "Yuri": {
+      "Race": "Terran",
+      "Type": "Binary",
+      "RootPath": "./",
+      "FileName": "Nikolaj",
+      "Args": "",
+      "Debug": false
+    }
+  }
+}
