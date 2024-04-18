@@ -10,8 +10,17 @@ mod strategy;
 #[derive(Default)]
 struct Nikolaj {
     iteration: usize,
+    
     enemy_units_memory: Units,
     enemy_unit_types_memory: HashMap<UnitTypeId, i32>,
+    enemy_structures_memory: Units,
+    enemy_structure_types_memory: HashMap<UnitTypeId, i32>,
+    my_units_memory: Units,
+    my_unit_types_memory: HashMap<UnitTypeId, i32>,
+    my_structures_memory: Units,
+    my_structure_types_memory: HashMap<UnitTypeId, i32>,
+
+    
 }
 
 impl Player for Nikolaj {
@@ -37,19 +46,40 @@ impl Player for Nikolaj {
         self.iteration = _iteration;
         if _iteration % 5 == 0 && self.units.my.townhalls.len() > 0 {
             strategy::units_memory(self);
-            println!("enemy_units_memory: {:?}", self.enemy_units_memory.tags());
         }
         Ok(())
     }
     fn on_end(&self, _result: GameResult) -> SC2Result<()> {
-        println!("---------------------");
-        println!("Game ended with result: {:?}", _result);
+        self.end_game_report(_result);
         Ok(())
     }
 }
 
 impl Nikolaj {
-    
+    fn end_game_report(&self, result: GameResult) {
+        println!("---------------------");
+        println!("On end:");
+        println!("Map name: {}", self.game_info.map_name);
+        println!("Result: {:?}", result);
+        println!("---------------------");
+        println!(" Enemy units memory:");
+        for (unit_type, count) in &self.enemy_unit_types_memory {
+            println!("# {:?}: {}", unit_type, count);
+        }
+        println!(" Enemy structures memory:");
+        for (unit_type, count) in &self.enemy_structure_types_memory {
+            println!("# {:?}: {}", unit_type, count);
+        }
+        println!(" My units memory:");
+        for (unit_type, count) in &self.my_unit_types_memory {
+            println!("# {:?}: {}", unit_type, count);
+        }
+        println!(" My structures memory:");
+        for (unit_type, count) in &self.my_structure_types_memory {
+            println!("# {:?}: {}", unit_type, count);
+        }
+        println!("---------------------");
+    }
 }
 /*
 fn main() -> SC2Result<()> {
