@@ -10,7 +10,7 @@ mod strategy;
 #[derive(Default)]
 struct Nikolaj {
     iteration: usize,
-    
+    //memory
     enemy_units_memory: Units,
     enemy_unit_types_memory: HashMap<UnitTypeId, i32>,
     enemy_structures_memory: Units,
@@ -19,7 +19,11 @@ struct Nikolaj {
     my_unit_types_memory: HashMap<UnitTypeId, i32>,
     my_structures_memory: Units,
     my_structure_types_memory: HashMap<UnitTypeId, i32>,
-
+    //enemy strategy
+    worker_rush: bool,
+    contain_rush: bool,
+    ramp_blocker: Option<u64>,
+    ramp_blocker_timer: usize,
     
 }
 
