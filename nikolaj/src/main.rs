@@ -24,7 +24,9 @@ struct Nikolaj {
     contain_rush: bool,
     ramp_blocker: Option<u64>,
     ramp_blocker_timer: usize,
-    
+    flooding: bool,
+    //points
+    idle_point: Point2
 }
 
 impl Player for Nikolaj {

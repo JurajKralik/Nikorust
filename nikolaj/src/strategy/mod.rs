@@ -221,7 +221,15 @@ pub(crate) fn cheese_detection(bot: &mut Nikolaj) {
             bot.ramp_blocker = None;
             bot.ramp_blocker_timer = 0;
         } else {
-            if bot.units.enemy.units.get(ramp_blocker).unwrap().distance(bot.ramps.my.depot_in_middle().unwrap()) > 12.0 {
+            if bot
+                .units
+                .enemy
+                .units
+                .get(ramp_blocker)
+                .unwrap()
+                .distance(bot.ramps.my.depot_in_middle().unwrap())
+                > 12.0
+            {
                 bot.ramp_blocker = None;
                 bot.ramp_blocker_timer = 0;
             }
@@ -244,13 +252,32 @@ pub(crate) fn cheese_detection(bot: &mut Nikolaj) {
         //start
         let mut possible_block = false;
         if let Some(corner_depots) = bot.ramps.my.corner_depots() {
-            if !bot.units.enemy.units.is_empty() {
-                for pos in corner_depots {
-                    if bot.units.enemy.units.closest(pos) {
-                        
+            for pos in corner_depots {
+                if let Some(closest) = bot.units.enemy.units.closest(pos) {
+                    if closest.distance(pos) < 2.0 {
+                        if bot.ramp_blocker_timer > 20 {
+                            bot.ramp_blocker = Some(closest.tag());
+                            println!("Ramp block detected {:#?}", bot.time);
+                        }
+                        possible_block = true;
                     }
-                }                
-            }            
+                }
+            }
+        }
+        if possible_block {
+            bot.ramp_blocker_timer += 1;
+        } else {
+            bot.ramp_blocker_timer = 0;
+        }
+    }
+    //flooding
+    if bot.time < 300.0 || bot.flooding {
+        if bot.units.enemy.units.closer(30.0, bot.idle_point).len() > 5 && !bot.flooding {
+            println!("Flooding detected {:#?}", bot.time);
+            bot.flooding = true;
+        } else if bot.flooding && (bot.units.my.townhalls.len() > 1 || !bot.units.my.structures.of_type(UnitTypeId::Bunker).ready().is_empty()) {
+            println!("Flooding ended {:#?}", bot.time);
+            bot.flooding = false;            
         }
     }
 }
