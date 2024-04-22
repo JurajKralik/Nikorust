@@ -1,7 +1,6 @@
 #![allow(non_snake_case)]
-use std::collections::HashMap;
-
 use rust_sc2::prelude::*;
+use std::collections::HashMap;
 
 mod ex_main;
 mod strategy;
@@ -19,14 +18,27 @@ struct Nikolaj {
     my_unit_types_memory: HashMap<UnitTypeId, i32>,
     my_structures_memory: Units,
     my_structure_types_memory: HashMap<UnitTypeId, i32>,
-    //enemy strategy
+    //mining
+    bases: Vec<u64>,
+    //enemy cheese
     worker_rush: bool,
     contain_rush: bool,
     ramp_blocker: Option<u64>,
     ramp_blocker_timer: usize,
     flooding: bool,
+    //enemy strategy
+    enemy_cloaking: bool,
+    enemy_fliers: bool,
+    enemy_heavy_fliers: bool,
     //points
-    idle_point: Point2
+    idle_point: Point2,
+    main_army_point: Option<Point2>,
+    defensive_point: Option<Point2>,
+    offensive_point: Option<Point2>,
+    repair_point: Point2,
+    harass_point: Point2,
+    //combat micro memory
+    assembling: usize,
 }
 
 impl Player for Nikolaj {
@@ -50,8 +62,22 @@ impl Player for Nikolaj {
     }
     fn on_step(&mut self, _iteration: usize) -> SC2Result<()> {
         self.iteration = _iteration;
+
         if _iteration % 5 == 0 && self.units.my.townhalls.len() > 0 {
+            //set points
+            if _iteration % 50 == 0 {
+                strategy::set_idle_point(self);
+                strategy::set_repair_point(self);
+                strategy::set_harass_point(self);
+            }
+            strategy::set_main_army_point(self);
+            strategy::set_defensive_point(self);
+            strategy::set_offensive_point(self);
+
+            //strategy reading
             strategy::units_memory(self);
+            strategy::cheese_detection(self);
+            strategy::enemy_macro_strategy(self);
         }
         Ok(())
     }

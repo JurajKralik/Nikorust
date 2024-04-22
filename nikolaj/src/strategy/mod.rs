@@ -1,7 +1,5 @@
-use std::any::Any;
-
 use crate::Nikolaj;
-use rust_sc2::{bot, prelude::*};
+use rust_sc2::prelude::*;
 
 pub(crate) fn units_memory(bot: &mut Nikolaj) {
     const MEMORY_IGNORETYPES: &'static [UnitTypeId] = &[
@@ -149,14 +147,6 @@ pub(crate) fn units_memory(bot: &mut Nikolaj) {
     }
 }
 
-pub(crate) fn get_enemy_army_supply(bot: &mut Nikolaj) -> f32 {
-    let mut army_supply = 0.0;
-    for unit in bot.enemy_units_memory.clone() {
-        army_supply += unit.supply_cost();
-    }
-    army_supply
-}
-
 pub(crate) fn cheese_detection(bot: &mut Nikolaj) {
     //worker rush
     if bot.time < 200.0 || bot.worker_rush {
@@ -275,9 +265,340 @@ pub(crate) fn cheese_detection(bot: &mut Nikolaj) {
         if bot.units.enemy.units.closer(30.0, bot.idle_point).len() > 5 && !bot.flooding {
             println!("Flooding detected {:#?}", bot.time);
             bot.flooding = true;
-        } else if bot.flooding && (bot.units.my.townhalls.len() > 1 || !bot.units.my.structures.of_type(UnitTypeId::Bunker).ready().is_empty()) {
+        } else if bot.flooding
+            && (bot.units.my.townhalls.len() > 1
+                || !bot
+                    .units
+                    .my
+                    .structures
+                    .of_type(UnitTypeId::Bunker)
+                    .ready()
+                    .is_empty())
+        {
             println!("Flooding ended {:#?}", bot.time);
-            bot.flooding = false;            
+            bot.flooding = false;
         }
     }
+}
+
+pub(crate) fn enemy_macro_strategy(bot: &mut Nikolaj) {
+    const CLOAK_AND_BURROW: &'static [UnitTypeId] = &[
+        UnitTypeId::DarkTemplar,
+        UnitTypeId::Mothership,
+        UnitTypeId::Banshee,
+        UnitTypeId::Ghost,
+        UnitTypeId::WidowMine,
+        UnitTypeId::WidowMineBurrowed,
+        UnitTypeId::LurkerMP,
+        UnitTypeId::LurkerMPBurrowed,
+        UnitTypeId::RoachBurrowed,
+    ];
+    const CLOAK_STRUCTURES: &'static [UnitTypeId] = &[
+        UnitTypeId::StarportTechLab,
+        UnitTypeId::GhostAcademy,
+        UnitTypeId::LurkerDenMP,
+        UnitTypeId::DarkShrine,
+    ];
+    const FLIERS_IGNORE: &'static [UnitTypeId] = &[
+        UnitTypeId::Overlord,
+        UnitTypeId::OverlordCocoon,
+        UnitTypeId::Overseer,
+        UnitTypeId::OverseerSiegeMode,
+        UnitTypeId::OverlordTransport,
+        UnitTypeId::Observer,
+        UnitTypeId::ObserverSiegeMode,
+        UnitTypeId::Medivac,
+        UnitTypeId::Phoenix,
+    ];
+    const HEAVY_FLIERS: &'static [UnitTypeId] = &[
+        UnitTypeId::Tempest,
+        UnitTypeId::Carrier,
+        UnitTypeId::Mothership,
+        UnitTypeId::Battlecruiser,
+        UnitTypeId::BroodLord,
+        UnitTypeId::Broodling,
+    ];
+    const FLYING_PRODUCTION_STRUCTURES: &'static [UnitTypeId] = &[
+        UnitTypeId::StarportTechLab,
+        UnitTypeId::Starport,
+        UnitTypeId::StarportReactor,
+        UnitTypeId::Spire,
+        UnitTypeId::GreaterSpire,
+        UnitTypeId::Stargate,
+        UnitTypeId::FleetBeacon,
+    ];
+    const HEAVY_FLYING_PRODUCTION_STRUCTURES: &'static [UnitTypeId] = &[
+        UnitTypeId::FusionCore,
+        UnitTypeId::FleetBeacon,
+        UnitTypeId::GreaterSpire,
+    ];
+    for enemy in bot.enemy_units_memory.clone() {
+        //cloak
+        if !bot.enemy_cloaking && CLOAK_AND_BURROW.contains(&enemy.type_id()) {
+            bot.enemy_cloaking = true;
+            println!(
+                "Cloaking unit {:#?} detected {:#?}",
+                enemy.type_id(),
+                bot.time
+            );
+        }
+        //fliers
+        if !bot.enemy_fliers
+            && ((enemy.type_id() == UnitTypeId::Colossus || enemy.is_flying())
+                && !FLIERS_IGNORE.contains(&enemy.type_id()))
+        {
+            bot.enemy_fliers = true;
+            println!(
+                "Flying unit {:#?} detected {:#?}",
+                enemy.type_id(),
+                bot.time
+            );
+        }
+        //heavy fliers
+        if !bot.enemy_heavy_fliers && HEAVY_FLIERS.contains(&enemy.type_id()) {
+            bot.enemy_heavy_fliers = true;
+            bot.enemy_fliers = true;
+            println!(
+                "Heavy flying unit {:#?} detected {:#?}",
+                enemy.type_id(),
+                bot.time
+            );
+        }
+    }
+    for enemy_type in bot.enemy_structure_types_memory.keys() {
+        //cloak
+        if !bot.enemy_cloaking && CLOAK_STRUCTURES.contains(enemy_type) {
+            bot.enemy_cloaking = true;
+            println!(
+                "Cloaking structure {:#?} detected {:#?}",
+                enemy_type, bot.time
+            );
+        }
+        //fliers
+        if !bot.enemy_fliers && FLYING_PRODUCTION_STRUCTURES.contains(enemy_type) {
+            bot.enemy_fliers = true;
+            println!(
+                "Flying production structure {:#?} detected {:#?}",
+                enemy_type, bot.time
+            );
+        }
+        if !bot.enemy_heavy_fliers && HEAVY_FLYING_PRODUCTION_STRUCTURES.contains(enemy_type) {
+            bot.enemy_heavy_fliers = true;
+            bot.enemy_fliers = true;
+            println!(
+                "Heavy flying production structure {:#?} detected {:#?}",
+                enemy_type, bot.time
+            );
+        }
+    }
+}
+
+pub(crate) fn set_idle_point(bot: &mut Nikolaj) {
+    //no base
+    if bot.units.my.townhalls.is_empty() {
+        if let Some(structure) = bot.units.my.structures.closest(bot.start_location) {
+            bot.idle_point = structure.position();
+            return;
+        }
+        //main base
+        if bot.units.my.townhalls.ready().len() == 1 {
+            if let (Some(main_base), Some(barracks_in_middle)) = (
+                bot.units.my.townhalls.closest(bot.start_location),
+                bot.ramps.my.barracks_in_middle(),
+            ) {
+                if main_base.distance(bot.start_location) < 2.0 {
+                    bot.idle_point = barracks_in_middle.towards(main_base.position(), 5.0);
+                    return;
+                }
+            }
+        }
+        //most frontal base
+        if !bot.bases.is_empty() {
+            let mut front_base: Option<Unit> = None;
+            let mut front_base_distance = 0.0;
+            bot.bases.sort();
+
+            for base in bot.bases.clone() {
+                if let Some(structure) = bot.units.my.structures.get(base) {
+                    let base_distance = structure.distance(bot.enemy_start);
+                    //first base
+                    if front_base.is_none() {
+                        front_base = Some(structure.clone());
+                        front_base_distance = base_distance;
+                        continue;
+                    }
+                    //base closest to enemy base. -15 for back third base
+                    if base_distance - 15.0 < front_base_distance {
+                        front_base = Some(structure.clone());
+                        front_base_distance = base_distance;
+                    }
+                }
+            }
+
+            if front_base.is_some() {
+                bot.idle_point = front_base.unwrap().position().towards(bot.enemy_start, 5.0);
+                return;
+            }
+        }
+        bot.idle_point = bot.start_location;
+    }
+}
+
+pub(crate) fn set_main_army_point(bot: &mut Nikolaj) {
+    const EXCLUDE_MAIN_ARMY: &'static [UnitTypeId] = &[
+        UnitTypeId::VikingAssault,
+        UnitTypeId::VikingFighter,
+        UnitTypeId::Raven,
+        UnitTypeId::Banshee,
+        UnitTypeId::Reaper,
+        UnitTypeId::Medivac,
+        UnitTypeId::SCV,
+        UnitTypeId::MULE,
+        UnitTypeId::WidowMine,
+        UnitTypeId::WidowMineBurrowed,
+    ];
+    //position of unit closest to the army center
+    let all_army = bot.units.my.units.exclude_types(&EXCLUDE_MAIN_ARMY).clone();
+    if let Some(army_center) = all_army.center() {
+        if let Some(centered) = all_army.closest(army_center) {
+            bot.main_army_point = Some(centered.clone().position());
+            return;
+        }
+    }
+    //none
+    bot.main_army_point = None;
+}
+
+pub(crate) fn set_defensive_point(bot: &mut Nikolaj) {
+    const DEFENSIVE_IGNORETYPES: &'static [UnitTypeId] = &[
+        UnitTypeId::SCV,
+        UnitTypeId::Drone,
+        UnitTypeId::DroneBurrowed,
+        UnitTypeId::Probe,
+        UnitTypeId::Observer,
+        UnitTypeId::Overlord,
+        UnitTypeId::Overseer,
+        UnitTypeId::Larva,
+        UnitTypeId::Changeling,
+        UnitTypeId::MULE,
+        UnitTypeId::ChangelingMarine,
+        UnitTypeId::ChangelingMarineShield,
+    ];
+    bot.defensive_point = None;
+
+    if let Some(enemy) = bot
+        .units
+        .enemy
+        .units
+        .exclude_types(&DEFENSIVE_IGNORETYPES)
+        .closest(bot.start_location)
+    {
+        let mut enemy_base = bot.enemy_start.clone();
+        if let Some(closest_structure) = bot.units.enemy.structures.closest(bot.start_location) {
+            enemy_base = closest_structure.position();
+        }
+        if let Some(structure) = bot.units.my.structures.closest(enemy) {
+            if enemy.distance(enemy_base) > enemy.distance(structure) * 2.0 {
+                bot.defensive_point = Some(enemy.position());
+            }
+        }
+    }
+}
+
+fn assemble_offensive(bot: &mut Nikolaj) {
+    const EXCLUDE_MAIN_ARMY: &'static [UnitTypeId] = &[
+        UnitTypeId::VikingAssault,
+        UnitTypeId::VikingFighter,
+        UnitTypeId::Raven,
+        UnitTypeId::Banshee,
+        UnitTypeId::Reaper,
+        UnitTypeId::Medivac,
+        UnitTypeId::SCV,
+        UnitTypeId::MULE,
+        UnitTypeId::WidowMine,
+        UnitTypeId::WidowMineBurrowed,
+    ];
+    bot.assembling = bot.iteration + 15;
+    let mut enemy_base = bot.enemy_start.clone();
+    if let Some(closest_structure) = bot.units.enemy.structures.closest(bot.start_location) {
+        enemy_base = closest_structure.position();
+    }
+
+    //reassemble
+    let all_army = bot.units.my.units.exclude_types(&EXCLUDE_MAIN_ARMY).clone();
+    if let (Some(main_army_point), Some(army_center)) = (bot.main_army_point, all_army.center()) {
+        if main_army_point.distance(bot.idle_point) < main_army_point.distance(enemy_base) && main_army_point.distance(army_center) > 15.0 {
+            bot.offensive_point = Some(main_army_point.clone());
+            return;
+        }
+    }
+
+    //attack enemy base
+    bot.offensive_point = Some(enemy_base.clone());
+}
+
+fn get_enemy_army_supply(bot: &mut Nikolaj) -> f32 {
+    let mut army_supply = 0.0;
+    for unit in bot.enemy_units_memory.clone() {
+        army_supply += unit.supply_cost();
+    }
+    army_supply
+}
+
+pub(crate) fn set_offensive_point(bot: &mut Nikolaj) {
+    //defense priority
+    if bot.defensive_point.is_some() {
+        bot.offensive_point = None;
+        return;
+    }
+
+    //start push
+    if (bot.supply_army > 12 && bot.supply_army as f32 > get_enemy_army_supply(bot))
+        || bot.supply_used > 170
+        || bot.assembling > bot.iteration
+    {
+        assemble_offensive(bot);
+        return;
+    }
+
+    //keep pushing
+    if let (Some(main_army_point), Some(offensive_point)) = (bot.main_army_point, bot.offensive_point) {
+        if bot.supply_army > 13 && main_army_point.distance(offensive_point) < main_army_point.distance(bot.idle_point) {
+            assemble_offensive(bot);
+            return;
+        } 
+    }
+    bot.offensive_point = None;
+}
+
+pub(crate) fn set_repair_point(bot: &mut Nikolaj) {
+    bot.repair_point = bot.start_location;
+
+    let mut maxed_base:Option<Unit> = None;
+    let mut max_scvs = 0;
+
+    for base in bot.units.my.townhalls.ready() {
+        let scvs = bot.units.my.workers.closer(20.0, base.position()).len();
+        //first
+        if maxed_base.is_none() {
+            maxed_base = Some(base.clone());
+            max_scvs = scvs;
+        } else if max_scvs < scvs {
+            maxed_base = Some(base.clone());
+            max_scvs = scvs;
+        }
+    }
+    if let Some(base) = maxed_base {
+        if let Some(mineral) = bot.units.mineral_fields.closest(base.position()) {
+            if base.clone().distance(mineral) < 9.0 {
+                bot.repair_point = base.clone().position().towards(mineral.clone().position(), -8.0);
+                return;
+            }
+        }
+        bot.repair_point = base.position().towards(bot.enemy_start, -4.0);
+    }
+}
+
+pub(crate) fn set_harass_point(bot: &mut Nikolaj) {
+    bot.harass_point = bot.enemy_start.towards(bot.start_location, -5.0);
 }
