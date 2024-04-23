@@ -153,7 +153,7 @@ pub(crate) fn cheese_detection(bot: &mut Nikolaj) {
         let mut enemy_workers = 0;
         for enemy in bot.units.enemy.units.clone() {
             if enemy.position().distance(bot.enemy_start)
-                < enemy.position().distance(bot.start_location)
+                > enemy.position().distance(bot.start_location)
             {
                 if enemy.is_worker() {
                     enemy_workers += 1;
