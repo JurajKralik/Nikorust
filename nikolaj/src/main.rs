@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 mod ex_main;
 mod strategy;
+mod bot_macro;
 
 #[bot]
 #[derive(Default)]
@@ -111,6 +112,10 @@ impl Nikolaj {
             println!("# {:?}: {}", unit_type, count);
         }
         println!("---------------------");
+    }
+
+    fn already_pending(&self, unit_type: UnitTypeId) -> usize {
+        self.counter().ordered().count(unit_type)
     }
 }
 /*
