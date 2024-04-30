@@ -1,10 +1,14 @@
 #![allow(non_snake_case)]
-use rust_sc2::prelude::*;
+use rust_sc2::{bot, prelude::*};
 use std::collections::HashMap;
 
+mod bot_macro;
 mod ex_main;
 mod strategy;
-mod bot_macro;
+
+use strategy::*;
+use crate::bot_macro::buildings_micro::*;
+use crate::bot_macro::conditions::*;
 
 #[bot]
 #[derive(Default)]
@@ -62,23 +66,45 @@ impl Player for Nikolaj {
         Ok(())
     }
     fn on_step(&mut self, _iteration: usize) -> SC2Result<()> {
+        const UTILITY_STRUCTURES: &'static [UnitTypeId] = &[
+            UnitTypeId::SupplyDepot,
+            UnitTypeId::Refinery,
+            UnitTypeId::EngineeringBay,
+            UnitTypeId::Armory,
+            UnitTypeId::Bunker,
+            UnitTypeId::MissileTurret,
+            UnitTypeId::CommandCenter,
+        ];
+
         self.iteration = _iteration;
 
         if _iteration % 5 == 0 && self.units.my.townhalls.len() > 0 {
             //set points
             if _iteration % 50 == 0 {
-                strategy::set_idle_point(self);
-                strategy::set_repair_point(self);
-                strategy::set_harass_point(self);
+                set_idle_point(self);
+                set_repair_point(self);
+                set_harass_point(self);
             }
-            strategy::set_main_army_point(self);
-            strategy::set_defensive_point(self);
-            strategy::set_offensive_point(self);
+            set_main_army_point(self);
+            set_defensive_point(self);
+            set_offensive_point(self);
 
             //strategy reading
-            strategy::units_memory(self);
-            strategy::cheese_detection(self);
-            strategy::enemy_macro_strategy(self);
+            units_memory(self);
+            cheese_detection(self);
+            enemy_macro_strategy(self);
+
+            //buildings micro
+            cancel_buildings(self);
+            depot_micro(self);
+            bunker_micro(self);
+            set_rally_points(self);
+
+            for structure in UTILITY_STRUCTURES {
+                if get_macro_conditions(self, &structure) {
+
+                }
+            }
         }
         Ok(())
     }
@@ -116,6 +142,22 @@ impl Nikolaj {
 
     fn already_pending(&self, unit_type: UnitTypeId) -> usize {
         self.counter().ordered().count(unit_type)
+    }
+
+    fn get_builder(&self, pos: Point2, mineral_tags: &[u64]) -> Option<&Unit> {
+        self.units
+            .my
+            .workers
+            .iter()
+            .filter(|u| {
+                !(u.is_constructing()
+                    || u.is_returning()
+                    || u.is_carrying_resource()
+                    || (u.is_gathering()
+                        && u.target_tag()
+                            .map_or(true, |tag| !mineral_tags.contains(&tag))))
+            })
+            .closest(pos)
     }
 }
 /*
