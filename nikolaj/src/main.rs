@@ -101,12 +101,13 @@ impl Player for Nikolaj {
             depot_micro(self);
             bunker_micro(self);
             set_rally_points(self);
-
+            
             for structure in UTILITY_STRUCTURES {
                 if get_macro_conditions(self, &structure) {
-                    finish_building_without_workers(self);
+                    
                 }
             }
+            finish_building_without_workers(self);
         }
         Ok(())
     }
@@ -146,19 +147,12 @@ impl Nikolaj {
         self.counter().ordered().count(unit_type)
     }
 
-    fn get_builder(&self, pos: Point2, mineral_tags: &[u64]) -> Option<&Unit> {
+    fn get_builder(&self, pos: Point2) -> Option<&Unit> {
         self.units
             .my
             .workers
             .iter()
-            .filter(|u| {
-                !(u.is_constructing()
-                    || u.is_returning()
-                    || u.is_carrying_resource()
-                    || (u.is_gathering()
-                        && u.target_tag()
-                            .map_or(true, |tag| !mineral_tags.contains(&tag))))
-            })
+            .filter(|u| !(u.is_constructing() || u.is_returning() || u.is_carrying_resource()))
             .closest(pos)
     }
 }
@@ -174,7 +168,7 @@ fn main() -> SC2Result<()> {
         Computer::new(Race::Random, Difficulty::VeryHard, None),
         "BerlingradAIE",
         LaunchOptions {
-            realtime: false,
+            realtime: true,
             ..Default::default()
         },
     )
