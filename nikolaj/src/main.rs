@@ -2,13 +2,15 @@
 use rust_sc2::{bot, prelude::*};
 use std::collections::HashMap;
 
-mod bot_macro;
 mod ex_main;
 mod strategy;
+mod bot_macro;
 
 use strategy::*;
 use crate::bot_macro::buildings_micro::*;
 use crate::bot_macro::conditions::*;
+use crate::bot_macro::construction::*;
+
 
 #[bot]
 #[derive(Default)]
@@ -102,7 +104,7 @@ impl Player for Nikolaj {
 
             for structure in UTILITY_STRUCTURES {
                 if get_macro_conditions(self, &structure) {
-
+                    finish_building_without_workers(self);
                 }
             }
         }
