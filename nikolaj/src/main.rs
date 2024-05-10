@@ -2,15 +2,15 @@
 use rust_sc2::{bot, prelude::*};
 use std::collections::HashMap;
 
+mod bot_macro;
 mod ex_main;
 mod strategy;
-mod bot_macro;
 
-use strategy::*;
 use crate::bot_macro::buildings_micro::*;
 use crate::bot_macro::conditions::*;
 use crate::bot_macro::construction::*;
-
+use crate::bot_macro::townhalls::*;
+use strategy::*;
 
 #[bot]
 #[derive(Default)]
@@ -46,6 +46,7 @@ struct Nikolaj {
     harass_point: Point2,
     //combat micro memory
     assembling: usize,
+    scanner_sweep_time: usize,
 }
 
 impl Player for Nikolaj {
@@ -79,6 +80,7 @@ impl Player for Nikolaj {
         ];
 
         self.iteration = _iteration;
+        bases_init(self);
 
         if _iteration % 5 == 0 && self.units.my.townhalls.len() > 0 {
             //set points
@@ -101,10 +103,12 @@ impl Player for Nikolaj {
             depot_micro(self);
             bunker_micro(self);
             set_rally_points(self);
-            
+
+            townhall_control(self);
+
             for structure in UTILITY_STRUCTURES {
                 if get_macro_conditions(self, &structure) {
-                    
+                    construct(self, structure.clone());
                 }
             }
             finish_building_without_workers(self);
@@ -147,14 +151,6 @@ impl Nikolaj {
         self.counter().ordered().count(unit_type)
     }
 
-    fn get_builder(&self, pos: Point2) -> Option<&Unit> {
-        self.units
-            .my
-            .workers
-            .iter()
-            .filter(|u| !(u.is_constructing() || u.is_returning() || u.is_carrying_resource()))
-            .closest(pos)
-    }
 }
 /*
 fn main() -> SC2Result<()> {
