@@ -1,6 +1,6 @@
 from sc2.constants import *
 
-py_list = [UnitTypeId.SUPPLYDEPOT, UnitTypeId.REFINERY, UnitTypeId.ENGINEERINGBAY, UnitTypeId.ARMORY, UnitTypeId.BUNKER, UnitTypeId.MISSILETURRET, UnitTypeId.COMMANDCENTER]
+py_list = [UnitTypeId.DARKTEMPLAR, UnitTypeId.MOTHERSHIP, UnitTypeId.BANSHEE, UnitTypeId.GHOST, UnitTypeId.WIDOWMINE, UnitTypeId.WIDOWMINEBURROWED, UnitTypeId.LURKER, UnitTypeId.LURKERMP, UnitTypeId.LURKERBURROWED, UnitTypeId.LURKERMPBURROWED, UnitTypeId.ROACHBURROWED]
 
 rust_list = ""
 

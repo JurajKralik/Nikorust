@@ -518,7 +518,7 @@ fn assemble_offensive(bot: &mut Nikolaj) {
         UnitTypeId::WidowMine,
         UnitTypeId::WidowMineBurrowed,
     ];
-    bot.assembling = bot.iteration + 15;
+    bot.assembling = bot.time + 15.0;
     let mut enemy_base = bot.enemy_start.clone();
     if let Some(closest_structure) = bot.units.enemy.structures.closest(bot.start_location) {
         enemy_base = closest_structure.position();
@@ -555,7 +555,7 @@ pub(crate) fn set_offensive_point(bot: &mut Nikolaj) {
     //start push
     if (bot.supply_army > 12 && bot.supply_army as f32 > get_enemy_army_supply(bot))
         || bot.supply_used > 170
-        || bot.assembling > bot.iteration
+        || bot.assembling > bot.time
     {
         assemble_offensive(bot);
         return;

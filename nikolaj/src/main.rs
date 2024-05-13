@@ -45,8 +45,8 @@ struct Nikolaj {
     repair_point: Point2,
     harass_point: Point2,
     //combat micro memory
-    assembling: usize,
-    scanner_sweep_time: usize,
+    assembling: f32,
+    scanner_sweep_time: f32,
 }
 
 impl Player for Nikolaj {
