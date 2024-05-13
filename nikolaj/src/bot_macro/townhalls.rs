@@ -11,6 +11,18 @@ pub(crate) fn bases_init(bot: &mut Nikolaj) {
     }
 }
 pub(crate) fn townhall_control(bot: &mut Nikolaj) {
+    const CLOAKING_UNITS: &'static [UnitTypeId] = &[
+        UnitTypeId::DarkTemplar,
+        UnitTypeId::Mothership,
+        UnitTypeId::Banshee,
+        UnitTypeId::Ghost,
+        UnitTypeId::WidowMine,
+        UnitTypeId::WidowMineBurrowed,
+        UnitTypeId::LurkerMP,
+        UnitTypeId::LurkerMPBurrowed,
+        UnitTypeId::RoachBurrowed,
+    ];
+
     for base in &bot.units.my.townhalls.ready() {
         if base.is_flying() {
             let enemies = bot.units.enemy.units.closer(15.0, base);
@@ -36,7 +48,7 @@ pub(crate) fn townhall_control(bot: &mut Nikolaj) {
             }
             //Land
             if base.orders().is_empty() {
-                if let Some(expansion) = bot.get_enemy_expansion() {
+                if let Some(expansion) = bot.get_expansion() {
                     base.land(expansion.loc, false);
                 }
             }
@@ -60,11 +72,45 @@ pub(crate) fn townhall_control(bot: &mut Nikolaj) {
             if base.type_id() == UnitTypeId::OrbitalCommand {
                 //Scan
                 if bot.time > bot.scanner_sweep_time && base.energy().unwrap() > 50 {
+                    let mut scanned = false;
                     //Scan for cloaked units
                     let mut enemy_units = bot.units.enemy.units.clone();
                     enemy_units.sort(|u| u.distance(base));
                     for enemy in enemy_units {
-                        
+                        if CLOAKING_UNITS.contains(&enemy.clone().type_id()) {
+                            base.command(
+                                AbilityId::ScannerSweepScan,
+                                Target::Pos(enemy.clone().position()),
+                                false,
+                            );
+                            bot.scanner_sweep_time = bot.time + 10.0;
+                            scanned = true;
+                            break;
+                        }
+                    }
+                    //Finishing hidden bases
+                    if let Some(closest) = bot.units.my.units.closest(bot.enemy_start) {
+                        if closest.distance(bot.enemy_start) < 5.0 {
+                            let structure = bot.units.enemy.structures.closest(closest);
+                            if structure.is_none() {
+                                for mineral in bot.units.mineral_fields.clone() {
+                                    if mineral.is_visible() {
+                                        continue;
+                                    } else {
+                                        base.command(
+                                            AbilityId::ScannerSweepScan,
+                                            Target::Pos(mineral.position()),
+                                            false,
+                                        );
+                                        scanned = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if scanned {
+                        continue;
                     }
                 }
                 //Drop MULE
@@ -108,6 +154,65 @@ pub(crate) fn townhall_control(bot: &mut Nikolaj) {
                             continue;
                         }
                     }
+                }
+            }
+            if base.is_idle() {
+                //Morph to Planetary
+                if base.type_id() == UnitTypeId::CommandCenter
+                    && bot.can_afford(UnitTypeId::PlanetaryFortress, false)
+                    && !bot
+                        .units
+                        .my
+                        .structures
+                        .of_type(UnitTypeId::EngineeringBay)
+                        .ready()
+                        .is_empty()
+                    && (bot
+                        .units
+                        .my
+                        .structures
+                        .of_type_including_alias(UnitTypeId::OrbitalCommand)
+                        .len()
+                        > 1
+                        || (bot.flooding
+                            && bot
+                                .units
+                                .my
+                                .structures
+                                .of_type_including_alias(UnitTypeId::OrbitalCommand)
+                                .len()
+                                > 0))
+                {
+                    base.command(
+                        AbilityId::UpgradeToPlanetaryFortressPlanetaryFortress,
+                        Target::None,
+                        false,
+                    );
+                    continue;
+                }
+                //Morph to Orbital
+                if base.type_id() == UnitTypeId::CommandCenter
+                    && bot.can_afford(UnitTypeId::OrbitalCommand, false)
+                    && !bot
+                        .units
+                        .my
+                        .structures
+                        .of_type_including_alias(UnitTypeId::Barracks)
+                        .ready()
+                        .is_empty()
+                {
+                    base.command(
+                        AbilityId::UpgradeToOrbitalOrbitalCommand,
+                        Target::None,
+                        false,
+                    );
+                    continue;
+                }
+                //SCVs
+                if bot.units.my.workers.len() < (bot.units.my.townhalls.len() * 22)
+                && bot.units.my.workers.len() + bot.already_pending(UnitTypeId::SCV) < 70 {
+                    base.train(UnitTypeId::SCV, false);
+                    continue;
                 }
             }
         }
