@@ -1,7 +1,7 @@
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
 
-pub(crate) fn get_macro_conditions(bot: &mut Nikolaj, structure: &UnitTypeId) -> bool {
+pub(crate) fn get_conditions(bot: &mut Nikolaj, structure: &UnitTypeId) -> bool {
     match structure {
         UnitTypeId::SupplyDepot => {
             let pending = bot.already_pending(UnitTypeId::SupplyDepot);
@@ -74,7 +74,7 @@ pub(crate) fn get_macro_conditions(bot: &mut Nikolaj, structure: &UnitTypeId) ->
                 let geysers = bot.units.vespene_geysers.closer(10.0, base.position());
                 for geyser in geysers {
                     if let Some(gas) = geyser.vespene_contents() {
-                        if gas > 0 {
+                        if gas > 0 && bot.units.my.structures.closer(1.0, geyser.position().clone()).is_empty(){
                             return true;
                         }
                     }
@@ -188,7 +188,7 @@ pub(crate) fn get_macro_conditions(bot: &mut Nikolaj, structure: &UnitTypeId) ->
         UnitTypeId::CommandCenter => {
             let ccs = bot.units.my.townhalls.clone();
             //TODO: saturation check change
-            let saturated = bot.units.my.workers.len() > (bot.units.my.townhalls.len() * 14);
+            let saturated = bot.units.my.workers.len() > (bot.units.my.townhalls.len() * 22) || bot.units.my.workers.len() > 50;
 
             if let Some(expansion) = bot.get_expansion() {
                 if saturated

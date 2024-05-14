@@ -30,7 +30,7 @@ pub(crate) fn depot_micro(bot: &mut Nikolaj) {
     {
         for unit in bot.units.enemy.units.closer(safe_dist, depot.position()) {
             if !unit.is_flying() {
-                depot.command(AbilityId::MorphSupplyDepotLower, Target::None, false);
+                depot.command(AbilityId::MorphSupplyDepotRaise, Target::None, false);
                 break;
             }
         }
@@ -51,7 +51,7 @@ pub(crate) fn depot_micro(bot: &mut Nikolaj) {
             }
         }
         if open {
-            depot.command(AbilityId::MorphSupplyDepotRaise, Target::None, false);
+            depot.command(AbilityId::MorphSupplyDepotLower, Target::None, false);
         }
     }
 }

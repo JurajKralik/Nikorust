@@ -13,9 +13,7 @@ fn get_builder(bot: &mut Nikolaj, target: Target) -> Option<&Unit> {
                 .my
                 .workers
                 .iter()
-                .filter(|u| {
-                    !(u.is_constructing() || u.is_returning() || u.is_carrying_resource())
-                })
+                .filter(|u| !(u.is_constructing() || u.is_returning() || u.is_carrying_resource()))
                 .closest(position);
         }
         Target::Pos(pos) => {
@@ -25,15 +23,16 @@ fn get_builder(bot: &mut Nikolaj, target: Target) -> Option<&Unit> {
                 .my
                 .workers
                 .iter()
-                .filter(|u| {
-                    !(u.is_constructing() || u.is_returning() || u.is_carrying_resource())
-                })
+                .filter(|u| !(u.is_constructing() || u.is_returning() || u.is_carrying_resource()))
                 .closest(position);
         }
     }
 }
 pub(crate) fn finish_building_without_workers(bot: &mut Nikolaj) {
     for building in bot.units.my.structures.not_ready().clone() {
+        if building.is_addon() {
+            continue;
+        }
         let mut has_builder = false;
         for worker in bot.units.my.workers.clone() {
             if worker.is_constructing_any(&vec![building.type_id()]) {
@@ -82,8 +81,51 @@ pub(crate) fn get_structure_position(bot: &mut Nikolaj, structure: UnitTypeId) -
             }
             Target::None
         }
+        UnitTypeId::CommandCenter => {
+            if let Some(expansion) = bot.get_expansion() {
+                return Target::Pos(expansion.loc);
+            }
+            Target::None
+        }
+        UnitTypeId::Barracks => get_production_position(bot),
+        UnitTypeId::Factory => get_production_position(bot),
+        UnitTypeId::Starport => get_production_position(bot),
+        UnitTypeId::EngineeringBay => get_production_position(bot),
+        UnitTypeId::Armory => get_production_position(bot),
         _ => Target::None,
     }
+}
+
+fn get_production_position(bot: &mut Nikolaj) -> Target {
+    //ramp middle
+    if let Some(ramp_middle) = bot.ramps.my.barracks_in_middle() {
+        if bot.can_place(UnitTypeId::Barracks, ramp_middle) {
+            return Target::Pos(ramp_middle);
+        }
+    }
+    for base in bot.units.my.townhalls.clone() {
+        let near =base.position().towards(bot.enemy_start, 7.0);
+        let pos = bot.find_placement(UnitTypeId::Barracks, near, Default::default());
+        if let Some(pos) = pos {
+            if bot.can_place(UnitTypeId::Barracks, pos) {
+                return Target::Pos(pos);
+            }
+        }
+    }
+    for base in bot.units.my.townhalls.clone() {
+        let near =base.position().towards(bot.enemy_start, 7.0);
+        let placementOptions = PlacementOptions {
+            step: 7,
+            ..Default::default()
+        };
+        let pos = bot.find_placement(UnitTypeId::Barracks, near, placementOptions);
+        if let Some(pos) = pos {
+            if bot.can_place(UnitTypeId::Barracks, pos) {
+                return Target::Pos(pos);
+            }
+        }
+    }
+    Target::None
 }
 
 pub(crate) fn construct(bot: &mut Nikolaj, structure: UnitTypeId) {

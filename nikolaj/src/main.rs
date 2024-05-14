@@ -2,19 +2,21 @@
 use rust_sc2::{bot, prelude::*};
 use std::collections::HashMap;
 
-mod bot_macro;
+mod modules;
 mod ex_main;
-mod strategy;
 
-use crate::bot_macro::buildings_micro::*;
-use crate::bot_macro::conditions::*;
-use crate::bot_macro::construction::*;
-use crate::bot_macro::townhalls::*;
-use strategy::*;
+use crate::modules::buildings_micro::*;
+use crate::modules::conditions::*;
+use crate::modules::construction::*;
+use crate::modules::scv::distribute_workers;
+use crate::modules::townhalls::*;
+use crate::modules::strategy::*;
+use crate::modules::build_order::*;
 
 #[bot]
 #[derive(Default)]
 struct Nikolaj {
+	last_loop_distributed: u32,
     iteration: usize,
     //memory
     enemy_units_memory: Units,
@@ -76,7 +78,7 @@ impl Player for Nikolaj {
             UnitTypeId::Armory,
             UnitTypeId::Bunker,
             UnitTypeId::MissileTurret,
-            UnitTypeId::CommandCenter,
+            UnitTypeId::CommandCenter
         ];
 
         self.iteration = _iteration;
@@ -107,11 +109,16 @@ impl Player for Nikolaj {
             townhall_control(self);
 
             for structure in UTILITY_STRUCTURES {
-                if get_macro_conditions(self, &structure) {
-                    construct(self, structure.clone());
+                if get_conditions(self, &structure) {
+                    if self.can_afford(structure.clone(), false) {
+                        construct(self, structure.clone());
+                    }
+                    self.subtract_resources(structure.clone(), false);
                 }
             }
+            execute_build_order(self);
             finish_building_without_workers(self);
+            distribute_workers(self);
         }
         Ok(())
     }
@@ -149,6 +156,10 @@ impl Nikolaj {
 
     fn already_pending(&self, unit_type: UnitTypeId) -> usize {
         self.counter().ordered().count(unit_type)
+    }
+
+    fn my_unit_count(&self, unit_type: UnitTypeId) -> usize {
+        self.units.my.units.of_type(unit_type).len() + self.already_pending(unit_type)
     }
 
 }
