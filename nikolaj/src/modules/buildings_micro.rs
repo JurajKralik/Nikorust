@@ -1,5 +1,6 @@
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
+use crate::params::*;
 
 pub(crate) fn cancel_buildings(bot: &mut Nikolaj) {
     for building in bot.units.my.structures.not_ready() {
@@ -58,21 +59,6 @@ pub(crate) fn depot_micro(bot: &mut Nikolaj) {
 
 pub(crate) fn bunker_micro(bot: &mut Nikolaj) {
     for bunker in bot.units.my.structures.of_type(UnitTypeId::Bunker).ready() {
-        const PRIORITY_ZERO: &'static [UnitTypeId] = &[
-            UnitTypeId::Larva,
-            UnitTypeId::Egg,
-            UnitTypeId::AdeptPhaseShift,
-            UnitTypeId::Interceptor,
-            UnitTypeId::Overlord,
-            UnitTypeId::OverlordCocoon,
-            UnitTypeId::Overseer,
-            UnitTypeId::OverseerSiegeMode,
-            UnitTypeId::OverlordTransport,
-            UnitTypeId::Observer,
-            UnitTypeId::ObserverSiegeMode,
-            UnitTypeId::Medivac,
-            UnitTypeId::Phoenix,
-        ];
         let enemies = bot
             .units
             .enemy
@@ -109,11 +95,6 @@ pub(crate) fn bunker_micro(bot: &mut Nikolaj) {
 }
 
 pub(crate) fn set_rally_points(bot: &mut Nikolaj) {
-    const PRODUCTION: &'static [UnitTypeId] = &[
-            UnitTypeId::Barracks,
-            UnitTypeId::Factory,
-            UnitTypeId::Starport
-        ];
     for building in bot.units.my.structures.of_types(&PRODUCTION).ready() {
         if building.rally_targets().is_empty() && !bot.units.my.townhalls.is_empty() {
             if let Some(townhall) = bot.units.my.townhalls.closest(building.position()) {

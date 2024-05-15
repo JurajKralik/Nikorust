@@ -1,5 +1,6 @@
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
+use crate::params::*;
 
 pub(crate) fn bases_init(bot: &mut Nikolaj) {
     bot.bases.clear();
@@ -11,17 +12,6 @@ pub(crate) fn bases_init(bot: &mut Nikolaj) {
     }
 }
 pub(crate) fn townhall_control(bot: &mut Nikolaj) {
-    const CLOAKING_UNITS: &'static [UnitTypeId] = &[
-        UnitTypeId::DarkTemplar,
-        UnitTypeId::Mothership,
-        UnitTypeId::Banshee,
-        UnitTypeId::Ghost,
-        UnitTypeId::WidowMine,
-        UnitTypeId::WidowMineBurrowed,
-        UnitTypeId::LurkerMP,
-        UnitTypeId::LurkerMPBurrowed,
-        UnitTypeId::RoachBurrowed,
-    ];
 
     for base in &bot.units.my.townhalls.ready() {
         if base.is_flying() {
@@ -77,7 +67,7 @@ pub(crate) fn townhall_control(bot: &mut Nikolaj) {
                     let mut enemy_units = bot.units.enemy.units.clone();
                     enemy_units.sort(|u| u.distance(base));
                     for enemy in enemy_units {
-                        if CLOAKING_UNITS.contains(&enemy.clone().type_id()) {
+                        if CLOAK_AND_BURROW.contains(&enemy.clone().type_id()) {
                             base.command(
                                 AbilityId::ScannerSweepScan,
                                 Target::Pos(enemy.clone().position()),

@@ -4,6 +4,7 @@ use std::collections::HashMap;
 
 mod modules;
 mod ex_main;
+mod params;
 
 use crate::modules::buildings_micro::*;
 use crate::modules::conditions::*;

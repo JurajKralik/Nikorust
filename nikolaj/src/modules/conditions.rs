@@ -1,5 +1,6 @@
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
+use crate::params::*;
 
 pub(crate) fn get_conditions(bot: &mut Nikolaj, structure: &UnitTypeId) -> bool {
     match structure {
@@ -83,13 +84,6 @@ pub(crate) fn get_conditions(bot: &mut Nikolaj, structure: &UnitTypeId) -> bool 
             false
         }
         UnitTypeId::EngineeringBay => {
-            const BIO: &'static [UnitTypeId] = &[
-                UnitTypeId::Marine,
-                UnitTypeId::Marauder,
-                UnitTypeId::Ghost,
-                UnitTypeId::Reaper,
-                UnitTypeId::HellionTank,
-            ];
             let bio_amount = bot.units.my.units.of_types(&BIO).len();
             let amount = bot
                 .units
@@ -112,22 +106,6 @@ pub(crate) fn get_conditions(bot: &mut Nikolaj, structure: &UnitTypeId) -> bool 
             false
         }
         UnitTypeId::Armory => {
-            const MECH: &'static [UnitTypeId] = &[
-                UnitTypeId::Hellion,
-                UnitTypeId::HellionTank,
-                UnitTypeId::SiegeTank,
-                UnitTypeId::SiegeTankSieged,
-                UnitTypeId::WidowMine,
-                UnitTypeId::WidowMineBurrowed,
-                UnitTypeId::Cyclone,
-                UnitTypeId::ThorAP,
-                UnitTypeId::Thor,
-                UnitTypeId::VikingAssault,
-                UnitTypeId::VikingFighter,
-                UnitTypeId::Raven,
-                UnitTypeId::Banshee,
-                UnitTypeId::Battlecruiser,
-            ];
             let amount = bot.units.my.structures.of_type(UnitTypeId::Armory).len();
             let mech_amount = bot.units.my.units.of_types(&MECH).len();
             let hellion_amount = bot.units.my.units.of_type(UnitTypeId::Hellion).len();

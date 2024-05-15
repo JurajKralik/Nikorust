@@ -1,31 +1,8 @@
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
+use crate::params::*;
 
 pub(crate) fn units_memory(bot: &mut Nikolaj) {
-    const MEMORY_IGNORETYPES: &'static [UnitTypeId] = &[
-        UnitTypeId::SCV,
-        UnitTypeId::Drone,
-        UnitTypeId::DroneBurrowed,
-        UnitTypeId::Probe,
-        UnitTypeId::AdeptPhaseShift,
-        UnitTypeId::Observer,
-        UnitTypeId::Overlord,
-        UnitTypeId::OverlordTransport,
-        UnitTypeId::Overseer,
-        UnitTypeId::OverlordCocoon,
-        UnitTypeId::Larva,
-        UnitTypeId::Egg,
-        UnitTypeId::BroodLordCocoon,
-        UnitTypeId::BanelingCocoon,
-        UnitTypeId::LurkerMPEgg,
-        UnitTypeId::Changeling,
-        UnitTypeId::Broodling,
-        UnitTypeId::LocustMP,
-        UnitTypeId::LocustMPFlying,
-        UnitTypeId::MULE,
-        UnitTypeId::ChangelingMarine,
-        UnitTypeId::ChangelingMarineShield,
-    ];
     let mut clean_templar = false;
 
     //add units to memory
@@ -282,56 +259,6 @@ pub(crate) fn cheese_detection(bot: &mut Nikolaj) {
 }
 
 pub(crate) fn enemy_macro_strategy(bot: &mut Nikolaj) {
-    const CLOAK_AND_BURROW: &'static [UnitTypeId] = &[
-        UnitTypeId::DarkTemplar,
-        UnitTypeId::Mothership,
-        UnitTypeId::Banshee,
-        UnitTypeId::Ghost,
-        UnitTypeId::WidowMine,
-        UnitTypeId::WidowMineBurrowed,
-        UnitTypeId::LurkerMP,
-        UnitTypeId::LurkerMPBurrowed,
-        UnitTypeId::RoachBurrowed,
-    ];
-    const CLOAK_STRUCTURES: &'static [UnitTypeId] = &[
-        UnitTypeId::StarportTechLab,
-        UnitTypeId::GhostAcademy,
-        UnitTypeId::LurkerDenMP,
-        UnitTypeId::DarkShrine,
-    ];
-    const FLIERS_IGNORE: &'static [UnitTypeId] = &[
-        UnitTypeId::Overlord,
-        UnitTypeId::OverlordCocoon,
-        UnitTypeId::Overseer,
-        UnitTypeId::OverseerSiegeMode,
-        UnitTypeId::OverlordTransport,
-        UnitTypeId::Observer,
-        UnitTypeId::ObserverSiegeMode,
-        UnitTypeId::Medivac,
-        UnitTypeId::Phoenix,
-    ];
-    const HEAVY_FLIERS: &'static [UnitTypeId] = &[
-        UnitTypeId::Tempest,
-        UnitTypeId::Carrier,
-        UnitTypeId::Mothership,
-        UnitTypeId::Battlecruiser,
-        UnitTypeId::BroodLord,
-        UnitTypeId::Broodling,
-    ];
-    const FLYING_PRODUCTION_STRUCTURES: &'static [UnitTypeId] = &[
-        UnitTypeId::StarportTechLab,
-        UnitTypeId::Starport,
-        UnitTypeId::StarportReactor,
-        UnitTypeId::Spire,
-        UnitTypeId::GreaterSpire,
-        UnitTypeId::Stargate,
-        UnitTypeId::FleetBeacon,
-    ];
-    const HEAVY_FLYING_PRODUCTION_STRUCTURES: &'static [UnitTypeId] = &[
-        UnitTypeId::FusionCore,
-        UnitTypeId::FleetBeacon,
-        UnitTypeId::GreaterSpire,
-    ];
     for enemy in bot.enemy_units_memory.clone() {
         //cloak
         if !bot.enemy_cloaking && CLOAK_AND_BURROW.contains(&enemy.type_id()) {
@@ -445,18 +372,6 @@ pub(crate) fn set_idle_point(bot: &mut Nikolaj) {
 }
 
 pub(crate) fn set_main_army_point(bot: &mut Nikolaj) {
-    const EXCLUDE_MAIN_ARMY: &'static [UnitTypeId] = &[
-        UnitTypeId::VikingAssault,
-        UnitTypeId::VikingFighter,
-        UnitTypeId::Raven,
-        UnitTypeId::Banshee,
-        UnitTypeId::Reaper,
-        UnitTypeId::Medivac,
-        UnitTypeId::SCV,
-        UnitTypeId::MULE,
-        UnitTypeId::WidowMine,
-        UnitTypeId::WidowMineBurrowed,
-    ];
     //position of unit closest to the army center
     let all_army = bot.units.my.units.exclude_types(&EXCLUDE_MAIN_ARMY).clone();
     if let Some(army_center) = all_army.center() {
@@ -470,20 +385,6 @@ pub(crate) fn set_main_army_point(bot: &mut Nikolaj) {
 }
 
 pub(crate) fn set_defensive_point(bot: &mut Nikolaj) {
-    const DEFENSIVE_IGNORETYPES: &'static [UnitTypeId] = &[
-        UnitTypeId::SCV,
-        UnitTypeId::Drone,
-        UnitTypeId::DroneBurrowed,
-        UnitTypeId::Probe,
-        UnitTypeId::Observer,
-        UnitTypeId::Overlord,
-        UnitTypeId::Overseer,
-        UnitTypeId::Larva,
-        UnitTypeId::Changeling,
-        UnitTypeId::MULE,
-        UnitTypeId::ChangelingMarine,
-        UnitTypeId::ChangelingMarineShield,
-    ];
     bot.defensive_point = None;
 
     if let Some(enemy) = bot
@@ -506,18 +407,6 @@ pub(crate) fn set_defensive_point(bot: &mut Nikolaj) {
 }
 
 fn assemble_offensive(bot: &mut Nikolaj) {
-    const EXCLUDE_MAIN_ARMY: &'static [UnitTypeId] = &[
-        UnitTypeId::VikingAssault,
-        UnitTypeId::VikingFighter,
-        UnitTypeId::Raven,
-        UnitTypeId::Banshee,
-        UnitTypeId::Reaper,
-        UnitTypeId::Medivac,
-        UnitTypeId::SCV,
-        UnitTypeId::MULE,
-        UnitTypeId::WidowMine,
-        UnitTypeId::WidowMineBurrowed,
-    ];
     bot.assembling = bot.time + 15.0;
     let mut enemy_base = bot.enemy_start.clone();
     if let Some(closest_structure) = bot.units.enemy.structures.closest(bot.start_location) {

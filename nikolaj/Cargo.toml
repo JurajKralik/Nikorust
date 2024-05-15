@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 rust-sc2 = { git = "https://github.com/ratosh/rust-sc2" }
 clap = {version = "4.5.4", features = ["derive", "cargo"] }
+lazy_static = "1.4.0"
 
 [[bin]]
 name = "Nikolaj"

@@ -1,15 +1,9 @@
 use std::collections::HashMap;
-
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
+use crate::params::*;
 
 pub(crate) fn decide_build_order(bot: &mut Nikolaj) -> Vec<UnitTypeId> {
-    const BIO: &'static [UnitTypeId] = &[
-        UnitTypeId::Marine,
-        UnitTypeId::Marauder,
-        UnitTypeId::Reaper,
-        UnitTypeId::Ghost,
-    ];
     let mut build_order: Vec<UnitTypeId> = vec![];
 
     if bot.enemy_race == Race::Terran {
@@ -61,13 +55,31 @@ pub(crate) fn execute_build_order(bot: &mut Nikolaj) {
     .iter()
     .cloned()
     .collect();
+    let unit_requirements: HashMap<UnitTypeId, UnitTypeId> = [
+        (UnitTypeId::Marine, UnitTypeId::Barracks),
+        (UnitTypeId::Marauder, UnitTypeId::Barracks),
+        (UnitTypeId::Reaper, UnitTypeId::Barracks),
+        (UnitTypeId::Ghost, UnitTypeId::Barracks),
+        (UnitTypeId::Hellion, UnitTypeId::Factory),
+        (UnitTypeId::WidowMine, UnitTypeId::Factory),
+        (UnitTypeId::Cyclone, UnitTypeId::Factory),
+        (UnitTypeId::SiegeTank, UnitTypeId::Factory),
+        (UnitTypeId::Thor, UnitTypeId::Factory),
+        (UnitTypeId::VikingFighter, UnitTypeId::Starport),
+        (UnitTypeId::Banshee, UnitTypeId::Starport),
+        (UnitTypeId::Liberator, UnitTypeId::Starport),
+        (UnitTypeId::Raven, UnitTypeId::Starport),
+        (UnitTypeId::Medivac, UnitTypeId::Starport),
+        (UnitTypeId::Battlecruiser, UnitTypeId::Starport),
+    ]
+    .iter()
+    .cloned()
+    .collect();
 
     let build_order = decide_build_order(bot);
     for unit in build_order {
         if let Some(source) = unit_source.get(&unit) {
-            if tech_requirements_met(bot, unit) {
-                
-            }
+            if tech_requirements_met(bot, unit) {}
         }
     }
 }
