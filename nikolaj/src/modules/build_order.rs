@@ -3,7 +3,13 @@ use crate::params::*;
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
 
-pub(crate) fn decide_build_order(bot: &mut Nikolaj) -> Vec<UnitTypeId> {
+pub struct BuildOrder{
+    pub bot: Nikolaj,
+    pub units: Vec<UnitTypeId>,
+    pub structures: Vec<UnitTypeId>,
+}
+
+fn decide_units(bot: &mut Nikolaj) -> Vec<UnitTypeId> {
     let mut build_order: Vec<UnitTypeId> = vec![];
 
     if bot.enemy_race == Race::Terran {
@@ -34,143 +40,195 @@ pub(crate) fn decide_build_order(bot: &mut Nikolaj) -> Vec<UnitTypeId> {
     build_order
 }
 
-pub(crate) fn execute_build_order(bot: &mut Nikolaj) {
-    let build_order = decide_build_order(bot);
-    //init idle production to prevent double training
-    bot.idle_production.clear();
-    for structure in bot.units.my.structures.of_types(&PRODUCTION).ready().idle() {
-        bot.idle_production.push(structure.tag());
-    }
-    
+fn decide_structures(bot: &mut Nikolaj) -> Vec<UnitTypeId> {
+    let mut build_order: Vec<UnitTypeId> = vec![];
 
-    for unit in build_order {
-        if let Some(source) = UNIT_SOURCE.get(&unit) {
-            //missing source building
-            if bot
-                .units
-                .my
-                .structures
-                .of_type_including_alias(source.clone())
-                .ready()
-                .is_empty()
-            {
-                if let Some(missing) = resolve_tech(bot, source.clone()) {
-                    if bot.already_pending(missing.clone()) == 0 {
-                        add_to_saving(bot, missing.clone());
-                    }
-                }
-                continue;
-            }
-            if let Some(tech) = TECH_REQUIREMENT.get(&unit) {
+    //Terran
+    if bot.enemy_race == Race::Terran {
+        let siege_tanks = bot.units.my.units.of_type(UnitTypeId::SiegeTank).len();
+        let vikings = bot.units.my.units.of_type(UnitTypeId::VikingFighter).len();
+
+        if siege_tanks == 0 {
+            build_order.push(UnitTypeId::Factory);
+        }
+        if vikings == 0 {
+            build_order.push(UnitTypeId::Starport);
+        }
+    }
+    build_order
+}
+
+fn structures_by_priority(unit: UnitTypeId) {
+    
+}
+
+impl BuildOrder {
+    pub fn new() -> Self {
+        let mut order = BuildOrder {
+            bot: Nikolaj::default(),
+            units: vec![],
+            structures: vec![],
+        };
+        order.units = decide_units(&mut order.bot);
+        order.structures = decide_structures(&mut order.bot);
+
+        order
+    }
+
+    pub fn execute_build_order(&self, bot: &mut Nikolaj) {
+        let build_order = self.units.clone();
+        //init idle production to prevent double training
+        bot.idle_production.clear();
+        for structure in bot.units.my.structures.of_types(&PRODUCTION).ready().idle() {
+            bot.idle_production.push(structure.tag());
+        }
+        
+    
+        for unit in build_order {
+            if let Some(source) = UNIT_SOURCE.get(&unit) {
+                //missing source building
                 if bot
                     .units
                     .my
                     .structures
-                    .of_type_including_alias(tech.clone())
+                    .of_type_including_alias(source.clone())
                     .ready()
                     .is_empty()
                 {
-                    if let Some(missing) = resolve_tech(bot, tech.clone()) {
+                    if let Some(missing) = BuildOrder::resolve_tech(bot, source.clone()) {
                         if bot.already_pending(missing.clone()) == 0 {
-                            add_to_saving(bot, missing.clone());
+                            BuildOrder::add_to_saving(bot, missing.clone());
                         }
                     }
                     continue;
                 }
+                if let Some(tech) = TECH_REQUIREMENT.get(&unit) {
+                    if bot
+                        .units
+                        .my
+                        .structures
+                        .of_type_including_alias(tech.clone())
+                        .ready()
+                        .is_empty()
+                    {
+                        if let Some(missing) = BuildOrder::resolve_tech(bot, tech.clone()) {
+                            if bot.already_pending(missing.clone()) == 0 {
+                                BuildOrder::add_to_saving(bot, missing.clone());
+                            }
+                        }
+                        continue;
+                    }
+                }
+                BuildOrder::train(bot, source.clone(), unit);
             }
-            train(bot, source.clone(), unit);
         }
     }
-}
+    
+    pub fn expand_production(&self, bot: &mut Nikolaj) {
 
-fn resolve_tech(bot: &mut Nikolaj, unit: UnitTypeId) -> Option<UnitTypeId> {
-    //no missing tech
-    if !bot
-        .units
-        .my
-        .structures
-        .of_type_including_alias(unit.clone())
-        .is_empty()
-    {
-        return None;
     }
-    //missing tech is already pending
-    if bot.already_pending(unit.clone()) != 0 {
-        return Some(unit.clone());
-    }
-    if let Some(tech) = TECH_REQUIREMENT.get(&unit) {
-        //no lower tech missing. Construct current tech
+
+    fn resolve_tech(bot: &mut Nikolaj, unit: UnitTypeId) -> Option<UnitTypeId> {
+        //no missing tech
         if !bot
             .units
             .my
             .structures
-            .of_type_including_alias(tech.clone())
+            .of_type_including_alias(unit.clone())
             .is_empty()
         {
+            return None;
+        }
+        //missing tech is already pending
+        if bot.already_pending(unit.clone()) != 0 {
+            return Some(unit.clone());
+        }
+        if let Some(tech) = TECH_REQUIREMENT.get(&unit) {
+            //no lower tech missing. Construct current tech
+            if !bot
+                .units
+                .my
+                .structures
+                .of_type_including_alias(tech.clone())
+                .is_empty()
+            {
+                construct(bot, unit.clone());
+                return Some(unit.clone());
+            }
+            //go deeper
+            return BuildOrder::resolve_tech(bot, tech.clone());
+        } else {
+            //no tech requirement
             construct(bot, unit.clone());
             return Some(unit.clone());
         }
-        //go deeper
-        return resolve_tech(bot, tech.clone());
-    } else {
-        //no tech requirement
-        construct(bot, unit.clone());
-        return Some(unit.clone());
     }
-}
-
-fn add_to_saving(bot: &mut Nikolaj, unit: UnitTypeId) {
-    if !bot.saving_on.contains(&unit.clone()) {
-        bot.subtract_resources(unit.clone(), false);
-        bot.saving_on.push(unit.clone());
-    }
-}
-
-fn train(bot: &mut Nikolaj, source: UnitTypeId, unit: UnitTypeId) {
-    if UNITS_NEED_TECHLAB.contains(&unit.clone()) {
-        //train with techlab structure
-        for structure in bot
-            .units
-            .my
-            .structures
-            .of_type(source)
-            .find_tags(&bot.idle_production)
-        {
-            if structure.has_techlab() {
-                if bot.idle_production.contains(&structure.tag()) {
-                    bot.idle_production.retain(|&x| x != structure.tag());
-                }
-                structure.train(unit, false);
-                add_to_saving(bot, unit);
-                return;
-            }
+    
+    fn add_to_saving(bot: &mut Nikolaj, unit: UnitTypeId) {
+        if !bot.saving_on.contains(&unit.clone()) {
+            bot.subtract_resources(unit.clone(), false);
+            bot.saving_on.push(unit.clone());
         }
-        //techlab missing
-        if let Some(techlab) = TECHLABS.get(&source) {
-            if bot.already_pending(techlab.clone()) == 0 {
-                for structure in bot
-                    .units
-                    .my
-                    .structures
-                    .of_type(techlab.clone())
-                    .find_tags(&bot.idle_production)
-                {
-                    if bot.can_afford(techlab.clone(), true) {
-                        if bot.idle_production.contains(&structure.tag()) {
-                            bot.idle_production.retain(|&x| x != structure.tag());
-                        }
-                        structure.command(AbilityId::BuildTechLab, Target::None, false);
-                        add_to_saving(bot, techlab.clone());
+    }
+    
+    fn train(bot: &mut Nikolaj, source: UnitTypeId, unit: UnitTypeId) {
+        if UNITS_NEED_TECHLAB.contains(&unit.clone()) {
+            //train with techlab structure
+            for structure in bot
+                .units
+                .my
+                .structures
+                .of_type(source)
+                .find_tags(&bot.idle_production)
+            {
+                if structure.has_techlab() {
+                    if bot.idle_production.contains(&structure.tag()) {
+                        bot.idle_production.retain(|&x| x != structure.tag());
                     }
+                    structure.train(unit, false);
+                    BuildOrder::add_to_saving(bot, unit);
                     return;
                 }
-            } else {
-                //wait for techlab to finish
+            }
+            //techlab missing
+            if let Some(techlab) = TECHLABS.get(&source) {
+                if bot.already_pending(techlab.clone()) == 0 {
+                    for structure in bot
+                        .units
+                        .my
+                        .structures
+                        .of_type(techlab.clone())
+                        .find_tags(&bot.idle_production)
+                    {
+                        if bot.can_afford(techlab.clone(), true) {
+                            if bot.idle_production.contains(&structure.tag()) {
+                                bot.idle_production.retain(|&x| x != structure.tag());
+                            }
+                            structure.command(AbilityId::BuildTechLab, Target::None, false);
+                            BuildOrder::add_to_saving(bot, techlab.clone());
+                        }
+                        return;
+                    }
+                } else {
+                    //wait for techlab to finish
+                    return;
+                }
+            }
+        } else {
+            //train without techlab
+            for structure in bot.units.my.structures.of_type(source)
+            .find_tags(&bot.idle_production) {
+                if bot.can_afford(unit, true) {
+                    if bot.idle_production.contains(&structure.tag()) {
+                        bot.idle_production.retain(|&x| x != structure.tag());
+                    }
+                    structure.train(unit, false);
+                    BuildOrder::add_to_saving(bot, unit);
+                }
                 return;
             }
         }
-    } else {
-        //train without techlab
+    
         for structure in bot.units.my.structures.of_type(source)
         .find_tags(&bot.idle_production) {
             if bot.can_afford(unit, true) {
@@ -178,20 +236,10 @@ fn train(bot: &mut Nikolaj, source: UnitTypeId, unit: UnitTypeId) {
                     bot.idle_production.retain(|&x| x != structure.tag());
                 }
                 structure.train(unit, false);
-                add_to_saving(bot, unit);
             }
-            return;
+            BuildOrder::add_to_saving(bot, unit);
         }
     }
-
-    for structure in bot.units.my.structures.of_type(source)
-    .find_tags(&bot.idle_production) {
-        if bot.can_afford(unit, true) {
-            if bot.idle_production.contains(&structure.tag()) {
-                bot.idle_production.retain(|&x| x != structure.tag());
-            }
-            structure.train(unit, false);
-        }
-        add_to_saving(bot, unit);
-    }
+    
 }
+

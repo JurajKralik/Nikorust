@@ -6,7 +6,7 @@ mod ex_main;
 mod modules;
 mod params;
 
-use crate::modules::build_order::*;
+use crate::modules::build_order::BuildOrder;
 use crate::modules::buildings_micro::*;
 use crate::modules::conditions::*;
 use crate::modules::construction::*;
@@ -119,7 +119,9 @@ impl Player for Nikolaj {
                     }
                 }
             }
-            execute_build_order(self);
+            let order = BuildOrder::new();
+            order.execute_build_order(self);
+            order.expand_production(self);
             finish_building_without_workers(self);
             distribute_workers(self);
         }
