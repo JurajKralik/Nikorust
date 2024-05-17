@@ -1,7 +1,7 @@
-use std::collections::HashMap;
+use crate::construct;
+use crate::params::*;
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
-use crate::params::*;
 
 pub(crate) fn decide_build_order(bot: &mut Nikolaj) -> Vec<UnitTypeId> {
     let mut build_order: Vec<UnitTypeId> = vec![];
@@ -35,186 +35,163 @@ pub(crate) fn decide_build_order(bot: &mut Nikolaj) -> Vec<UnitTypeId> {
 }
 
 pub(crate) fn execute_build_order(bot: &mut Nikolaj) {
-    let unit_source: HashMap<UnitTypeId, UnitTypeId> = [
-        (UnitTypeId::Marine, UnitTypeId::Barracks),
-        (UnitTypeId::Marauder, UnitTypeId::Barracks),
-        (UnitTypeId::Reaper, UnitTypeId::Barracks),
-        (UnitTypeId::Ghost, UnitTypeId::Barracks),
-        (UnitTypeId::Hellion, UnitTypeId::Factory),
-        (UnitTypeId::WidowMine, UnitTypeId::Factory),
-        (UnitTypeId::Cyclone, UnitTypeId::Factory),
-        (UnitTypeId::SiegeTank, UnitTypeId::Factory),
-        (UnitTypeId::Thor, UnitTypeId::Factory),
-        (UnitTypeId::VikingFighter, UnitTypeId::Starport),
-        (UnitTypeId::Banshee, UnitTypeId::Starport),
-        (UnitTypeId::Liberator, UnitTypeId::Starport),
-        (UnitTypeId::Raven, UnitTypeId::Starport),
-        (UnitTypeId::Medivac, UnitTypeId::Starport),
-        (UnitTypeId::Battlecruiser, UnitTypeId::Starport),
-    ]
-    .iter()
-    .cloned()
-    .collect();
-    let unit_requirements: HashMap<UnitTypeId, UnitTypeId> = [
-        (UnitTypeId::Marine, UnitTypeId::Barracks),
-        (UnitTypeId::Marauder, UnitTypeId::Barracks),
-        (UnitTypeId::Reaper, UnitTypeId::Barracks),
-        (UnitTypeId::Ghost, UnitTypeId::Barracks),
-        (UnitTypeId::Hellion, UnitTypeId::Factory),
-        (UnitTypeId::WidowMine, UnitTypeId::Factory),
-        (UnitTypeId::Cyclone, UnitTypeId::Factory),
-        (UnitTypeId::SiegeTank, UnitTypeId::Factory),
-        (UnitTypeId::Thor, UnitTypeId::Factory),
-        (UnitTypeId::VikingFighter, UnitTypeId::Starport),
-        (UnitTypeId::Banshee, UnitTypeId::Starport),
-        (UnitTypeId::Liberator, UnitTypeId::Starport),
-        (UnitTypeId::Raven, UnitTypeId::Starport),
-        (UnitTypeId::Medivac, UnitTypeId::Starport),
-        (UnitTypeId::Battlecruiser, UnitTypeId::Starport),
-    ]
-    .iter()
-    .cloned()
-    .collect();
-
     let build_order = decide_build_order(bot);
+    //init idle production to prevent double training
+    bot.idle_production.clear();
+    for structure in bot.units.my.structures.of_types(&PRODUCTION).ready().idle() {
+        bot.idle_production.push(structure.tag());
+    }
+    
+
     for unit in build_order {
-        if let Some(source) = unit_source.get(&unit) {
-            if tech_requirements_met(bot, unit) {}
+        if let Some(source) = UNIT_SOURCE.get(&unit) {
+            //missing source building
+            if bot
+                .units
+                .my
+                .structures
+                .of_type_including_alias(source.clone())
+                .ready()
+                .is_empty()
+            {
+                if let Some(missing) = resolve_tech(bot, source.clone()) {
+                    if bot.already_pending(missing.clone()) == 0 {
+                        add_to_saving(bot, missing.clone());
+                    }
+                }
+                continue;
+            }
+            if let Some(tech) = TECH_REQUIREMENT.get(&unit) {
+                if bot
+                    .units
+                    .my
+                    .structures
+                    .of_type_including_alias(tech.clone())
+                    .ready()
+                    .is_empty()
+                {
+                    if let Some(missing) = resolve_tech(bot, tech.clone()) {
+                        if bot.already_pending(missing.clone()) == 0 {
+                            add_to_saving(bot, missing.clone());
+                        }
+                    }
+                    continue;
+                }
+            }
+            train(bot, source.clone(), unit);
         }
     }
 }
 
-fn tech_requirements_met(bot: &Nikolaj, unit: UnitTypeId) -> bool {
-    match unit {
-        UnitTypeId::Marine => !bot
+fn resolve_tech(bot: &mut Nikolaj, unit: UnitTypeId) -> Option<UnitTypeId> {
+    //no missing tech
+    if !bot
+        .units
+        .my
+        .structures
+        .of_type_including_alias(unit.clone())
+        .is_empty()
+    {
+        return None;
+    }
+    //missing tech is already pending
+    if bot.already_pending(unit.clone()) != 0 {
+        return Some(unit.clone());
+    }
+    if let Some(tech) = TECH_REQUIREMENT.get(&unit) {
+        //no lower tech missing. Construct current tech
+        if !bot
             .units
             .my
             .structures
-            .of_type_including_alias(UnitTypeId::Barracks)
-            .ready()
-            .is_empty(),
-        UnitTypeId::Marauder => !bot
+            .of_type_including_alias(tech.clone())
+            .is_empty()
+        {
+            construct(bot, unit.clone());
+            return Some(unit.clone());
+        }
+        //go deeper
+        return resolve_tech(bot, tech.clone());
+    } else {
+        //no tech requirement
+        construct(bot, unit.clone());
+        return Some(unit.clone());
+    }
+}
+
+fn add_to_saving(bot: &mut Nikolaj, unit: UnitTypeId) {
+    if !bot.saving_on.contains(&unit.clone()) {
+        bot.subtract_resources(unit.clone(), false);
+        bot.saving_on.push(unit.clone());
+    }
+}
+
+fn train(bot: &mut Nikolaj, source: UnitTypeId, unit: UnitTypeId) {
+    if UNITS_NEED_TECHLAB.contains(&unit.clone()) {
+        //train with techlab structure
+        for structure in bot
             .units
             .my
             .structures
-            .of_type_including_alias(UnitTypeId::Barracks)
-            .ready()
-            .is_empty(),
-        UnitTypeId::Reaper => !bot
-            .units
-            .my
-            .structures
-            .of_type_including_alias(UnitTypeId::Barracks)
-            .ready()
-            .is_empty(),
-        UnitTypeId::Ghost => {
-            !bot.units
-                .my
-                .structures
-                .of_type_including_alias(UnitTypeId::Barracks)
-                .ready()
-                .is_empty()
-                && !bot
+            .of_type(source)
+            .find_tags(&bot.idle_production)
+        {
+            if structure.has_techlab() {
+                if bot.idle_production.contains(&structure.tag()) {
+                    bot.idle_production.retain(|&x| x != structure.tag());
+                }
+                structure.train(unit, false);
+                add_to_saving(bot, unit);
+                return;
+            }
+        }
+        //techlab missing
+        if let Some(techlab) = TECHLABS.get(&source) {
+            if bot.already_pending(techlab.clone()) == 0 {
+                for structure in bot
                     .units
                     .my
                     .structures
-                    .of_type(UnitTypeId::GhostAcademy)
-                    .ready()
-                    .is_empty()
+                    .of_type(techlab.clone())
+                    .find_tags(&bot.idle_production)
+                {
+                    if bot.can_afford(techlab.clone(), true) {
+                        if bot.idle_production.contains(&structure.tag()) {
+                            bot.idle_production.retain(|&x| x != structure.tag());
+                        }
+                        structure.command(AbilityId::BuildTechLab, Target::None, false);
+                        add_to_saving(bot, techlab.clone());
+                    }
+                    return;
+                }
+            } else {
+                //wait for techlab to finish
+                return;
+            }
         }
-        UnitTypeId::Hellion => !bot
-            .units
-            .my
-            .structures
-            .of_type_including_alias(UnitTypeId::Factory)
-            .ready()
-            .is_empty(),
-        UnitTypeId::WidowMine => !bot
-            .units
-            .my
-            .structures
-            .of_type_including_alias(UnitTypeId::Factory)
-            .ready()
-            .is_empty(),
-        UnitTypeId::Cyclone => !bot
-            .units
-            .my
-            .structures
-            .of_type_including_alias(UnitTypeId::Factory)
-            .ready()
-            .is_empty(),
-        UnitTypeId::SiegeTank => !bot
-            .units
-            .my
-            .structures
-            .of_type_including_alias(UnitTypeId::Factory)
-            .ready()
-            .is_empty(),
-        UnitTypeId::Thor => {
-            !bot.units
-                .my
-                .structures
-                .of_type_including_alias(UnitTypeId::Factory)
-                .ready()
-                .is_empty()
-                && !bot
-                    .units
-                    .my
-                    .structures
-                    .of_type(UnitTypeId::Armory)
-                    .ready()
-                    .is_empty()
+    } else {
+        //train without techlab
+        for structure in bot.units.my.structures.of_type(source)
+        .find_tags(&bot.idle_production) {
+            if bot.can_afford(unit, true) {
+                if bot.idle_production.contains(&structure.tag()) {
+                    bot.idle_production.retain(|&x| x != structure.tag());
+                }
+                structure.train(unit, false);
+                add_to_saving(bot, unit);
+            }
+            return;
         }
-        UnitTypeId::VikingFighter => !bot
-            .units
-            .my
-            .structures
-            .of_type_including_alias(UnitTypeId::Starport)
-            .ready()
-            .is_empty(),
-        UnitTypeId::Banshee => !bot
-            .units
-            .my
-            .structures
-            .of_type_including_alias(UnitTypeId::Starport)
-            .ready()
-            .is_empty(),
-        UnitTypeId::Liberator => !bot
-            .units
-            .my
-            .structures
-            .of_type_including_alias(UnitTypeId::Starport)
-            .ready()
-            .is_empty(),
-        UnitTypeId::Raven => !bot
-            .units
-            .my
-            .structures
-            .of_type_including_alias(UnitTypeId::Starport)
-            .ready()
-            .is_empty(),
-        UnitTypeId::Medivac => !bot
-            .units
-            .my
-            .structures
-            .of_type_including_alias(UnitTypeId::Starport)
-            .ready()
-            .is_empty(),
-        UnitTypeId::Battlecruiser => {
-            !bot.units
-                .my
-                .structures
-                .of_type_including_alias(UnitTypeId::Starport)
-                .ready()
-                .is_empty()
-                && !bot
-                    .units
-                    .my
-                    .structures
-                    .of_type(UnitTypeId::FusionCore)
-                    .ready()
-                    .is_empty()
+    }
+
+    for structure in bot.units.my.structures.of_type(source)
+    .find_tags(&bot.idle_production) {
+        if bot.can_afford(unit, true) {
+            if bot.idle_production.contains(&structure.tag()) {
+                bot.idle_production.retain(|&x| x != structure.tag());
+            }
+            structure.train(unit, false);
         }
-        _ => false,
+        add_to_saving(bot, unit);
     }
 }

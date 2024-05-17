@@ -1,7 +1,6 @@
+use lazy_static::lazy_static;
 use rust_sc2::prelude::*;
-//use lazy_static::lazy_static;
-//use std::collections::HashMap;
-
+use std::collections::HashMap;
 
 pub const BIO: &'static [UnitTypeId] = &[
     UnitTypeId::Marine,
@@ -27,7 +26,7 @@ pub const PRIORITY_ZERO: &'static [UnitTypeId] = &[
 pub const PRODUCTION: &'static [UnitTypeId] = &[
     UnitTypeId::Barracks,
     UnitTypeId::Factory,
-    UnitTypeId::Starport
+    UnitTypeId::Starport,
 ];
 pub const MECH: &'static [UnitTypeId] = &[
     UnitTypeId::Hellion,
@@ -145,20 +144,87 @@ pub const DEFENSIVE_IGNORETYPES: &'static [UnitTypeId] = &[
     UnitTypeId::ChangelingMarine,
     UnitTypeId::ChangelingMarineShield,
 ];
-/*
+pub const UNITS_NEED_TECHLAB: &'static [UnitTypeId] = &[
+    UnitTypeId::Marauder,
+    UnitTypeId::Ghost,
+    UnitTypeId::SiegeTank,
+    UnitTypeId::Thor,
+    UnitTypeId::Banshee,
+    UnitTypeId::Battlecruiser,
+];
+
 lazy_static! {
-    pub static ref SPEED_MINING: bool = true;
-    pub static ref SPEED_MINING_WORKERS: u32 = 74;
-    pub static ref DISABLE_PRODUCTION: bool = false;
-    pub static ref THREATENING_REFERENCE: f32 = 1.2f32;
-    pub static ref ADVANCED_REFERENCE: f32 = 0.9f32;
-    pub static ref OFFENSIVE_REFERENCE: f32 = 0.8f32;
-    pub static ref UNLOCK_ROACH_WORKERS: HashMap<Race, usize> = {
+    pub static ref UNIT_SOURCE: HashMap<UnitTypeId, UnitTypeId> = {
         let mut m = HashMap::new();
-        m.insert(Race::Zerg, 25);
-        m.insert(Race::Protoss, 42);
-        m.insert(Race::Terran, 36);
-        m.insert(Race::Random, 28);
+        m.insert(UnitTypeId::Marine, UnitTypeId::Barracks);
+        m.insert(UnitTypeId::Marauder, UnitTypeId::Barracks);
+        m.insert(UnitTypeId::Reaper, UnitTypeId::Barracks);
+        m.insert(UnitTypeId::Ghost, UnitTypeId::Barracks);
+        m.insert(UnitTypeId::Hellion, UnitTypeId::Factory);
+        m.insert(UnitTypeId::WidowMine, UnitTypeId::Factory);
+        m.insert(UnitTypeId::Cyclone, UnitTypeId::Factory);
+        m.insert(UnitTypeId::SiegeTank, UnitTypeId::Factory);
+        m.insert(UnitTypeId::Thor, UnitTypeId::Factory);
+        m.insert(UnitTypeId::VikingFighter, UnitTypeId::Starport);
+        m.insert(UnitTypeId::Banshee, UnitTypeId::Starport);
+        m.insert(UnitTypeId::Liberator, UnitTypeId::Starport);
+        m.insert(UnitTypeId::Raven, UnitTypeId::Starport);
+        m.insert(UnitTypeId::Medivac, UnitTypeId::Starport);
+        m.insert(UnitTypeId::Battlecruiser, UnitTypeId::Starport);
         m
     };
-}*/
+    pub static ref TECHLABS: HashMap<UnitTypeId, UnitTypeId> = {
+        let mut m = HashMap::new();
+        m.insert(UnitTypeId::Barracks, UnitTypeId::BarracksTechLab);
+        m.insert(UnitTypeId::Factory, UnitTypeId::FactoryTechLab);
+        m.insert(UnitTypeId::Starport, UnitTypeId::StarportTechLab);
+        m
+    };
+    pub static ref TECHLABS_ABILITY: HashMap<UnitTypeId, AbilityId> = {
+        let mut m = HashMap::new();
+        m.insert(UnitTypeId::BarracksTechLab, AbilityId::BarracksTechLabMorphTechLabBarracks);
+        m.insert(UnitTypeId::FactoryTechLab, AbilityId::FactoryTechReactorMorphTechLabFactory);
+        m.insert(UnitTypeId::StarportTechLab, AbilityId::StarportTechReactorMorphTechLabStarport);
+        m
+    };
+    
+    pub static ref TECH_REQUIREMENT: HashMap<UnitTypeId, UnitTypeId> = {
+        let mut m = HashMap::new();
+        //Units
+        m.insert(UnitTypeId::Marine, UnitTypeId::Barracks);
+        m.insert(UnitTypeId::Marauder, UnitTypeId::Barracks);
+        m.insert(UnitTypeId::Reaper, UnitTypeId::Barracks);
+        m.insert(UnitTypeId::Ghost, UnitTypeId::GhostAcademy);
+        m.insert(UnitTypeId::Hellion, UnitTypeId::Factory);
+        m.insert(UnitTypeId::WidowMine, UnitTypeId::Factory);
+        m.insert(UnitTypeId::Cyclone, UnitTypeId::Factory);
+        m.insert(UnitTypeId::SiegeTank, UnitTypeId::Factory);
+        m.insert(UnitTypeId::Thor, UnitTypeId::Armory);
+        m.insert(UnitTypeId::VikingFighter, UnitTypeId::Starport);
+        m.insert(UnitTypeId::Banshee, UnitTypeId::Starport);
+        m.insert(UnitTypeId::Liberator, UnitTypeId::Starport);
+        m.insert(UnitTypeId::Raven, UnitTypeId::Starport);
+        m.insert(UnitTypeId::Medivac, UnitTypeId::Starport);
+        m.insert(UnitTypeId::Battlecruiser, UnitTypeId::FusionCore);
+        //Structures
+        m.insert(UnitTypeId::Barracks, UnitTypeId::SupplyDepot);
+        m.insert(UnitTypeId::Factory, UnitTypeId::Barracks);
+        m.insert(UnitTypeId::Starport, UnitTypeId::Factory);
+        m.insert(UnitTypeId::BarracksTechLab, UnitTypeId::Barracks);
+        m.insert(UnitTypeId::BarracksReactor, UnitTypeId::Barracks);
+        m.insert(UnitTypeId::FactoryTechLab, UnitTypeId::Factory);
+        m.insert(UnitTypeId::FactoryReactor, UnitTypeId::Factory);
+        m.insert(UnitTypeId::StarportTechLab, UnitTypeId::Starport);
+        m.insert(UnitTypeId::StarportReactor, UnitTypeId::Starport);
+        m.insert(UnitTypeId::GhostAcademy, UnitTypeId::Barracks);
+        m.insert(UnitTypeId::Armory, UnitTypeId::Factory);
+        m.insert(UnitTypeId::FusionCore, UnitTypeId::Starport);
+        m.insert(UnitTypeId::SupplyDepot, UnitTypeId::CommandCenter);
+        m.insert(UnitTypeId::Refinery, UnitTypeId::CommandCenter);
+        m.insert(UnitTypeId::EngineeringBay, UnitTypeId::CommandCenter);
+        m.insert(UnitTypeId::Bunker, UnitTypeId::Barracks);
+        m.insert(UnitTypeId::MissileTurret, UnitTypeId::EngineeringBay);
+        m.insert(UnitTypeId::SensorTower, UnitTypeId::EngineeringBay);
+        m
+    };
+}
