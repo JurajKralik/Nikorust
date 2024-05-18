@@ -3,15 +3,14 @@ use crate::params::*;
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
 
-pub struct BuildOrder{
+pub struct BuildOrder {
     pub bot: Nikolaj,
     pub units: Vec<UnitTypeId>,
-    pub structures: Vec<UnitTypeId>,
+    pub next_multiproduction_structure: Option<UnitTypeId>,
 }
 
 fn decide_units(bot: &mut Nikolaj) -> Vec<UnitTypeId> {
     let mut build_order: Vec<UnitTypeId> = vec![];
-
     if bot.enemy_race == Race::Terran {
         build_order = vec![
             UnitTypeId::SiegeTank,
@@ -32,59 +31,63 @@ fn decide_units(bot: &mut Nikolaj) -> Vec<UnitTypeId> {
     }
 
     //starters
-    for unit in [UnitTypeId::Reaper, UnitTypeId::Banshee].iter() {
-        if bot.already_pending(*unit) == 0 && bot.my_units_memory.of_type(*unit).is_empty() {
-            build_order.insert(0, *unit);
+    if bot.iteration > 1 {
+        for unit in [UnitTypeId::Reaper, UnitTypeId::Banshee].iter() {
+            if bot.already_pending(unit.clone()) == 0
+                && bot.my_units_memory.of_type(unit.clone()).is_empty()
+            {
+                build_order.insert(0, unit.clone());
+            }
         }
     }
     build_order
 }
 
-fn decide_structures(bot: &mut Nikolaj) -> Vec<UnitTypeId> {
-    let mut build_order: Vec<UnitTypeId> = vec![];
+fn decide_next_structure(bot: &mut Nikolaj, units: Vec<UnitTypeId>) -> Option<UnitTypeId> {
+    //empty build order
+    if units.len() == 0 {
+        return None;
+    }
 
-    //Terran
-    if bot.enemy_race == Race::Terran {
-        let siege_tanks = bot.units.my.units.of_type(UnitTypeId::SiegeTank).len();
-        let vikings = bot.units.my.units.of_type(UnitTypeId::VikingFighter).len();
-
-        if siege_tanks == 0 {
-            build_order.push(UnitTypeId::Factory);
+    if let Some(first_production) = UNIT_SOURCE.get(&units[0].clone()) {
+        //single production
+        if units.len() == 1 {
+            return Some(first_production.clone());
         }
-        if vikings == 0 {
-            build_order.push(UnitTypeId::Starport);
+        if let Some(second_production) = UNIT_SOURCE.get(&units[0].clone()) {
+            let first_production_amount = bot.my_unit_count(first_production.clone());
+            let second_production_amount = bot.my_unit_count(second_production.clone());
+            if first_production_amount <= second_production_amount {
+                return Some(first_production.clone());
+            } else {
+                return Some(second_production.clone());
+            }
         }
     }
-    build_order
-}
-
-fn structures_by_priority(unit: UnitTypeId) {
-    
+    None
 }
 
 impl BuildOrder {
-    pub fn new() -> Self {
+    pub fn new(_bot: &mut Nikolaj) -> Self {
         let mut order = BuildOrder {
-            bot: Nikolaj::default(),
+            bot: _bot,
             units: vec![],
-            structures: vec![],
+            next_multiproduction_structure: None,
         };
         order.units = decide_units(&mut order.bot);
-        order.structures = decide_structures(&mut order.bot);
+        order.next_multiproduction_structure =
+            decide_next_structure(&mut order.bot, order.units.clone());
 
         order
     }
 
     pub fn execute_build_order(&self, bot: &mut Nikolaj) {
-        let build_order = self.units.clone();
         //init idle production to prevent double training
-        bot.idle_production.clear();
         for structure in bot.units.my.structures.of_types(&PRODUCTION).ready().idle() {
             bot.idle_production.push(structure.tag());
         }
-        
-    
-        for unit in build_order {
+
+        for unit in self.units.clone() {
             if let Some(source) = UNIT_SOURCE.get(&unit) {
                 //missing source building
                 if bot
@@ -123,9 +126,19 @@ impl BuildOrder {
             }
         }
     }
-    
-    pub fn expand_production(&self, bot: &mut Nikolaj) {
 
+    pub fn expand_production(&self, bot: &mut Nikolaj) {
+        if let Some(next_structure) = self.next_multiproduction_structure.clone() {
+            if !bot.idle_production.is_empty()
+                || bot.minerals < 450
+                || bot.already_pending(next_structure) != 0
+            {
+                return;
+            }
+            if bot.can_afford(next_structure, false) {
+                construct(bot, next_structure);
+            }
+        }
     }
 
     fn resolve_tech(bot: &mut Nikolaj, unit: UnitTypeId) -> Option<UnitTypeId> {
@@ -163,14 +176,14 @@ impl BuildOrder {
             return Some(unit.clone());
         }
     }
-    
+
     fn add_to_saving(bot: &mut Nikolaj, unit: UnitTypeId) {
         if !bot.saving_on.contains(&unit.clone()) {
             bot.subtract_resources(unit.clone(), false);
             bot.saving_on.push(unit.clone());
         }
     }
-    
+
     fn train(bot: &mut Nikolaj, source: UnitTypeId, unit: UnitTypeId) {
         if UNITS_NEED_TECHLAB.contains(&unit.clone()) {
             //train with techlab structure
@@ -216,8 +229,13 @@ impl BuildOrder {
             }
         } else {
             //train without techlab
-            for structure in bot.units.my.structures.of_type(source)
-            .find_tags(&bot.idle_production) {
+            for structure in bot
+                .units
+                .my
+                .structures
+                .of_type(source)
+                .find_tags(&bot.idle_production)
+            {
                 if bot.can_afford(unit, true) {
                     if bot.idle_production.contains(&structure.tag()) {
                         bot.idle_production.retain(|&x| x != structure.tag());
@@ -228,9 +246,14 @@ impl BuildOrder {
                 return;
             }
         }
-    
-        for structure in bot.units.my.structures.of_type(source)
-        .find_tags(&bot.idle_production) {
+
+        for structure in bot
+            .units
+            .my
+            .structures
+            .of_type(source)
+            .find_tags(&bot.idle_production)
+        {
             if bot.can_afford(unit, true) {
                 if bot.idle_production.contains(&structure.tag()) {
                     bot.idle_production.retain(|&x| x != structure.tag());
@@ -240,6 +263,4 @@ impl BuildOrder {
             BuildOrder::add_to_saving(bot, unit);
         }
     }
-    
 }
-

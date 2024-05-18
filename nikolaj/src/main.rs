@@ -112,16 +112,20 @@ impl Player for Nikolaj {
 
             townhall_control(self);
 
+            //utility structures
             for structure in UTILITY_STRUCTURES {
-                if get_conditions(self, &structure) {
-                    if self.can_afford(structure.clone(), false) {
-                        construct(self, structure.clone());
-                    }
+                if get_conditions(self, &structure) && self.can_afford(structure.clone(), false) {
+                    construct(self, structure.clone());
                 }
             }
-            let order = BuildOrder::new();
+
+            println!("Race: {:?}", self.enemy_race);
+            //build order
+            self.idle_production.clear();
+            let order = BuildOrder::new(self);
             order.execute_build_order(self);
             order.expand_production(self);
+
             finish_building_without_workers(self);
             distribute_workers(self);
         }
