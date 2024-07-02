@@ -2,7 +2,7 @@ use crate::Nikolaj;
 use rust_sc2::prelude::*;
 use crate::params::*;
 
-pub(crate) fn get_conditions(bot: &mut Nikolaj, structure: &UnitTypeId) -> bool {
+pub fn get_conditions(bot: &mut Nikolaj, structure: &UnitTypeId) -> bool {
     match structure {
         UnitTypeId::SupplyDepot => {
             let pending = bot.already_pending(UnitTypeId::SupplyDepot);

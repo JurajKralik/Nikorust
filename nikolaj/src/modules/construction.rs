@@ -28,7 +28,7 @@ fn get_builder(bot: &mut Nikolaj, target: Target) -> Option<&Unit> {
         }
     }
 }
-pub(crate) fn finish_building_without_workers(bot: &mut Nikolaj) {
+pub fn finish_building_without_workers(bot: &mut Nikolaj) {
     for building in bot.units.my.structures.not_ready().clone() {
         if building.is_addon() {
             continue;
@@ -48,7 +48,7 @@ pub(crate) fn finish_building_without_workers(bot: &mut Nikolaj) {
     }
 }
 
-pub(crate) fn get_structure_position(bot: &mut Nikolaj, structure: UnitTypeId) -> Target {
+pub fn get_structure_position(bot: &mut Nikolaj, structure: UnitTypeId) -> Target {
     match structure {
         UnitTypeId::SupplyDepot => {
             if let Some(depots) = bot.ramps.my.corner_depots() {
@@ -128,7 +128,7 @@ fn get_production_position(bot: &mut Nikolaj) -> Target {
     Target::None
 }
 
-pub(crate) fn construct(bot: &mut Nikolaj, structure: UnitTypeId) {
+pub fn construct(bot: &mut Nikolaj, structure: UnitTypeId) {
     let pos = get_structure_position(bot, structure);
     let builder = get_builder(bot, pos);
     match pos {

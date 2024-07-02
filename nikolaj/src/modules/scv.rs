@@ -3,7 +3,7 @@ use rust_sc2::prelude::*;
 use std::cmp::Ordering;
 
 
-pub(crate) fn distribute_workers(bot: &mut Nikolaj) {
+pub fn distribute_workers(bot: &mut Nikolaj) {
     const DISTRIBUTION_DELAY: u32 = 8;
 
     if bot.units.my.workers.is_empty() {

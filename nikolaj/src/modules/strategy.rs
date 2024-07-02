@@ -2,7 +2,7 @@ use crate::Nikolaj;
 use rust_sc2::prelude::*;
 use crate::params::*;
 
-pub(crate) fn units_memory(bot: &mut Nikolaj) {
+pub fn units_memory(bot: &mut Nikolaj) {
     let mut clean_templar = false;
 
     //add units to memory
@@ -124,7 +124,7 @@ pub(crate) fn units_memory(bot: &mut Nikolaj) {
     }
 }
 
-pub(crate) fn cheese_detection(bot: &mut Nikolaj) {
+pub fn cheese_detection(bot: &mut Nikolaj) {
     //worker rush
     if bot.time < 200.0 || bot.worker_rush {
         let mut enemy_workers = 0;
@@ -258,7 +258,7 @@ pub(crate) fn cheese_detection(bot: &mut Nikolaj) {
     }
 }
 
-pub(crate) fn enemy_macro_strategy(bot: &mut Nikolaj) {
+pub fn enemy_macro_strategy(bot: &mut Nikolaj) {
     for enemy in bot.enemy_units_memory.clone() {
         //cloak
         if !bot.enemy_cloaking && CLOAK_AND_BURROW.contains(&enemy.type_id()) {
@@ -320,7 +320,7 @@ pub(crate) fn enemy_macro_strategy(bot: &mut Nikolaj) {
     }
 }
 
-pub(crate) fn set_idle_point(bot: &mut Nikolaj) {
+pub fn set_idle_point(bot: &mut Nikolaj) {
     //no base
     if bot.units.my.townhalls.is_empty() {
         if let Some(structure) = bot.units.my.structures.closest(bot.start_location) {
@@ -371,7 +371,7 @@ pub(crate) fn set_idle_point(bot: &mut Nikolaj) {
     }
 }
 
-pub(crate) fn set_main_army_point(bot: &mut Nikolaj) {
+pub fn set_main_army_point(bot: &mut Nikolaj) {
     //position of unit closest to the army center
     let all_army = bot.units.my.units.exclude_types(&EXCLUDE_MAIN_ARMY).clone();
     if let Some(army_center) = all_army.center() {
@@ -384,7 +384,7 @@ pub(crate) fn set_main_army_point(bot: &mut Nikolaj) {
     bot.main_army_point = None;
 }
 
-pub(crate) fn set_defensive_point(bot: &mut Nikolaj) {
+pub fn set_defensive_point(bot: &mut Nikolaj) {
     bot.defensive_point = None;
 
     if let Some(enemy) = bot
@@ -434,7 +434,7 @@ fn get_enemy_army_supply(bot: &mut Nikolaj) -> f32 {
     army_supply
 }
 
-pub(crate) fn set_offensive_point(bot: &mut Nikolaj) {
+pub fn set_offensive_point(bot: &mut Nikolaj) {
     //defense priority
     if bot.defensive_point.is_some() {
         bot.offensive_point = None;
@@ -460,7 +460,7 @@ pub(crate) fn set_offensive_point(bot: &mut Nikolaj) {
     bot.offensive_point = None;
 }
 
-pub(crate) fn set_repair_point(bot: &mut Nikolaj) {
+pub fn set_repair_point(bot: &mut Nikolaj) {
     bot.repair_point = bot.start_location;
 
     let mut maxed_base:Option<Unit> = None;
@@ -488,6 +488,6 @@ pub(crate) fn set_repair_point(bot: &mut Nikolaj) {
     }
 }
 
-pub(crate) fn set_harass_point(bot: &mut Nikolaj) {
+pub fn set_harass_point(bot: &mut Nikolaj) {
     bot.harass_point = bot.enemy_start.towards(bot.start_location, -5.0);
 }

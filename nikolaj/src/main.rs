@@ -6,7 +6,7 @@ mod ex_main;
 mod modules;
 mod params;
 
-use crate::modules::build_order::BuildOrder;
+use crate::modules::build_order::*;
 use crate::modules::buildings_micro::*;
 use crate::modules::conditions::*;
 use crate::modules::construction::*;
@@ -53,6 +53,8 @@ struct Nikolaj {
     //macro
     saving_on: Vec<UnitTypeId>,
     idle_production: Vec<u64>,
+    order_units: Vec<UnitTypeId>,
+    next_multiproduction_structure: Option<UnitTypeId>,
 }
 
 impl Player for Nikolaj {
@@ -119,12 +121,12 @@ impl Player for Nikolaj {
                 }
             }
 
-            println!("Race: {:?}", self.enemy_race);
             //build order
             self.idle_production.clear();
-            let order = BuildOrder::new(self);
-            order.execute_build_order(self);
-            order.expand_production(self);
+            self.order_units = decide_units(self);
+            self.next_multiproduction_structure = decide_next_structure(self);
+            execute_build_order(self);
+            expand_production(self);
 
             finish_building_without_workers(self);
             distribute_workers(self);

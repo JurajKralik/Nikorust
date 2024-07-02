@@ -2,7 +2,7 @@ use crate::Nikolaj;
 use rust_sc2::prelude::*;
 use crate::params::*;
 
-pub(crate) fn cancel_buildings(bot: &mut Nikolaj) {
+pub fn cancel_buildings(bot: &mut Nikolaj) {
     for building in bot.units.my.structures.not_ready() {
         if let (Some(health_max), Some(health), Some(health_percentage)) = (
             building.health_max(),
@@ -19,7 +19,7 @@ pub(crate) fn cancel_buildings(bot: &mut Nikolaj) {
     }
 }
 
-pub(crate) fn depot_micro(bot: &mut Nikolaj) {
+pub fn depot_micro(bot: &mut Nikolaj) {
     let safe_dist = 8.0;
 
     //opened
@@ -57,7 +57,7 @@ pub(crate) fn depot_micro(bot: &mut Nikolaj) {
     }
 }
 
-pub(crate) fn bunker_micro(bot: &mut Nikolaj) {
+pub fn bunker_micro(bot: &mut Nikolaj) {
     for bunker in bot.units.my.structures.of_type(UnitTypeId::Bunker).ready() {
         let enemies = bot
             .units
@@ -94,7 +94,7 @@ pub(crate) fn bunker_micro(bot: &mut Nikolaj) {
     }
 }
 
-pub(crate) fn set_rally_points(bot: &mut Nikolaj) {
+pub fn set_rally_points(bot: &mut Nikolaj) {
     for building in bot.units.my.structures.of_types(&PRODUCTION).ready() {
         if building.rally_targets().is_empty() && !bot.units.my.townhalls.is_empty() {
             if let Some(townhall) = bot.units.my.townhalls.closest(building.position()) {

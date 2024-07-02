@@ -2,7 +2,7 @@ use crate::Nikolaj;
 use rust_sc2::prelude::*;
 use crate::params::*;
 
-pub(crate) fn bases_init(bot: &mut Nikolaj) {
+pub fn bases_init(bot: &mut Nikolaj) {
     bot.bases.clear();
 
     for base in &bot.units.my.townhalls.ready() {
@@ -11,7 +11,7 @@ pub(crate) fn bases_init(bot: &mut Nikolaj) {
         }
     }
 }
-pub(crate) fn townhall_control(bot: &mut Nikolaj) {
+pub fn townhall_control(bot: &mut Nikolaj) {
 
     for base in &bot.units.my.townhalls.ready() {
         if base.is_flying() {
