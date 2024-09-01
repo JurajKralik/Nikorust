@@ -165,7 +165,9 @@ fn add_to_saving(bot: &mut Nikolaj, unit: UnitTypeId) {
 }
 
 fn train(bot: &mut Nikolaj, source: UnitTypeId, unit: UnitTypeId) {
+    println!("Training: {:?}", unit);
     if UNITS_NEED_TECHLAB.contains(&unit.clone()) {
+        println!("Needs techlab");
         //train with techlab structure
         for structure in bot
             .units
@@ -183,8 +185,10 @@ fn train(bot: &mut Nikolaj, source: UnitTypeId, unit: UnitTypeId) {
                 return;
             }
         }
+        println!("Techlab not found");
         //techlab missing
         if let Some(techlab) = TECHLABS.get(&source) {
+            println!("{:?}", bot.already_pending(techlab.clone()));
             if bot.already_pending(techlab.clone()) == 0 {
                 for structure in bot
                     .units
@@ -197,10 +201,10 @@ fn train(bot: &mut Nikolaj, source: UnitTypeId, unit: UnitTypeId) {
                         if bot.idle_production.contains(&structure.tag()) {
                             bot.idle_production.retain(|&x| x != structure.tag());
                         }
-                        structure.command(AbilityId::BuildTechLab, Target::None, false);
+                        build_addon(&structure, techlab.clone());
                         add_to_saving(bot, techlab.clone());
+                        return;
                     }
-                    return;
                 }
             } else {
                 //wait for techlab to finish
@@ -241,5 +245,27 @@ fn train(bot: &mut Nikolaj, source: UnitTypeId, unit: UnitTypeId) {
             structure.train(unit, false);
         }
         add_to_saving(bot, unit);
+    }
+}
+
+fn build_addon(structure: &Unit, addon: UnitTypeId) {
+    if structure.type_id() == UnitTypeId::Barracks {
+        if addon == UnitTypeId::BarracksTechLab {
+            structure.command(AbilityId::BuildTechLabBarracks, Target::None, false);
+        } else {
+            structure.command(AbilityId::BuildReactorBarracks, Target::None, false);
+        }
+    } else if structure.type_id() == UnitTypeId::Factory {
+        if addon == UnitTypeId::FactoryTechLab {
+            structure.command(AbilityId::BuildTechLabFactory, Target::None, false);
+        } else {
+            structure.command(AbilityId::BuildReactorFactory, Target::None, false);
+        }
+    } else if structure.type_id() == UnitTypeId::Starport {
+        if addon == UnitTypeId::StarportTechLab {
+            structure.command(AbilityId::BuildTechLabStarport, Target::None, false);
+        } else {
+            structure.command(AbilityId::BuildReactorStarport, Target::None, false);
+        }
     }
 }
