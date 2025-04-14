@@ -73,6 +73,7 @@ enum Command {
 	},
 }
 
+#[allow(dead_code)]
 pub(crate) fn main(mut bot: impl Player + DerefMut<Target = Bot> + Deref<Target = Bot>) -> SC2Result<()> {
 	let args = Args::parse();
 
