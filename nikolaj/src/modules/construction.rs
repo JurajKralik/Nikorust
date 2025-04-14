@@ -1,7 +1,7 @@
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
 
-fn get_builder(bot: &mut Nikolaj, target: Target) -> Option<&Unit> {
+pub fn get_builder(bot: &mut Nikolaj, target: Target) -> Option<&Unit> {
     match target {
         Target::None => {
             return None;

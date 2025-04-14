@@ -152,7 +152,7 @@ pub fn cheese_detection(bot: &mut Nikolaj) {
         }
     }
     //contain rush
-    if bot.time < 350.0 || bot.contain_rush {
+    if bot.time < 60.0 * 5.0 || bot.contain_rush {
         if !bot.units.enemy.structures.is_empty() {
             for structure in bot.units.enemy.structures.clone() {
                 if structure.position().distance(bot.start_location)
@@ -238,7 +238,7 @@ pub fn cheese_detection(bot: &mut Nikolaj) {
         }
     }
     //flooding
-    if bot.time < 300.0 || bot.flooding {
+    if bot.time < 60.0 * 5.0 || bot.flooding {
         if bot.units.enemy.units.closer(30.0, bot.idle_point).len() > 5 && !bot.flooding {
             println!("Flooding detected {:#?}", bot.time);
             bot.flooding = true;
