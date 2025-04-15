@@ -70,3 +70,9 @@ pub fn get_builder(bot: &mut Nikolaj, target: Target) -> Option<&Unit> {
         }
     }
 }
+
+pub fn build(bot: &mut Nikolaj, position: Point2, structure: UnitTypeId) {
+    if let Some(builder) = get_builder(bot, Target::Pos(position)) {
+        builder.build(structure, position, false);
+    }
+}

@@ -10,13 +10,10 @@ pub fn construct_supply_depots(bot: &mut Nikolaj) {
     let position = get_next_depot_position(bot);
     let position = match position {
         Target::None => return,
-        Target::Pos(pos) => pos,
+        Target::Pos(pos) => pos, 
         Target::Tag(_) => return,
     };
-    let builder = get_builder(bot, Target::Pos(position));
-    if let Some(worker) = builder {
-        worker.build(UnitTypeId::SupplyDepot, position, false);
-    }
+    build(bot, position, UnitTypeId::SupplyDepot);
 }
 
 fn check_depots_needed(bot: &mut Nikolaj) -> bool {

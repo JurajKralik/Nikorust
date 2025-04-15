@@ -1,5 +1,5 @@
 use crate::Nikolaj;
-use crate::helpers::construction::get_builder;
+use crate::helpers::construction::*;
 use rust_sc2::prelude::*;
 
 const CLOAK_AND_BURROW: &'static [UnitTypeId] = &[
@@ -52,11 +52,8 @@ pub fn construct_command_centers(bot: &mut Nikolaj) {
     }
     
     // Expand
-    let builder = get_builder(bot, Target::Pos(position));
-    if let Some(worker) = builder {
-        worker.build(UnitTypeId::CommandCenter, position, false);
-    }
-    
+    let structure = UnitTypeId::CommandCenter;
+    build(bot, position, structure);
 }
 
 pub fn townhall_control(bot: &mut Nikolaj) {

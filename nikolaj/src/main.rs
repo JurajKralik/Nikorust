@@ -56,6 +56,16 @@ impl Nikolaj {
     fn already_pending(&self, unit_type: UnitTypeId) -> usize {
         self.counter().ordered().count(unit_type)
     }
+
+    #[allow(dead_code)]
+    fn unit_count(&self, unit_type: UnitTypeId) -> usize {
+        self.units.my.units.of_type(unit_type).len()
+    }
+
+    #[allow(dead_code)]
+    fn structure_count(&self, unit_type: UnitTypeId) -> usize {
+        self.units.my.structures.ready().of_type(unit_type).len()
+    }
 }
 
 
