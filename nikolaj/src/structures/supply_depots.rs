@@ -25,27 +25,27 @@ fn check_depots_needed(bot: &mut Nikolaj) -> bool {
     let supply_cap = bot.supply_cap;
     let supply_used = bot.supply_used;
 
-    //stop
+    // Stop
     if supply_cap > 199 || bot.units.my.townhalls.is_empty() {
         return false;
     }
-    //classic
+    // Classic
     if supply_left < 6 && pending == 0 {
         return true;
     }
-    //supply block close
+    // Supply block close
     if supply_left < 6 && pending < 2 && supply_used > 30 {
         return true;
     }
-    //supply block too close
+    // Supply block too close
     if supply_used > 45 && supply_left < 3 && pending < 3 {
         return true;
     }
-    //lategame
+    // Lategame
     if supply_cap > 40 && supply_left < 8 && pending == 0 {
         return true;
     }
-    //close middle ramp
+    // Close middle ramp
     if let Some(depot_in_middle) = bot.ramps.my.depot_in_middle() {
         if bot
             .units
@@ -75,6 +75,7 @@ fn check_depots_needed(bot: &mut Nikolaj) -> bool {
 }
 
 fn get_next_depot_position(bot: &mut Nikolaj) -> Target {
+    // Ramp corners
     if let Some(depots) = bot.ramps.my.corner_depots() {
         for depot in depots {
             if bot.units.my.structures.closer(2.0, depot).is_empty() {
@@ -82,15 +83,32 @@ fn get_next_depot_position(bot: &mut Nikolaj) -> Target {
             }
         }
     }
+    // Ramp middle
     if let Some(depot) = bot.ramps.my.depot_in_middle() {
         if bot.units.my.structures.closer(2.0, depot).is_empty() {
             return Target::Pos(depot);
         }
     }
+    // Base walls
     for base in bot.units.my.townhalls.clone() {
-        let base_depots_pos = base.position().towards(bot.enemy_start, -10.0);
+        let base_position = base.position().clone();
+        // First base ignore
+        if base_position.distance(bot.start_location) < 3.0 {
+            continue;
+        }
+        
+        let base_depots_pos = base_position.towards(bot.game_info.map_center, 7.0);
         if let Some(depot) =
             bot.find_placement(UnitTypeId::SupplyDepot, base_depots_pos, Default::default())
+        {
+            return Target::Pos(depot);
+        }
+    }
+    // Main base mineral line
+    if let Some(main_base) = bot.units.my.townhalls.closest(bot.start_location) {
+        let position = main_base.position().towards(bot.game_info.map_center, -8.0);
+        if let Some(depot) =
+            bot.find_placement(UnitTypeId::SupplyDepot, position, Default::default())
         {
             return Target::Pos(depot);
         }
