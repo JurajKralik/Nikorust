@@ -2,47 +2,47 @@ use crate::helpers::construction::*;
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
 
-pub fn construct_barracks(bot: &mut Nikolaj) {
-    if bot.already_pending(UnitTypeId::Barracks) > 0 {
+pub fn construct_factory(bot: &mut Nikolaj) {
+    if bot.already_pending(UnitTypeId::Factory) > 0 {
         return;
     }
-    if !bot.can_afford(UnitTypeId::Barracks, false) {
+    if !bot.can_afford(UnitTypeId::Factory, false) {
         return;
     }
-    if bot.structure_count(UnitTypeId::SupplyDepot)
-        + bot.structure_count(UnitTypeId::SupplyDepotLowered)
+    if bot.structure_count(UnitTypeId::Barracks)
+        + bot.structure_count(UnitTypeId::BarracksFlying)
         == 0
     {
         return;
     }
 
-    let amount = bot.structure_count(UnitTypeId::Barracks)
-        + bot.structure_count(UnitTypeId::BarracksFlying)
-        + bot.already_pending(UnitTypeId::Barracks);
+    let amount = bot.structure_count(UnitTypeId::Factory)
+        + bot.structure_count(UnitTypeId::FactoryFlying)
+        + bot.already_pending(UnitTypeId::Factory);
 
     // Conditions
-    // Max 4 barracks
+    // Max 4 factories
     if amount >= 4 {
         return;
     }
 
-    // Barracks flying
+    // Factory flying
     if !bot
         .units
         .my
         .structures
-        .of_type(UnitTypeId::BarracksFlying)
+        .of_type(UnitTypeId::FactoryFlying)
         .is_empty()
     {
         return;
     }
 
-    // Barracks production ongoing
+    // Factory production ongoing
     if !bot
         .units
         .my
         .structures
-        .of_type(UnitTypeId::Barracks)
+        .of_type(UnitTypeId::Factory)
         .idle()
         .is_empty()
     {
@@ -50,9 +50,7 @@ pub fn construct_barracks(bot: &mut Nikolaj) {
     }
 
     // Factory and Starport first
-    if bot.structure_count(UnitTypeId::Barracks) > 0
-        && bot.structure_count(UnitTypeId::Factory) + bot.structure_count(UnitTypeId::FactoryFlying)
-            == 0
+    if bot.structure_count(UnitTypeId::Factory) > 0
         && bot.structure_count(UnitTypeId::Starport)
             + bot.structure_count(UnitTypeId::StarportFlying)
             == 0
@@ -72,23 +70,16 @@ pub fn construct_barracks(bot: &mut Nikolaj) {
 
     // On grid
     if let Some(position) = get_placement_on_grid(bot) {
-        build(bot, position, UnitTypeId::Barracks);
+        build(bot, position, UnitTypeId::Factory);
         return;
     }
 
     // Random position
     for base in bot.units.my.townhalls.clone() {
         let position = base.position().towards(bot.enemy_start, 4.0);
-        if bot.can_place(UnitTypeId::Barracks, position) {
-            build(bot, position, UnitTypeId::Barracks);
+        if bot.can_place(UnitTypeId::Factory, position) {
+            build(bot, position, UnitTypeId::Factory);
             return;
         }
-    }
-}
-
-pub fn barracks_control(bot: &mut Nikolaj) {
-    for barracks in bot.units.my.structures.of_type(UnitTypeId::Barracks).idle() {
-        
-
     }
 }

@@ -4,8 +4,10 @@ mod ex_main;
 mod helpers;
 mod structures;
 use crate::structures::command_center::*;
-use crate::structures::barracks::*;
 use crate::structures::supply_depots::*;
+use crate::structures::barracks::*;
+use crate::structures::factory::*;
+use crate::helpers::build_order::*;
 
 
 #[bot]
@@ -15,6 +17,11 @@ struct Nikolaj {
     scanner_sweep_time: f32,
     enemy_cloaking: bool,
     enemy_flooding: bool,
+    barracks_priority: Option<UnitTypeId>,
+    factory_priority: Option<UnitTypeId>,
+    starport_priority: Option<UnitTypeId>,
+    starter_reaper: bool,
+    starter_banshee: bool,
 }
 
 impl Player for Nikolaj {
@@ -28,14 +35,21 @@ impl Player for Nikolaj {
 
         println!("---------------------");
         println!("On loop:");
+        self.barracks_priority = None;
+        self.factory_priority = None;
+        self.starport_priority = None;
+        self.starter_reaper = true;
+        self.starter_banshee = true;
         Ok(())
     }
     fn on_step(&mut self, _iteration: usize) -> SC2Result<()> {
-        self.iteration += 1;
+        self.iteration = _iteration;
+        decide_strategy(self);
         construct_command_centers(self);
         townhall_control(self);
-        construct_barracks(self);
         construct_supply_depots(self);
+        construct_barracks(self);
+        construct_factory(self);
         Ok(())
     }
     fn on_end(&self, _result: GameResult) -> SC2Result<()> {
