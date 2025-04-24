@@ -1,6 +1,7 @@
 use crate::helpers::construction::*;
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
+use rust_sc2::ramp::Ramp;
 
 pub fn construct_supply_depots(bot: &mut Nikolaj) {
     if !check_depots_needed(bot) {
@@ -94,6 +95,34 @@ fn get_next_depot_position(bot: &mut Nikolaj) -> Target {
             continue;
         }
         
+        // Towards closest ramp
+        // Get closest ramp
+        let mut closest_ramp: Option<Ramp> = None;
+        let mut closest_distance = 9999.0;
+        for ramp in bot.ramps.all.clone() {
+            if let Some(ramp_top) = ramp.top_center() {
+                let distance = base_position.distance(ramp_top);
+                if distance < closest_distance {
+                    closest_distance = distance;
+                    closest_ramp = Some(ramp.clone());
+                }
+            }
+        }
+        // Find placement
+        if let Some(ramp) = closest_ramp {
+            if let Some(ramp_pos) = ramp.top_center(){
+                let wall_pos = base_position.towards(Point2 { x: ramp_pos.0 as f32, y: ramp_pos.1 as f32 }, 7.0);
+                if bot.units.my.structures.of_type_including_alias(UnitTypeId::SupplyDepot).closer(10.0, wall_pos).len() < 5 {
+                    if let Some(depot) =
+                        bot.find_placement(UnitTypeId::SupplyDepot, wall_pos, Default::default())
+                    {
+                        return Target::Pos(depot);
+                    }
+                }
+            }
+        }
+        
+        // Towards map center
         let base_depots_pos = base_position.towards(bot.game_info.map_center, 7.0);
         if let Some(depot) =
             bot.find_placement(UnitTypeId::SupplyDepot, base_depots_pos, Default::default())
