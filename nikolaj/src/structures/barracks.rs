@@ -88,7 +88,19 @@ pub fn construct_barracks(bot: &mut Nikolaj) {
 
 pub fn barracks_control(bot: &mut Nikolaj) {
     for barracks in bot.units.my.structures.of_type(UnitTypeId::Barracks).idle() {
-        
-
+        if let Some(unit_type) = bot.barracks_priority {
+            if [UnitTypeId::Marauder, UnitTypeId::Ghost].contains(&unit_type) {
+                if !barracks.has_techlab(){
+                    let addon_position = barracks.position().clone().offset(2.5, -0.5);
+                    if bot.can_place(UnitTypeId::SupplyDepot, addon_position) {
+                        barracks(AbilityId::BuildTechLabBarracks);
+                    } else {
+                        barracks(AbilityId::LiftBarracks);
+                    }
+                }
+            }
+        } else {
+            return;
+        }
     }
 }

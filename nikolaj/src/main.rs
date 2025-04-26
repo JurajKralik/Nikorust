@@ -1,3 +1,4 @@
+#![allow(non_snake_case)]
 use rust_sc2::{bot, prelude::*};
 
 mod ex_main;
@@ -50,6 +51,7 @@ impl Player for Nikolaj {
         construct_supply_depots(self);
         construct_barracks(self);
         construct_factory(self);
+        barracks_control(self);
         Ok(())
     }
     fn on_end(&self, _result: GameResult) -> SC2Result<()> {
