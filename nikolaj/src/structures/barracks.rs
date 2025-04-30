@@ -89,18 +89,42 @@ pub fn construct_barracks(bot: &mut Nikolaj) {
 pub fn barracks_control(bot: &mut Nikolaj) {
     for barracks in bot.units.my.structures.of_type(UnitTypeId::Barracks).idle() {
         if let Some(unit_type) = bot.barracks_priority {
+            // Tech lab for Marauder and Ghost
             if [UnitTypeId::Marauder, UnitTypeId::Ghost].contains(&unit_type) {
+                // Build tech lab
                 if !barracks.has_techlab(){
                     let addon_position = barracks.position().clone().offset(2.5, -0.5);
                     if bot.can_place(UnitTypeId::SupplyDepot, addon_position) {
-                        barracks(AbilityId::BuildTechLabBarracks);
+                        barracks.command(AbilityId::BuildTechLabBarracks, Target::None, false);
                     } else {
-                        barracks(AbilityId::LiftBarracks);
+                        barracks.command(AbilityId::LiftBarracks, Target::None, false);
                     }
+                // Train
+                } else {
+                    barracks.train(unit_type, false);
                 }
+            } else {
+                // Train
+                barracks.train(unit_type, false);
             }
+        // No priority
         } else {
-            return;
+            break;
+        }
+    }
+
+    // Land barracks
+    for barracks in bot.units.my.structures.of_type(UnitTypeId::BarracksFlying).idle() {
+        // On grid
+        if let Some(position) = get_placement_on_grid(bot) {
+            barracks.command(AbilityId::LandBarracks, Target::Pos(position), false);
+        }
+        // Random position
+        for base in bot.units.my.townhalls.clone() {
+            let position = base.position().towards(bot.enemy_start, 4.0);
+            if bot.can_place(UnitTypeId::Barracks, position) {
+                barracks.command(AbilityId::LandBarracks, Target::Pos(position), false);
+            }
         }
     }
 }
