@@ -49,6 +49,7 @@ impl Player for Nikolaj {
         construct_command_centers(self);
         townhall_control(self);
         construct_supply_depots(self);
+        supply_depots_control(self);
         construct_barracks(self);
         construct_factory(self);
         barracks_control(self);

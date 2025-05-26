@@ -141,3 +141,33 @@ fn get_next_depot_position(bot: &mut Nikolaj) -> Target {
     }
     Target::None
 }
+
+pub fn supply_depots_control(bot: &mut Nikolaj) {
+    if bot.units.my.structures.of_type_including_alias(UnitTypeId::SupplyDepot).is_empty() {
+        return;
+    }
+    // Closed
+    for depot in bot.units.my.structures.of_type(UnitTypeId::SupplyDepot).clone() {
+        let mut open = true;
+        for unit in bot.units.enemy.units.closer(8.0, depot.position()) {
+            if !unit.is_flying() {
+                open = false;
+                break;
+            }
+        }
+        if !open {
+            continue;
+        }
+        depot.command(AbilityId::MorphSupplyDepotLower, Target::None, false);
+    }
+
+    // Opened
+    for depot in bot.units.my.structures.of_type(UnitTypeId::SupplyDepotLowered).clone() {
+        for unit in bot.units.enemy.units.closer(8.0, depot.position()) {
+            if !unit.is_flying() {
+                depot.command(AbilityId::MorphSupplyDepotRaise, Target::None, false);
+                break;
+            }
+        }
+    }
+}
