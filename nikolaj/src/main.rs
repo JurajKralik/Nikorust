@@ -4,17 +4,21 @@ use rust_sc2::{bot, prelude::*};
 mod ex_main;
 mod helpers;
 mod structures;
+mod units;
 use crate::structures::command_center::*;
 use crate::structures::supply_depots::*;
 use crate::structures::barracks::*;
 use crate::structures::factory::*;
+use crate::structures::refinery::*;
 use crate::helpers::build_order::*;
+use crate::units::scv::*;
 
 
 #[bot]
 #[derive(Default)]
 struct Nikolaj {
     iteration: usize,
+    last_loop_distributed: u32,
     scanner_sweep_time: f32,
     enemy_cloaking: bool,
     enemy_flooding: bool,
@@ -45,9 +49,12 @@ impl Player for Nikolaj {
     }
     fn on_step(&mut self, _iteration: usize) -> SC2Result<()> {
         self.iteration = _iteration;
+        distribute_workers(self);
+        finish_building_without_workers(self);
         decide_strategy(self);
         construct_command_centers(self);
         townhall_control(self);
+        construct_refinery(self);
         construct_supply_depots(self);
         supply_depots_control(self);
         construct_barracks(self);
