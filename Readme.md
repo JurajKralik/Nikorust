@@ -5,7 +5,7 @@ Rust version on Nikolaj (Python) SC2 AI.
 Made using rust-sc2 library.  
 Idea is to make slow push Terran BOT same as in the python, but with less performance limitation.
 
-## Modules
+## Structures
 ### Command Center
 - [x] Construct
 - [x] Fly/Land
