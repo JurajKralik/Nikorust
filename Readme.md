@@ -68,7 +68,7 @@ Idea is to make slow push Terran BOT same as in the python, but with less perfor
 ### Sensor Tower
 - [ ] Construct
 
-## Unit control
+## CC Units
 ### SCV
 - [x] Distribution
 - [ ] Split on start
@@ -81,6 +81,7 @@ Idea is to make slow push Terran BOT same as in the python, but with less perfor
 - [ ] Worker rush answer
 - [ ] Planetary Fortress rush answer
 
+## Barracks Units
 ### Marine
 - [x] Train
 - [ ] Control
@@ -97,7 +98,12 @@ Idea is to make slow push Terran BOT same as in the python, but with less perfor
 - [ ] Train
 - [ ] Control
 
+## Factory Units
 ### Hellion
+- [ ] Train
+- [ ] Control
+
+### Siege Tank
 - [ ] Train
 - [ ] Control
 
@@ -109,6 +115,11 @@ Idea is to make slow push Terran BOT same as in the python, but with less perfor
 - [ ] Train
 - [ ] Control
 
+### Thor
+- [ ] Train
+- [ ] Control
+
+## Starport Units
 ### Viking
 - [ ] Train
 - [ ] Control
@@ -117,3 +128,29 @@ Idea is to make slow push Terran BOT same as in the python, but with less perfor
 - [ ] Train
 - [ ] Control
 - [ ] Drop units
+
+### Banshee
+- [ ] Train
+- [ ] Control
+- [ ] Harass
+
+### Raven
+- [ ] Train
+- [ ] Control
+- [ ] Harass
+
+### Liberator
+- [ ] Train
+- [ ] Control
+- [ ] Harass
+
+### Battlecruiser
+- [ ] Train
+- [ ] Control
+- [ ] Harass
+
+## Utilities
+- [ ] Building placement
+- [ ] Unit rally points
+- [ ] Walls
+- [ ] Pathfinding
