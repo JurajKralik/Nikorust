@@ -10,6 +10,7 @@ use crate::structures::supply_depots::*;
 use crate::structures::barracks::*;
 use crate::structures::factory::*;
 use crate::structures::refinery::*;
+use crate::structures::starport::*;
 use crate::helpers::build_order::*;
 use crate::units::scv::*;
 
@@ -59,7 +60,10 @@ impl Player for Nikolaj {
         supply_depots_control(self);
         construct_barracks(self);
         construct_factory(self);
+        construct_starport(self);
         barracks_control(self);
+        factory_control(self);
+        starport_control(self);
         Ok(())
     }
     fn on_end(&self, _result: GameResult) -> SC2Result<()> {

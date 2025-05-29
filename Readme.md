@@ -49,7 +49,7 @@ Idea is to make slow push Terran BOT same as in the python, but with less perfor
 | Construct        | ✅     |
 | Construct Addon  | ✅     |
 | Train            | ✅     |
-| Fly/Land         | ⬜     |
+| Fly/Land         | ✅     |
 
 </details>
 
@@ -59,9 +59,9 @@ Idea is to make slow push Terran BOT same as in the python, but with less perfor
 | Task             | Status |
 |------------------|--------|
 | Construct        | ✅     |
-| Construct Addon  | ⬜     |
-| Train            | ⬜     |
-| Fly/Land         | ⬜     |
+| Construct Addon  | ✅     |
+| Train            | ✅     |
+| Fly/Land         | ✅     |
 
 </details>
 
@@ -70,10 +70,10 @@ Idea is to make slow push Terran BOT same as in the python, but with less perfor
 
 | Task             | Status |
 |------------------|--------|
-| Construct        | ⬜     |
-| Construct Addon  | ⬜     |
-| Train            | ⬜     |
-| Fly/Land         | ⬜     |
+| Construct        | ✅     |
+| Construct Addon  | ✅     |
+| Train            | ✅     |
+| Fly/Land         | ✅     |
 
 </details>
 
@@ -229,6 +229,7 @@ Idea is to make slow push Terran BOT same as in the python, but with less perfor
 | Feature             | Status |
 |---------------------|--------|
 | Building placement  | ✅     |
+| Combat strategy     | ⬜     |
 | Unit rally points   | ⬜     |
 | Walls               | ⬜     |
 | Pathfinding         | ⬜     |
