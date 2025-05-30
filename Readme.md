@@ -230,7 +230,8 @@ Idea is to make slow push Terran BOT same as in the python, but with less perfor
 |---------------------|--------|
 | Building placement  | ✅     |
 | Combat strategy     | ⬜     |
-| Unit rally points   | ⬜     |
+| Unit counter        | ⬜     |
+| Unit rally points   | ✅     |
 | Walls               | ⬜     |
 | Pathfinding         | ⬜     |
 
