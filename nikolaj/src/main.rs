@@ -1,6 +1,5 @@
 #![allow(non_snake_case)]
 use rust_sc2::{bot, prelude::*};
-use std::collections::HashMap;
 
 mod ex_main;
 mod helpers;
@@ -20,7 +19,7 @@ use crate::units::scv::*;
 #[derive(Default)]
 struct Nikolaj {
     iteration: usize,
-    mining_distribution: HashMap<u64, Vec<u64>>,
+    scvs: ScvControl,
     scanner_sweep_time: f32,
     enemy_cloaking: bool,
     enemy_flooding: bool,
