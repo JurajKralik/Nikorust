@@ -17,10 +17,8 @@ fn init_mineral_fields_and_refineries(bot: &mut Nikolaj) {
 			valid_tags.push(mineral.tag());
 		}
 		for refinery in bot.units.my.structures.of_type_including_alias(UnitTypeId::Refinery).closer(10.0, base.position()).ready() {
-			if let Some(vespene) = refinery.vespene_contents() {
-				if vespene > 0 {
-					valid_tags.push(refinery.tag());
-				}
+			if refinery.vespene_contents().unwrap_or(0) > 0 {
+				valid_tags.push(refinery.tag());
 			}
 		}
 	}
@@ -29,8 +27,8 @@ fn init_mineral_fields_and_refineries(bot: &mut Nikolaj) {
 	bot.mining_distribution.retain(|tag, _| valid_tags.contains(tag));
 
 	// Add missing valid tags
-	for tag in valid_tags {
-		bot.mining_distribution.entry(tag).or_insert_with(Vec::new);
+	for tag in &valid_tags {
+		bot.mining_distribution.entry(*tag).or_insert_with(Vec::new);
 	}
 }
 
