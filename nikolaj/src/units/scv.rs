@@ -7,11 +7,11 @@ use std::collections::HashMap;
 pub struct ScvControl {
 	mining_distribution: HashMap<u64, Vec<u64>>,
 	repair_list: HashMap<u64, Vec<u64>>,
-	refineries: Units,
-	mineral_fields: Units,
-	gas_workers: Units,
-	mineral_workers: Units,
-	idle_workers: Units,
+	current_refineries: Units,
+	current_mineral_fields: Units,
+	current_gas_workers: Units,
+	current_mineral_workers: Units,
+	current_idle_workers: Units
 }
 
 impl Default for ScvControl {
@@ -19,28 +19,37 @@ impl Default for ScvControl {
 		Self {
 			mining_distribution: HashMap::new(),
 			repair_list: HashMap::new(),
-			refineries: Units::default(),
-			mineral_fields: Units::default(),
-			gas_workers: Units::default(),
-			mineral_workers: Units::default(),
-			idle_workers: Units::default(),
+			current_refineries: Units::default(),
+			current_mineral_fields: Units::default(),
+			current_gas_workers: Units::default(),
+			current_mineral_workers: Units::default(),
+			current_idle_workers: Units::default()
 		}
 	}
 }
+
+struct SaturationInfo {
+	deficit_at_mineral_fields: HashMap<u64, u32>,
+	deficit_at_refineries: HashMap<u64, u32>,
+	overflow_at_mineral_fields: HashMap<u64, u32>,
+	overflow_at_refineries: HashMap<u64, u32>,
+}
+
 
 pub fn distribute_workers(bot: &mut Nikolaj) {
 	reset_scv_control(bot);
 	init_mineral_fields_and_refineries(bot);
 	init_repair_targets(bot);
 	get_worker_allocations(bot);
+	split_workers(bot);
 }
 
 fn reset_scv_control(bot: &mut Nikolaj) {
-	bot.scvs.refineries.clear();
-	bot.scvs.mineral_fields.clear();
-	bot.scvs.gas_workers.clear();
-	bot.scvs.mineral_workers.clear();
-	bot.scvs.idle_workers.clear();
+	bot.scvs.current_refineries.clear();
+	bot.scvs.current_mineral_fields.clear();
+	bot.scvs.current_gas_workers.clear();
+	bot.scvs.current_mineral_workers.clear();
+	bot.scvs.current_idle_workers.clear();
 }
 
 fn init_mineral_fields_and_refineries(bot: &mut Nikolaj) {
@@ -58,11 +67,21 @@ fn init_mineral_fields_and_refineries(bot: &mut Nikolaj) {
 	}
 
 	// Remove entries not in valid set
-	bot.scvs.mining_distribution.retain(|tag, _| valid_tags.contains(tag));
+	let tags_to_remove: Vec<u64> = bot.scvs.mining_distribution.keys()
+		.filter(|tag| !valid_tags.contains(tag))
+		.cloned()
+		.collect();
+	for tag in tags_to_remove {
+		println!("[{}]: Removing invalid mining_distribution tag: {}", bot.iteration, tag);
+		bot.scvs.mining_distribution.remove(&tag);
+	}
 
 	// Add missing valid tags
 	for tag in &valid_tags {
-		bot.scvs.mining_distribution.entry(*tag).or_insert_with(Vec::new);
+		if !bot.scvs.mining_distribution.contains_key(tag) {
+			println!("[{}]: Adding new mining_distribution tag: {}", bot.iteration, tag);
+			bot.scvs.mining_distribution.insert(*tag, Vec::new());
+		}
 	}
 }
 
@@ -90,9 +109,9 @@ fn get_worker_allocations(bot: &mut Nikolaj) {
 	// Refresh resources
 	for resource_tag in bot.scvs.mining_distribution.keys() {
 		if let Some(mineral_field) = bot.units.mineral_fields.iter().find_tag(resource_tag.clone()) {
-			bot.scvs.mineral_fields.push(mineral_field.clone());
+			bot.scvs.current_mineral_fields.push(mineral_field.clone());
 		} else if let Some(refinery) = bot.units.my.structures.iter().find_tag(resource_tag.clone()) {
-			bot.scvs.refineries.push(refinery.clone());
+			bot.scvs.current_refineries.push(refinery.clone());
 		} else {
 			println!("[{}]: (1) Unknown resource tag: {}", bot.iteration, resource_tag);
 		}
@@ -107,14 +126,14 @@ fn get_worker_allocations(bot: &mut Nikolaj) {
 		if bot.units.mineral_fields.contains_tag(*tag) {
 			for worker_tag in workers {
 				if let Some(worker_unit) = bot.units.my.workers.iter().find_tag(*worker_tag) {
-					bot.scvs.mineral_workers.push(worker_unit.clone());
+					bot.scvs.current_mineral_workers.push(worker_unit.clone());
 				}
 			}
 		// Refineries
 		} else if bot.units.my.structures.contains_tag(*tag) {
 			for worker_tag in workers {
 				if let Some(worker_unit) = bot.units.my.workers.iter().find_tag(*worker_tag) {
-					bot.scvs.gas_workers.push(worker_unit.clone());
+					bot.scvs.current_gas_workers.push(worker_unit.clone());
 				}
 			}
 		} else {
@@ -124,14 +143,66 @@ fn get_worker_allocations(bot: &mut Nikolaj) {
 
 	// Idle workers
 	for worker in bot.units.my.workers.clone() {
-		if !(bot.scvs.gas_workers.contains_tag(worker.tag()) || bot.scvs.mineral_workers.contains_tag(worker.tag())) {
-			bot.scvs.idle_workers.push(worker);
+		if !(bot.scvs.current_gas_workers.contains_tag(worker.tag()) || bot.scvs.current_mineral_workers.contains_tag(worker.tag())) {
+			bot.scvs.current_idle_workers.push(worker);
 		}
 	}
 }
 
+fn split_workers(bot: &mut Nikolaj) {
+	let saturation = get_saturation_of_resources(bot);
+
+	while !saturation.deficit_at_mineral_fields.is_empty() || !saturation.deficit_at_refineries.is_empty() && !saturation.overflow_at_mineral_fields.is_empty() || !saturation.overflow_at_refineries.is_empty() {
+	  
 
 
+
+	}
+
+}
+
+fn get_saturation_of_resources(bot: &mut Nikolaj) -> SaturationInfo {
+	let mut saturation = SaturationInfo {
+		deficit_at_mineral_fields: HashMap::new(),
+		deficit_at_refineries: HashMap::new(),
+		overflow_at_mineral_fields: HashMap::new(),
+		overflow_at_refineries: HashMap::new(),
+	};
+
+	for mineral_field in bot.scvs.current_mineral_fields.iter() {
+		let tag = mineral_field.tag();
+		let assigned = bot.scvs.mining_distribution.get(&tag).map_or(0, |v| v.len() as u32);
+		if assigned < 2 {
+			saturation.deficit_at_mineral_fields.insert(tag, 2 - assigned);
+		}
+	}
+
+	for refinery in bot.scvs.current_refineries.iter() {
+		let tag = refinery.tag();
+		let assigned = bot.scvs.mining_distribution.get(&tag).map_or(0, |v| v.len() as u32);
+		if assigned < 3 {
+			saturation.deficit_at_refineries.insert(tag, 3 - assigned);
+		}
+	}
+
+	for mineral_field in bot.scvs.current_mineral_fields.iter() {
+		let tag = mineral_field.tag();
+		let assigned = bot.scvs.mining_distribution.get(&tag).map_or(0, |v| v.len() as u32);
+		if assigned > 2 {
+			saturation.overflow_at_mineral_fields.insert(tag, assigned - 2);
+		}
+	}
+
+	for refinery in bot.scvs.current_refineries.iter() {
+		let tag = refinery.tag();
+		let assigned = bot.scvs.mining_distribution.get(&tag).map_or(0, |v| v.len() as u32);
+		if assigned > 3 {
+			saturation.overflow_at_refineries.insert(tag, assigned - 3);
+		}
+	}
+
+	return saturation;
+}
 
 
 
