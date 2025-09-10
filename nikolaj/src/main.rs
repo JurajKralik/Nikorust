@@ -50,7 +50,7 @@ impl Player for Nikolaj {
     }
     fn on_step(&mut self, _iteration: usize) -> SC2Result<()> {
         self.iteration = _iteration;
-        scv_tick(self);
+        scv_step(self);
         decide_strategy(self);
         construct_command_centers(self);
         townhall_control(self);

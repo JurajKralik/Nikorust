@@ -1,4 +1,4 @@
-pub mod housekeeping;
+pub mod cleanup;
 pub mod discovery;
 pub mod repair;
 pub mod allocation;

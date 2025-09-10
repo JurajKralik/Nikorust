@@ -4,14 +4,14 @@ use rust_sc2::prelude::*;
 
 pub mod helpers;
 
-pub fn scv_tick(bot: &mut Nikolaj) {
-    helpers::housekeeping::reset_frame(bot);
+pub fn scv_step(bot: &mut Nikolaj) {
+    helpers::cleanup::reset_frame(bot);
     helpers::discovery::init_resources(bot);
-    helpers::repair::update_targets(bot);
-    helpers::allocation::refresh_allocations(bot);
-    helpers::allocation::rebalance(bot);      // uses saturation internally
-    helpers::speedmine::tick(bot);
-    helpers::building::finish_builds(bot);
+    helpers::repair::repair(bot); // TODO
+    helpers::allocation::refresh_allocations(bot); // TODO
+    helpers::allocation::rebalance(bot); // TODO
+    helpers::building::finish_buildings(bot); // TODO
+    helpers::speedmine::tick(bot); // TODO
 }
 
 
