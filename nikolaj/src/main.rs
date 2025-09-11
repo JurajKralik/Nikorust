@@ -19,7 +19,7 @@ use crate::units::scv::*;
 #[derive(Default)]
 struct Nikolaj {
     iteration: usize,
-    scvs: ScvControl,
+    worker_allocator: WorkerAllocator,
     scanner_sweep_time: f32,
     enemy_cloaking: bool,
     enemy_flooding: bool,
@@ -38,7 +38,6 @@ impl Player for Nikolaj {
         println!("---------------------");
         println!("On start:");
         println!("Map name: {}", self.game_info.map_name);
-
         println!("---------------------");
         println!("On loop:");
         self.barracks_priority = None;
