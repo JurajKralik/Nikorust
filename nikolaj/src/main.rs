@@ -156,7 +156,7 @@ fn main() -> SC2Result<()> {
         Computer::new(Race::Terran, Difficulty::VeryHard, None),
         "BerlingradAIE",
         LaunchOptions {
-            realtime: false,
+            realtime: true,
             ..Default::default()
         },
     )

@@ -1,13 +1,16 @@
 use crate::Nikolaj;
-use rust_sc2::{prelude::*, units};
+use rust_sc2::prelude::*;
 use rust_sc2::units::AllUnits;
 use std::collections::{HashMap, HashSet};
 
 
 pub fn scv_step(bot: &mut Nikolaj) {
     bot.worker_allocator.bases = get_mining_bases(&bot.units);
-    bot.worker_allocator.update_resources(collect_valid_resource_tags(&bot.units));
-    bot.worker_allocator.update_repair_targets(&bot.units.clone(), collect_damaged_targets(&bot.units));
+    let valid_resources_tags = collect_valid_resource_tags(&bot.units);
+    bot.worker_allocator.update_resources(valid_resources_tags);
+    let bases_tags = bot.worker_allocator.bases.iter().clone();
+    let damaged_targets = collect_damaged_targets(&bot.units, bases_tags);
+    bot.worker_allocator.update_repair_targets(&bot.units.clone(), damaged_targets);
     bot.worker_allocator.assign_repairmen(&bot.units.clone());
 }
 
@@ -51,6 +54,8 @@ impl WorkerAllocator {
         damaged_targets: HashMap<u64, RepairAllocation>,
     ) {
         let valid_tags: HashSet<u64> = damaged_targets.keys().cloned().collect();
+        let bases_tags = self.bases.iter().clone();
+        let bases = units.my.structures.find_tags(bases_tags);
 
         // Check existing repair targets
         let mut invalid_tags: Vec<u64> = Vec::new();
@@ -63,6 +68,11 @@ impl WorkerAllocator {
                 target = units.my.structures.iter().find_tag(tag.clone()).unwrap().clone();
             } else {
                 target = units.my.units.iter().find_tag(tag.clone()).unwrap().clone();
+                let closest_base_distance = bases.closest_distance(target.position()).unwrap_or(0.0);
+                if closest_base_distance > 20.0 {
+                    invalid_tags.push(*tag);
+                    continue;
+                }
             }
             let health_percentage = target.health_percentage().unwrap_or(1.0);
             if health_percentage < 1.0 {
@@ -93,6 +103,53 @@ impl WorkerAllocator {
     }
     fn assign_repairmen(&mut self, units: &AllUnits) {
         let workers = units.my.workers.ready().clone();
+        let worker_tags = workers.iter().map(|w| w.tag()).collect::<HashSet<u64>>();
+        for (tag, alloc) in self.repair.iter_mut() {
+            let mut current_workers = alloc.workers.clone();
+            let max_workers = alloc.max_workers;
+            let target: Unit;
+            if alloc.is_structure {
+                target = units.my.structures.iter().find_tag(tag.clone()).unwrap().clone();
+            } else {
+                target = units.my.units.iter().find_tag(tag.clone()).unwrap().clone();
+            }
+            // Check if workers are still valid
+            for worker in current_workers.clone() {
+                if !worker_tags.contains(&worker) {
+                    current_workers.retain(|w| *w != worker);
+                }
+            }
+            // Assign new workers
+            if current_workers.len() < max_workers {
+                let workers_sorted = workers.iter().sort_by_distance(target.clone());
+                for worker in workers_sorted {
+                    let worker_tag = worker.tag();
+                    if current_workers.len() >= max_workers {
+                        break;
+                    }
+                    if worker.distance(target.clone()) > 25.0 {
+                        break;
+                    }
+                    if self.worker_roles.contains_key(&worker_tag) {
+                        let worker_role = self.worker_roles.get(&worker_tag).unwrap().clone();
+                        if worker_role != WorkerRole::Busy && worker_role != WorkerRole::Repair {
+                            continue;
+                        }
+                        current_workers.push(worker_tag);
+                    }
+                }
+            }
+            alloc.workers = current_workers.clone();
+            // Send repair commands
+            for worker_tag in current_workers {
+                let worker = units.my.workers.iter().find_tag(worker_tag).unwrap().clone();
+                if worker.is_repairing() {
+                    continue;
+                }
+                self.worker_roles.insert(worker_tag, WorkerRole::Repair);
+                worker.repair(tag.clone(), false);
+            }
+        }
     }
 }
 
@@ -158,8 +215,10 @@ fn collect_valid_resource_tags(units: &AllUnits) -> (HashSet<u64>, HashSet<u64>)
     (minerals, refineries)
 }
 
-fn collect_damaged_targets(units: &AllUnits) -> HashMap<u64, RepairAllocation> {
+fn collect_damaged_targets(units: &AllUnits, bases_tags: std::slice::Iter<u64>) -> HashMap<u64, RepairAllocation> {
     let mut damaged_targets = HashMap::new();
+    let bases = units.my.structures.find_tags(bases_tags);
+
     for structure in units.my.structures.ready().clone() {
         let health_percentage = structure.health_percentage().unwrap_or(1.0);
         if health_percentage < 0.8 {
@@ -193,7 +252,8 @@ fn collect_damaged_targets(units: &AllUnits) -> HashMap<u64, RepairAllocation> {
             continue;
         }
         let health_percentage = unit.health_percentage().unwrap_or(1.0);
-        if health_percentage < 0.5 {
+        let closest_base_distance = bases.closest_distance(unit.position()).unwrap_or(0.0);
+        if health_percentage < 0.5 && closest_base_distance < 20.0 {
             damaged_targets.insert(
                 unit.tag(),
                 RepairAllocation {
