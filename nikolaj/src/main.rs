@@ -52,6 +52,7 @@ impl Player for Nikolaj {
         self.iteration = _iteration;
         scv_step(self);
         debug::debug_show_mining(self);
+        debug::debug_show_repair(self);
         decide_strategy(self);
         construct_command_centers(self);
         townhall_control(self);
