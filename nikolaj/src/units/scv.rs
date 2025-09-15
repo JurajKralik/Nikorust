@@ -135,8 +135,8 @@ impl WorkerAllocator {
                         if worker_role != WorkerRole::Busy && worker_role != WorkerRole::Repair {
                             continue;
                         }
-                        current_workers.push(worker_tag);
                     }
+                    current_workers.push(worker_tag);
                 }
             }
             alloc.workers = current_workers.clone();
