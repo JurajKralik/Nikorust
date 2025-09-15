@@ -119,8 +119,9 @@ pub fn debug_show_repair(
                 if let Some(worker) = bot.units.my.workers.iter().find_tag(worker_tag) {
                     let worker_pos = worker.position();
                     let color = "white";
-                    bot.debug_sphere(worker_pos, 0.3, target_color);
+                    bot.debug_sphere(worker_pos, 0.5, target_color);
                     bot.debug_line(worker_pos, target_pos, color);
+                    println!("Debugger: Worker with tag {} repairing target {}", worker_tag, tag);
                 } else {
                     println!("Debugger: Worker with tag {} not found", worker_tag);
                 }

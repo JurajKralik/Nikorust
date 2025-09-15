@@ -287,7 +287,9 @@ fn collect_damaged_targets(units: &AllUnits, bases_tags: std::slice::Iter<u64>) 
                 UnitTypeId::SupplyDepot
                 | UnitTypeId::SupplyDepotLowered => 2,
                 UnitTypeId::Bunker
-                | UnitTypeId::MissileTurret => 3,
+                | UnitTypeId::MissileTurret
+                | UnitTypeId::CommandCenter
+                | UnitTypeId::OrbitalCommand => 3,
                 UnitTypeId::PlanetaryFortress => 5,
                 _ => 1,
             };
