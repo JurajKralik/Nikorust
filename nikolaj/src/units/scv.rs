@@ -5,13 +5,31 @@ use std::collections::{HashMap, HashSet};
 
 
 pub fn scv_step(bot: &mut Nikolaj) {
+    // Worker rush
+    if bot.enemy_worker_rush {
+        counter_worker_rush(bot); // TODO: implement
+        return;
+    }
+
+    // Bases
     bot.worker_allocator.bases = get_mining_bases(&bot.units);
-    let valid_resources_tags = collect_valid_resource_tags(&bot.units);
-    bot.worker_allocator.update_resources(valid_resources_tags);
+    
+    // Repair
     let bases_tags = bot.worker_allocator.bases.iter().clone();
     let damaged_targets = collect_damaged_targets(&bot.units, bases_tags);
     bot.worker_allocator.update_repair_targets(&bot.units.clone(), damaged_targets);
     bot.worker_allocator.assign_repairmen(&bot.units.clone());
+
+    // Ramp blocking
+    if bot.enemy_ramp_blocking {
+        counter_ramp_blocking(bot); // TODO: implement
+    }
+
+    // Resources
+    bot.worker_allocator.update_idle_workers(&bot.units.clone());
+    let valid_resources_tags = collect_valid_resource_tags(&bot.units.clone());
+    bot.worker_allocator.update_resources(valid_resources_tags, &bot.units.clone());
+
 }
 
 #[derive(Debug, Default)]
@@ -23,31 +41,6 @@ pub struct WorkerAllocator {
 }
 
 impl WorkerAllocator {
-    fn update_resources(
-        &mut self,
-        valid_resources: (HashSet<u64>, HashSet<u64>),
-    ) {
-        let (valid_minerals, valid_refineries) = valid_resources;
-        let valid_all: HashSet<u64> = valid_minerals.union(&valid_refineries).cloned().collect();
-
-        self.resources.retain(|tag, _| valid_all.contains(tag));
-
-        for tag in valid_minerals {
-            self.resources.entry(tag).or_insert(ResourceAllocation {
-                resource_tag: tag,
-                worker_role: WorkerRole::Mineral,
-                workers: Vec::new(),
-            });
-        }
-
-        for tag in valid_refineries {
-            self.resources.entry(tag).or_insert(ResourceAllocation {
-                resource_tag: tag,
-                worker_role: WorkerRole::Gas,
-                workers: Vec::new(),
-            });
-        }
-    }
     fn update_repair_targets(
         &mut self,
         units: &AllUnits,
@@ -89,6 +82,11 @@ impl WorkerAllocator {
                 continue;
             }
             invalid_tags.push(*tag);
+            for worker_tag in alloc.workers.clone() {
+                if self.worker_roles.contains_key(&worker_tag) {
+                    self.worker_roles.insert(worker_tag, WorkerRole::Idle);
+                }
+            }
         }
         for tag in invalid_tags {
             self.repair.remove(&tag);
@@ -131,7 +129,7 @@ impl WorkerAllocator {
                         break;
                     }
                     if self.worker_roles.contains_key(&worker_tag) {
-                        let worker_role = self.worker_roles.get(&worker_tag).unwrap().clone();
+                        let worker_role = self.worker_roles.get(&worker_tag).unwrap_or(&WorkerRole::Idle).clone();
                         if worker_role != WorkerRole::Busy && worker_role != WorkerRole::Repair {
                             continue;
                         }
@@ -149,6 +147,61 @@ impl WorkerAllocator {
                 self.worker_roles.insert(worker_tag, WorkerRole::Repair);
                 worker.repair(tag.clone(), false);
             }
+        }
+    }
+    fn update_idle_workers(&mut self, units: &AllUnits) {
+        for worker in units.my.workers.ready().clone() {
+            let worker_tag = worker.tag();
+            if !self.worker_roles.contains_key(&worker_tag) {
+                self.worker_roles.insert(worker_tag, WorkerRole::Idle);
+            }
+        }
+    }
+    fn update_resources(
+        &mut self,
+        valid_minerals_and_refineries: (HashSet<u64>, HashSet<u64>),
+        units: &AllUnits
+    ) {
+        let (valid_minerals, valid_refineries) = valid_minerals_and_refineries;
+        let valid_resources: HashSet<u64> = valid_minerals.union(&valid_refineries).cloned().collect();
+        self.remove_invalid_resources(&valid_resources.clone(), units);
+        self.add_new_resources(&valid_minerals, &valid_refineries);
+    }
+    fn remove_invalid_resources(&mut self, valid_resources: &HashSet<u64>, units: &AllUnits) {
+        let worker_tags = units.my.workers.iter().map(|w| w.tag()).collect::<HashSet<u64>>();
+        let mut invalid_resources_tags: Vec<u64> = Vec::new();
+        for (tag, alloc) in self.resources.iter_mut() {
+            if !valid_resources.contains(tag) {
+                invalid_resources_tags.push(*tag);
+                for worker_tag in alloc.workers.clone() {
+                    if !worker_tags.contains(&worker_tag) {
+                        if self.worker_roles.contains_key(&worker_tag) {
+                            self.worker_roles.remove(&worker_tag);
+                        }
+                    } else {
+                        self.worker_roles.insert(worker_tag, WorkerRole::Idle);
+                    }
+                }
+            }
+        }
+        for tag in invalid_resources_tags {
+            self.resources.remove(&tag);
+        }
+    }
+    fn add_new_resources(&mut self, valid_minerals: &HashSet<u64>, valid_refineries: &HashSet<u64>) {
+        for tag in valid_minerals {
+            self.resources.insert(*tag, ResourceAllocation {
+                resource_tag: *tag,
+                worker_role: WorkerRole::Mineral,
+                workers: Vec::new(),
+            });
+        }
+        for tag in valid_refineries {
+            self.resources.insert(*tag, ResourceAllocation {
+                resource_tag: *tag,
+                worker_role: WorkerRole::Gas,
+                workers: Vec::new(),
+            });
         }
     }
 }
@@ -178,6 +231,14 @@ pub struct ResourceAllocation {
 }
 
 // Helpers
+fn counter_worker_rush(_bot: &mut Nikolaj) {
+    return;
+}
+
+fn counter_ramp_blocking(_bot: &mut Nikolaj) {
+    return;
+}
+
 fn get_mining_bases(units: &AllUnits) -> Vec<u64> {
     let mut bases = Vec::new();
     for base in units.my.townhalls.ready().clone() {

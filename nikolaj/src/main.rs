@@ -24,6 +24,8 @@ struct Nikolaj {
     scanner_sweep_time: f32,
     enemy_cloaking: bool,
     enemy_flooding: bool,
+    enemy_worker_rush: bool,
+    enemy_ramp_blocking: bool,
     barracks_priority: Option<UnitTypeId>,
     factory_priority: Option<UnitTypeId>,
     starport_priority: Option<UnitTypeId>,
