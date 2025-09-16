@@ -29,7 +29,9 @@ pub fn scv_step(bot: &mut Nikolaj) {
     bot.worker_allocator.update_idle_workers(&bot.units.clone());
     let valid_resources_tags = collect_valid_resource_tags(&bot.units.clone());
     bot.worker_allocator.update_resources(valid_resources_tags, &bot.units.clone());
-
+    bot.worker_allocator.update_saturation();
+    bot.worker_allocator.assign_resource_workers(&bot.units.clone());
+    bot.worker_allocator.workers_movement(&bot.units.clone());
 }
 
 #[derive(Debug, Default)]
@@ -38,6 +40,7 @@ pub struct WorkerAllocator {
     pub repair: HashMap<u64, RepairAllocation>,
     pub resources: HashMap<u64, ResourceAllocation>,
     pub worker_roles: HashMap<u64, WorkerRole>,
+    pub saturation: ResourceSaturation,
 }
 
 impl WorkerAllocator {
@@ -88,7 +91,21 @@ impl WorkerAllocator {
                 }
             }
         }
+        let workers_tags = units.my.workers.iter().map(|w| w.tag()).collect::<HashSet<u64>>();
         for tag in invalid_tags {
+            // Free workers
+            if let Some(alloc) = self.repair.get(&tag) {
+                for worker_tag in alloc.workers.clone() {
+                    if !workers_tags.contains(&worker_tag) {
+                        if self.worker_roles.contains_key(&worker_tag) {
+                            self.worker_roles.remove(&worker_tag);
+                        }
+                    } else {
+                        self.worker_roles.insert(worker_tag, WorkerRole::Idle);
+                    }
+                }
+            }
+            // Remove invalid repair target
             self.repair.remove(&tag);
         }
         // Add new repair targets
@@ -204,6 +221,240 @@ impl WorkerAllocator {
             });
         }
     }
+    fn update_saturation(&mut self) {
+        self.saturation = ResourceSaturation {
+            mineral_tags_undersaturated: Vec::new(),
+            mineral_tags_oversaturated: Vec::new(),
+            refinery_tags_undersaturated: Vec::new(),
+            refinery_tags_oversaturated: Vec::new(),
+        };
+        for (resource_tag, allocation) in self.resources.iter() {
+            let workers_count = allocation.workers.len();
+            match allocation.worker_role {
+                WorkerRole::Mineral => {
+                    if workers_count < 2 {
+                        self.saturation.mineral_tags_undersaturated.push(*resource_tag);
+                    } else if workers_count == 2 {
+                        continue;
+                    } else {
+                        self.saturation.mineral_tags_oversaturated.push(*resource_tag);
+                    }
+                }
+                WorkerRole::Gas => {
+                    if workers_count < 3 {
+                        self.saturation.refinery_tags_undersaturated.push(*resource_tag);
+                    } else if workers_count == 3 {
+                        continue;
+                    } else {
+                        self.saturation.refinery_tags_oversaturated.push(*resource_tag);
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    fn assign_resource_workers(&mut self, units: &AllUnits) {
+        let workers = units.my.workers.ready().clone();
+        for worker in workers {
+            let worker_tag = worker.tag();
+            if !self.worker_roles.contains_key(&worker_tag) {
+                self.worker_roles.insert(worker_tag, WorkerRole::Idle);
+                println!("New worker without role detected: {}", worker_tag);
+            }
+            let worker_role = self.worker_roles.get(&worker_tag).unwrap_or(&WorkerRole::Idle).clone();
+            let gas_priority = self.get_resource_priority_gas();
+            if worker_role == WorkerRole::Idle {
+                self.unassign_worker(worker_tag);
+                if gas_priority && !self.saturation.refinery_tags_undersaturated.is_empty() {
+                    self.assign_worker_to_gas(worker_tag, units);
+                } else {
+                    self.assign_worker_to_minerals(worker_tag, units);
+                }
+            } else if worker_role == WorkerRole::Mineral {
+                if let Some(mineral_allocation) = self.resources.get(&worker_tag) {
+                    let on_oversaturation = self.saturation.mineral_tags_oversaturated.contains(&mineral_allocation.resource_tag);
+                    if on_oversaturation {
+                        if !self.saturation.refinery_tags_undersaturated.is_empty() {
+                            self.unassign_worker(worker_tag);
+                            self.assign_worker_to_gas(worker_tag, units);
+                        } else if !self.saturation.mineral_tags_undersaturated.is_empty() {
+                            self.unassign_worker(worker_tag);
+                            self.assign_worker_to_minerals(worker_tag, units);
+                        }
+                    }
+                }
+            } else if worker_role == WorkerRole::Gas {
+                if let Some(gas_allocation) = self.resources.get(&worker_tag) {
+                    let on_oversaturation = self.saturation.refinery_tags_oversaturated.contains(&gas_allocation.resource_tag);
+                    if on_oversaturation {
+                        if !self.saturation.mineral_tags_undersaturated.is_empty() {
+                            self.unassign_worker(worker_tag);
+                            self.assign_worker_to_minerals(worker_tag, units);
+                        } else if !self.saturation.refinery_tags_undersaturated.is_empty() {
+                            self.unassign_worker(worker_tag);
+                            self.assign_worker_to_gas(worker_tag, units);
+                        }
+                    }
+                }
+            }
+            self.update_saturation();
+        }
+    }
+    fn get_resource_priority_gas(&self) -> bool {
+        const GAS_PRIORITY_THRESHOLD: f32 = 2.5;
+        let mineral_workers = self.worker_roles.values().filter(|&&role| role == WorkerRole::Mineral).count() as f32;
+        let gas_workers = self.worker_roles.values().filter(|&&role| role == WorkerRole::Gas).count() as f32;
+        if gas_workers == 0.0 {
+            return mineral_workers < GAS_PRIORITY_THRESHOLD;
+        }
+        mineral_workers / gas_workers < GAS_PRIORITY_THRESHOLD
+    }
+    fn assign_worker_to_minerals(&mut self, worker_tag: u64, units: &AllUnits) {
+        let undersaturated_mineral_tags = &self.saturation.mineral_tags_undersaturated;
+        let mut minerals: Units = units.mineral_fields.clone();
+        let worker = units.my.workers.iter().find_tag(worker_tag).unwrap().clone();
+        // Try undersaturated minerals first
+        if !undersaturated_mineral_tags.is_empty() {
+            minerals = minerals.find_tags(undersaturated_mineral_tags.iter());
+            if let Some(closest_mineral) = minerals.closest(worker.position()) {
+                if let Some(allocation) = self.resources.get_mut(&closest_mineral.tag()) {
+                    allocation.workers.push(worker_tag);
+                    self.worker_roles.insert(worker_tag, WorkerRole::Mineral);
+                    worker.gather(closest_mineral.tag(), false);
+                }
+            }
+        // Lowest saturated minerals next
+        } else {
+            minerals.iter().sort_by_distance(worker.position());
+            let mut lowest_saturated_count = usize::MAX;
+            let mut lowest_saturated_tag: Option<u64> = None;
+            for (resource_tag, allocation) in self.resources.iter() {
+                if allocation.worker_role != WorkerRole::Mineral {
+                    continue;
+                }
+                let workers_count = allocation.workers.len();
+                if workers_count < lowest_saturated_count {
+                    lowest_saturated_count = workers_count;
+                    lowest_saturated_tag = Some(*resource_tag);
+                }
+            }
+            if let Some(mineral_tag) = lowest_saturated_tag {
+                if let Some(allocation) = self.resources.get_mut(&mineral_tag) {
+                    allocation.workers.push(worker_tag);
+                    self.worker_roles.insert(worker_tag, WorkerRole::Mineral);
+                    worker.gather(mineral_tag, false);
+                }
+            }
+        }
+    }
+    fn assign_worker_to_gas(&mut self, worker_tag: u64, units: &AllUnits) {
+        let refinery_tags = &self.saturation.refinery_tags_undersaturated;
+        if refinery_tags.is_empty() {
+            return;
+        }
+        let refineries: Units = units.my.structures.find_tags(refinery_tags.iter());
+        let worker = units.my.workers.iter().find_tag(worker_tag).unwrap().clone();
+        if let Some(closest_refinery) = refineries.closest(worker.position()) {
+            if let Some(allocation) = self.resources.get_mut(&closest_refinery.tag()) {
+                allocation.workers.push(worker_tag);
+                self.worker_roles.insert(worker_tag, WorkerRole::Gas);
+                worker.gather(closest_refinery.tag(), false);
+            }
+        }
+    }
+    fn unassign_worker(&mut self, worker_tag: u64) {
+        for (_resource_tag, allocation) in self.resources.iter_mut() {
+            if allocation.workers.contains(&worker_tag) {
+                allocation.workers.remove(worker_tag as usize);
+                return;
+            }
+        }
+        self.worker_roles.insert(worker_tag, WorkerRole::Idle);
+    }
+    fn workers_movement(&self, units: &AllUnits) {
+        const GATHER_OFFSET: f32 = 1.0;
+        const RETURN_OFFSET: f32 = 1.0;
+        let workers = units.my.workers.ready().clone();
+        for worker in workers {
+            let worker_tag = worker.tag();
+            if let Some(role) = self.worker_roles.get(&worker_tag) {
+                if role == &WorkerRole::Idle {
+                    println!("Unassigned worker: {}", worker_tag);
+                    continue;
+                } else if role == &WorkerRole::Busy {
+                    continue;
+                } else if role == &WorkerRole::Repair {
+                    for alloc in self.repair.values() {
+                        if alloc.workers.contains(&worker_tag) {
+                            let target_tag = alloc.tag;
+                            let target: Unit;
+                            if alloc.is_structure {
+                                target = units.my.structures.iter().find_tag(target_tag).unwrap().clone();
+                            } else {
+                                target = units.my.units.iter().find_tag(target_tag).unwrap().clone();
+                            }
+                            worker.repair(target.tag(), false);
+                            break;
+                        }
+                    }
+                } else if role == &WorkerRole::Mineral {
+                    for alloc in self.resources.values() {
+                        if alloc.worker_role != WorkerRole::Mineral {
+                            continue;
+                        }
+                        if alloc.workers.contains(&worker_tag) {
+                            let target_tag = alloc.resource_tag;
+                            let target = units.mineral_fields.iter().find_tag(target_tag).unwrap().clone();
+                            let closest_base = units.my.townhalls.closest(worker.clone().position());
+                            if let Some(closest_base) = closest_base {
+                                if worker.clone().is_carrying_resource() {
+                                    if worker.clone().distance(closest_base.position()) > closest_base.radius() + RETURN_OFFSET {
+                                        let return_position = closest_base.position().towards(worker.clone().position(), closest_base.radius() + RETURN_OFFSET);
+                                        worker.move_to(Target::Pos(return_position), false);
+                                        worker.smart(Target::Tag(closest_base.tag()), true);
+                                    } else {
+                                        let return_position = target.position().towards(worker.clone().position(), target.radius() + RETURN_OFFSET);
+                                        worker.smart(Target::Tag(closest_base.tag()), false);
+                                        worker.move_to(Target::Pos(return_position), true);
+                                    }
+                                } else {
+                                    if worker.clone().distance(target.position()) > target.radius() + GATHER_OFFSET {
+                                        let gather_position = target.position().towards(worker.clone().position(), target.radius() + GATHER_OFFSET);
+                                        worker.move_to(Target::Pos(gather_position), false);
+                                        worker.gather(target.tag(), true);
+                                    } else {
+                                        let gather_position = target.position().towards(worker.clone().position(), target.radius() + GATHER_OFFSET);
+                                        worker.gather(target.tag(), false);
+                                        worker.move_to(Target::Pos(gather_position), true);
+                                    }
+                                }
+                            }
+                            break;
+                        }
+                    }
+                } else if role == &WorkerRole::Gas {
+                    for alloc in self.resources.values() {
+                        if alloc.worker_role != WorkerRole::Gas {
+                            continue;
+                        }
+                        if alloc.workers.contains(&worker_tag) {
+                            let target_tag = alloc.resource_tag;
+                            let target = units.my.structures.iter().find_tag(target_tag).unwrap().clone();
+                            let closest_base = units.my.townhalls.closest(worker.clone().position());
+                            if let Some(closest_base) = closest_base {
+                                if worker.clone().is_carrying_resource() {
+                                    worker.smart(Target::Tag(closest_base.tag()), false);
+                                } else {
+                                    worker.gather(target.tag(), false);
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -228,6 +479,14 @@ pub struct ResourceAllocation {
     pub resource_tag: u64,
     pub worker_role: WorkerRole,
     pub workers: Vec<u64>,
+}
+
+#[derive(Debug, Default)]
+pub struct ResourceSaturation {
+    pub mineral_tags_undersaturated: Vec<u64>,
+    pub mineral_tags_oversaturated: Vec<u64>,
+    pub refinery_tags_undersaturated: Vec<u64>,
+    pub refinery_tags_oversaturated: Vec<u64>,
 }
 
 // Helpers

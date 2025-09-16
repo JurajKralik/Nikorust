@@ -53,6 +53,7 @@ impl Player for Nikolaj {
     fn on_step(&mut self, _iteration: usize) -> SC2Result<()> {
         self.iteration = _iteration;
         scv_step(self);
+        debug::debug_show_bases(self);
         debug::debug_show_mining(self);
         debug::debug_show_repair(self);
         decide_strategy(self);

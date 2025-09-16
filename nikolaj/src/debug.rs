@@ -4,9 +4,10 @@ use crate::units::scv::*;
 use std::collections::HashMap;
 
 // Debugging
-pub fn debug_show_mining(
+pub fn debug_show_bases(
     bot: &mut Nikolaj
 ) {
+
     // Bases
     let bases = bot.worker_allocator.bases.clone();
     for base_tag in bases {
@@ -19,8 +20,11 @@ pub fn debug_show_mining(
             println!("Debugger: Base with tag {} not found", base_tag);
         }
     }
+}
 
-    // Mining
+pub fn debug_show_mining(
+    bot: &mut Nikolaj
+) {
     // Clone list
     let mut mining_list:HashMap<u64, ResourceAllocation> = HashMap::new();
     for (tag, alloc) in &bot.worker_allocator.resources {
@@ -121,7 +125,6 @@ pub fn debug_show_repair(
                     let color = "white";
                     bot.debug_sphere(worker_pos, 0.5, target_color);
                     bot.debug_line(worker_pos, target_pos, color);
-                    println!("Debugger: Worker with tag {} repairing target {}", worker_tag, tag);
                 } else {
                     println!("Debugger: Worker with tag {} not found", worker_tag);
                 }
