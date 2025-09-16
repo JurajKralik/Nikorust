@@ -50,23 +50,21 @@ pub fn get_builder(bot: &mut Nikolaj, target: Target) -> Option<&Unit> {
         }
         Target::Tag(tag) => {
             let position = bot.units.vespene_geysers.get(tag).unwrap().position();
-            return bot
-                .units
-                .my
-                .workers
-                .iter()
-                .filter(|u| !(u.is_constructing() || u.is_returning() || u.is_carrying_resource()))
-                .closest(position);
+            let tag = bot.worker_allocator.get_closest_worker(&bot.units, position);
+            if let Some(tag) = tag {
+                return bot.units.my.workers.iter().find_tag(tag);
+            } else {
+                return None;
+            }
         }
         Target::Pos(pos) => {
             let position = pos;
-            return bot
-                .units
-                .my
-                .workers
-                .iter()
-                .filter(|u| !(u.is_constructing() || u.is_returning() || u.is_carrying_resource()))
-                .closest(position);
+            let tag = bot.worker_allocator.get_closest_worker(&bot.units, position);
+            if let Some(tag) = tag {
+                return bot.units.my.workers.iter().find_tag(tag);
+            } else {
+                return None;
+            }
         }
     }
 }

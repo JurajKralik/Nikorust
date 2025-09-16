@@ -455,6 +455,45 @@ impl WorkerAllocator {
             }
         }
     }
+    pub fn get_closest_worker(&mut self, units: &AllUnits, position: Point2) -> Option<u64> {
+        let mut closest_worker = self.get_closest_worker_by_role(units, position, WorkerRole::Idle, &self.worker_roles.clone());
+        if closest_worker.is_some() {
+            self.worker_roles.insert(closest_worker.unwrap(), WorkerRole::Busy);
+            return closest_worker;
+        }
+        closest_worker = self.get_closest_worker_by_role(units, position, WorkerRole::Mineral, &self.worker_roles.clone());
+        if closest_worker.is_some() {
+            return closest_worker;
+        }
+        closest_worker = self.get_closest_worker_by_role(units, position, WorkerRole::Gas, &self.worker_roles.clone());
+        if closest_worker.is_some() {
+            return closest_worker;
+        }
+        None
+    }
+    fn get_closest_worker_by_role(
+        &self, units: &AllUnits, position: Point2, role: WorkerRole, roles: &HashMap<u64, WorkerRole>
+    ) -> Option<u64> {
+        let workers = &units.my.workers;
+        let mut closest_worker_tag: Option<u64> = None;
+        let mut closest_distance = f32::MAX;
+
+        for worker in workers {
+            if let Some(worker_role) = roles.get(&worker.tag()) {
+                if *worker_role == role {
+                    let distance = worker.position().distance(position);
+                    if distance < closest_distance {
+                        closest_distance = distance;
+                        closest_worker_tag = Some(worker.tag());
+                    }
+                }
+            }
+        }
+        if let Some(tag) = closest_worker_tag {
+            return Some(tag).clone();
+        }
+        None
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
