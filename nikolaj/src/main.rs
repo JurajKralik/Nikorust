@@ -56,6 +56,7 @@ impl Player for Nikolaj {
         debug::debug_show_bases(self);
         debug::debug_show_mining(self);
         debug::debug_show_repair(self);
+        debug::debug_show_worker_roles(self);
         decide_strategy(self);
         construct_command_centers(self);
         townhall_control(self);

@@ -45,26 +45,24 @@ fn is_valid_position(
 
 pub fn get_builder(bot: &mut Nikolaj, target: Target) -> Option<&Unit> {
     match target {
-        Target::None => {
-            return None;
-        }
+        Target::None => None,
+
         Target::Tag(tag) => {
-            let position = bot.units.vespene_geysers.get(tag).unwrap().position();
-            let tag = bot.worker_allocator.get_closest_worker(&bot.units, position);
-            if let Some(tag) = tag {
-                return bot.units.my.workers.iter().find_tag(tag);
-            } else {
-                return None;
-            }
+            // clone position first (immutable borrow ends here)
+            let position = bot.units.vespene_geysers.get(tag)?.position();
+
+            // now safe to borrow worker_allocator mutably
+            let worker_tag = bot.worker_allocator.get_closest_worker(&bot.units.clone(), position)?;
+            bot.units.my.workers.iter().find_tag(worker_tag)
         }
+
         Target::Pos(pos) => {
+            // position is already given
             let position = pos;
-            let tag = bot.worker_allocator.get_closest_worker(&bot.units, position);
-            if let Some(tag) = tag {
-                return bot.units.my.workers.iter().find_tag(tag);
-            } else {
-                return None;
-            }
+
+            // do the mut borrow after we’re done with bot.units
+            let worker_tag = bot.worker_allocator.get_closest_worker(&bot.units.clone(), position)?;
+            bot.units.my.workers.iter().find_tag(worker_tag)
         }
     }
 }

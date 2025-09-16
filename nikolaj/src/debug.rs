@@ -77,6 +77,39 @@ pub fn debug_show_mining(
     }
 }
 
+pub fn debug_show_worker_roles(
+    bot: &mut Nikolaj
+) {
+    let mut worker_infos = Vec::new();
+    for worker in bot.units.my.workers.iter() {
+        let position = worker.position();
+        let tag = worker.tag();
+        if let Some(role) = bot.worker_allocator.worker_roles.get(&tag) {
+            let text = match role {
+                WorkerRole::Idle => "Idle",
+                WorkerRole::Mineral => "Mineral",
+                WorkerRole::Gas => "Gas",
+                WorkerRole::Busy => "Busy",
+                WorkerRole::Repair => "Repair",
+            };
+            let color = match role {
+                WorkerRole::Idle => "red",
+                WorkerRole::Mineral => "blue",
+                WorkerRole::Gas => "green",
+                WorkerRole::Busy => "yellow",
+                WorkerRole::Repair => "white",
+            };
+            worker_infos.push((text, position, color));
+        } else {
+            println!("Debugger: Worker role for tag {} not found", tag);
+        }
+    }
+    for (text, pos, color) in worker_infos {
+        bot.debug_sphere(pos, 0.5, color);
+        bot.debug_text(text, pos, color, Some(1));
+    }
+}
+
 pub fn debug_show_repair(
     bot: &mut Nikolaj
 ) {

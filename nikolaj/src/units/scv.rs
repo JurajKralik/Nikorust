@@ -171,6 +171,10 @@ impl WorkerAllocator {
             let worker_tag = worker.tag();
             if !self.worker_roles.contains_key(&worker_tag) {
                 self.worker_roles.insert(worker_tag, WorkerRole::Idle);
+            } else if self.worker_roles.get(&worker_tag).unwrap() == &WorkerRole::Busy {
+                if worker.is_idle() || worker.is_gathering() || worker.is_repairing() {
+                    self.worker_roles.insert(worker_tag, WorkerRole::Idle);
+                }
             }
         }
     }
@@ -372,8 +376,8 @@ impl WorkerAllocator {
         self.worker_roles.insert(worker_tag, WorkerRole::Idle);
     }
     fn workers_movement(&self, units: &AllUnits) {
-        const GATHER_OFFSET: f32 = 1.0;
-        const RETURN_OFFSET: f32 = 1.0;
+        const GATHER_OFFSET: f32 = 0.5;
+        const RETURN_OFFSET: f32 = 0.5;
         let workers = units.my.workers.ready().clone();
         for worker in workers {
             let worker_tag = worker.tag();
@@ -463,10 +467,12 @@ impl WorkerAllocator {
         }
         closest_worker = self.get_closest_worker_by_role(units, position, WorkerRole::Mineral, &self.worker_roles.clone());
         if closest_worker.is_some() {
+            self.worker_roles.insert(closest_worker.unwrap(), WorkerRole::Busy);
             return closest_worker;
         }
         closest_worker = self.get_closest_worker_by_role(units, position, WorkerRole::Gas, &self.worker_roles.clone());
         if closest_worker.is_some() {
+            self.worker_roles.insert(closest_worker.unwrap(), WorkerRole::Busy);
             return closest_worker;
         }
         None
