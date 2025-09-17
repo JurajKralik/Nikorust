@@ -1,8 +1,26 @@
 use crate::Nikolaj;
 use rust_sc2::{prelude::*, units::AllUnits};
+use crate::units::helpers::surroundings::*;
 
 
-pub fn flee_to_bunker(units: AllUnits, unit: &Unit) -> bool {
+pub fn flee_bio(bot: &mut Nikolaj, unit: &Unit, surroundings: SurroundingsInfo) {
+    let units = bot.units.clone();
+    if flee_to_bunker(units.clone(), unit) {
+        return;
+    }
+    if flee_to_medivac(units.clone(), unit) {
+        return;
+    }
+    if flee_to_tank(units.clone(), unit) {
+        return;
+    }
+    if flee_from_threat(bot, unit, surroundings.closest_threat) {
+        return;
+    }
+    let idle_point = bot.strategy_data.idle_point;
+    unit.move_to(Target::Pos(idle_point), false);
+}
+fn flee_to_bunker(units: AllUnits, unit: &Unit) -> bool {
     let bunkers = units.my.structures.of_type(UnitTypeId::Bunker).ready();
     let nearby_bunkers = bunkers.closer(12.0, unit.position());
     if let Some(bunker) = nearby_bunkers.first() {
@@ -13,7 +31,7 @@ pub fn flee_to_bunker(units: AllUnits, unit: &Unit) -> bool {
     }
     false
 }
-pub fn flee_to_medivac(units: AllUnits, unit: &Unit) -> bool {
+fn flee_to_medivac(units: AllUnits, unit: &Unit) -> bool {
     let medivacs = units
         .my
         .units
@@ -27,7 +45,24 @@ pub fn flee_to_medivac(units: AllUnits, unit: &Unit) -> bool {
     }
     false
 }
-pub fn flee_from_threat(bot: &mut Nikolaj, unit: &Unit, threat: Option<Unit>) -> bool {
+fn flee_to_tank(units: AllUnits, unit: &Unit) -> bool {
+    let tanks = units
+        .my
+        .units
+        .of_type(UnitTypeId::SiegeTankSieged);
+    let nearby_tanks = tanks.closer(12.0, unit.position());
+    if let Some(tank) = nearby_tanks.first() {
+        if unit.distance(tank.position()) > 3.0 {
+            unit.move_to(Target::Pos(tank.position()), false);
+            return true;
+        } else {
+            unit.attack(Target::Pos(unit.position()), false);
+            return true;
+        }
+    }
+    false
+}
+fn flee_from_threat(bot: &mut Nikolaj, unit: &Unit, threat: Option<Unit>) -> bool {
     if let Some(threat_unit) = threat {
         // Use combat grid to find furthest point
         let combat_grid = combat_grid8_pathable(bot, unit.position(), 3.0);

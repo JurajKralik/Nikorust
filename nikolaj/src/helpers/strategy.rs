@@ -5,6 +5,7 @@ pub fn strategy_step(bot: &mut Nikolaj) {
     refresh_idle_point(bot);
     refresh_defense_point(bot);
     refresh_attack_point(bot);
+    refresh_army_center(bot);
     refresh_harass_points(bot);
     refresh_repair_points(bot);
     enemy_army_snapshot(bot);
@@ -51,14 +52,17 @@ fn refresh_idle_point(bot: &mut Nikolaj) {
 }
 fn refresh_defense_point(bot: &mut Nikolaj) {
     let enemies = bot.units.enemy.units.clone();
+    bot.strategy_data.defend = false;
     if enemies.is_empty() {
-        bot.strategy_data.defend = false;
         return;
     }
     let mut closest_enemy: Option<Unit> = None;
     let mut closest_distance = f32::MAX;
     for enemy in enemies {
         if !enemy.can_attack() {
+            continue;
+        }
+        if enemy.position().distance(bot.enemy_start) < bot.enemy_start.distance(bot.start_location)/2.0 {
             continue;
         }
         if let Some(closest) = closest_enemy.as_ref() {
@@ -148,6 +152,24 @@ fn refresh_attack_point(bot: &mut Nikolaj) {
         }
     } else {
         bot.strategy_data.attack_point = ramp;
+    }
+}
+fn refresh_army_center(bot: &mut Nikolaj) {
+    let attack_point = bot.strategy_data.attack_point;
+    let my_units = bot.units.my.units.clone();
+    let mut frontal_units = Units::new();
+    for unit in my_units.iter().sort_by_distance(attack_point) {
+        if frontal_units.len() >= 6 {
+            break;
+        }
+        if unit.can_attack() && !unit.type_id().is_worker() {
+            frontal_units.push(unit.clone());
+        }
+    }
+    if let Some(center) = frontal_units.center() {
+        bot.strategy_data.army_center = center;
+    } else {
+        bot.strategy_data.army_center = attack_point;
     }
 }
 fn refresh_harass_points(bot: &mut Nikolaj) {
@@ -446,6 +468,7 @@ pub struct StrategyData {
     pub idle_point: Point2,
     pub defense_point: Point2,
     pub attack_point: Point2,
+    pub army_center: Point2,
     pub harass_points: Vec<Point2>,
     pub repair_points: Vec<Point2>,
     pub defend: bool,
@@ -466,6 +489,7 @@ impl Default for StrategyData {
             idle_point: Point2::new(0.0, 0.0),
             defense_point: Point2::new(0.0, 0.0),
             attack_point: Point2::new(0.0, 0.0),
+            army_center: Point2::new(0.0, 0.0),
             harass_points: Vec::new(),
             repair_points: Vec::new(),
             defend: false,

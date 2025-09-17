@@ -25,6 +25,8 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo
     let mut surroundings = SurroundingsInfo::default();
     let enemies = bot.units.enemy.units.clone();
     let sorted_enemies = enemies.iter().sort_by_distance(unit.position()).closer(unit.sight_range() + 2.0, unit.position());
+    let enemy_structures = bot.units.enemy.structures.clone();
+    let sorted_structures = enemy_structures.iter().sort_by_distance(unit.position()).closer(unit.sight_range() + 2.0, unit.position());
     for enemy in sorted_enemies {
         // Check threat
         if can_attack(enemy, unit) {
@@ -63,12 +65,17 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo
         }
         surroundings.closest_counter = None; // TODO
     }
-    
-
-
-
-
-
+    for structure in sorted_structures {
+        // Check threat
+        if can_attack(structure, unit) {
+            if surroundings.closest_threat.is_none() {
+                surroundings.closest_threat = Some(structure.clone());
+            }
+            if in_range(structure, unit) {
+                surroundings.in_danger = true;
+            }
+        }
+    }
     surroundings
 }
 fn can_attack(attacker: &Unit, target: &Unit) -> bool {
