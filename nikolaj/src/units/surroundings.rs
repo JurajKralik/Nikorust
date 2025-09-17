@@ -24,7 +24,7 @@ impl Default for SurroundingsInfo {
 pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo {
     let mut surroundings = SurroundingsInfo::default();
     let enemies = bot.units.enemy.units.clone();
-    let sorted_enemies = enemies.iter().sort_by_distance(unit.position());
+    let sorted_enemies = enemies.iter().sort_by_distance(unit.position()).closer(unit.sight_range() + 2.0, unit.position());
     for enemy in sorted_enemies {
         // Check threat
         if can_attack(enemy, unit) {
