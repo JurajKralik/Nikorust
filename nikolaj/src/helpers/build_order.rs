@@ -1,7 +1,7 @@
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
 
-pub fn decide_strategy(bot: &mut Nikolaj) {
+pub fn decide_build_strategy(bot: &mut Nikolaj) {
     check_starters(bot);
     decide_barracks(bot);
     decide_factory(bot);

@@ -165,3 +165,36 @@ pub fn debug_show_repair(
         }
     }
 }
+
+pub fn debug_show_strategy_points(
+    bot: &mut Nikolaj
+) {
+    // Idle point
+    let idle_point = bot.strategy_data.idle_point;
+    bot.debug_sphere(idle_point, 0.5, "white");
+    bot.debug_text("IDLE", idle_point, "white", Some(1));
+
+    // Defense point
+    let defense_point = bot.strategy_data.defense_point;
+    bot.debug_sphere(defense_point, 0.5, "yellow");
+    bot.debug_text("DEFENSE", defense_point, "yellow", Some(1));
+
+    // Attack point
+    let attack_point = bot.strategy_data.attack_point;
+    bot.debug_sphere(attack_point, 0.5, "red");
+    bot.debug_text("ATTACK", attack_point, "red", Some(1));
+
+    // Harass points
+    let harass_points = bot.strategy_data.harass_points.clone();
+    for (i, point) in harass_points.iter().enumerate() {
+        bot.debug_sphere(*point, 0.5, "blue");
+        bot.debug_text(&format!("HARASS {}", i + 1), *point, "blue", Some(1));
+    }
+    // Repair points
+    let repair_points = bot.strategy_data.repair_points.clone();
+    for (i, point) in repair_points.iter().enumerate() {
+        bot.debug_sphere(*point, 0.5, "green");
+        bot.debug_text(&format!("REPAIR {}", i + 1), *point, "green", Some(1));
+    }
+    
+}

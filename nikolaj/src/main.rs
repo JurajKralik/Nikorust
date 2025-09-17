@@ -6,14 +6,16 @@ mod helpers;
 mod structures;
 mod units;
 
+use crate::debug::*;
 use crate::helpers::construction::*;
+use crate::helpers::strategy::*;
+use crate::helpers::build_order::*;
 use crate::structures::command_center::*;
 use crate::structures::supply_depots::*;
 use crate::structures::barracks::*;
 use crate::structures::factory::*;
 use crate::structures::refinery::*;
 use crate::structures::starport::*;
-use crate::helpers::build_order::*;
 use crate::units::scv::*;
 
 
@@ -22,6 +24,7 @@ use crate::units::scv::*;
 struct Nikolaj {
     iteration: usize,
     worker_allocator: WorkerAllocator,
+    strategy_data: StrategyData,
     construction_info: ConstructionInfo,
     scanner_sweep_time: f32,
     enemy_cloaking: bool,
@@ -55,12 +58,12 @@ impl Player for Nikolaj {
     fn on_step(&mut self, _iteration: usize) -> SC2Result<()> {
         self.iteration = _iteration;
         scv_step(self);
-        debug::debug_show_bases(self);
-        debug::debug_show_mining(self);
-        debug::debug_show_repair(self);
-        debug::debug_show_worker_roles(self);
+        debug_show_bases(self);
+        debug_show_mining(self);
+        debug_show_repair(self);
+        debug_show_worker_roles(self);
         refresh_construction_info(self);
-        decide_strategy(self);
+        decide_build_strategy(self);
         construct_command_centers(self);
         townhall_control(self);
         construct_refinery(self);
@@ -72,6 +75,8 @@ impl Player for Nikolaj {
         barracks_control(self);
         factory_control(self);
         starport_control(self);
+        strategy_step(self);
+        debug_show_strategy_points(self);
         Ok(())
     }
     fn on_end(&self, _result: GameResult) -> SC2Result<()> {
@@ -116,7 +121,7 @@ impl Nikolaj {
         }
     }
     fn debug_translate_point(&self, position_p2: Point2) -> Point3 {
-        let height = self.get_z_height(position_p2);
+        let height = self.get_z_height(position_p2) + 1.0;
         Point3::new(position_p2.x, position_p2.y, height)
     }
     fn debug_cube(&mut self, center_p2: Point2, size: f32, color: &str) {
