@@ -220,6 +220,7 @@ fn get_visible_enemies(bot: &Nikolaj) -> Vec<UnitSnapshot> {
             health: health,
             supply: supply,
             last_seen: bot.time,
+            is_snapshot: false,
         };
         currently_visible_army.push(snapshot);
     }
@@ -230,6 +231,11 @@ fn get_appended_enemy_army_snapshot(
     visible_enemies: Vec<UnitSnapshot>,
 ) -> Vec<UnitSnapshot> {
     let mut current_snapshot: Vec<UnitSnapshot> = bot.strategy_data.enemy_army.clone();
+    // Mark all as snapshot
+    for current_enemy in current_snapshot.iter_mut() {
+        current_enemy.is_snapshot = true;
+    }
+    // Update or add
     for visible in visible_enemies {
         if let Some(existing) = current_snapshot.iter_mut().find(|e| e.id == visible.id) {
             existing.position = visible.position;
@@ -489,4 +495,5 @@ pub struct UnitSnapshot {
     pub health: f32,
     pub supply: usize,
     pub last_seen: f32,
+    pub is_snapshot: bool,
 }

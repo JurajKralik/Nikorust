@@ -1,6 +1,4 @@
 pub mod scv;
-pub mod combat_units;
-pub mod surroundings;
 mod marine;
 mod marauder;
 mod reaper;
@@ -15,3 +13,4 @@ mod medivac;
 mod raven;
 mod banshee;
 mod battlecruiser;
+pub mod helpers;

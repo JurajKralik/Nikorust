@@ -17,7 +17,7 @@ use crate::structures::factory::*;
 use crate::structures::refinery::*;
 use crate::structures::starport::*;
 use crate::units::scv::*;
-use crate::units::combat_units::*;
+use crate::units::helpers::combat_units::*;
 
 
 #[bot]

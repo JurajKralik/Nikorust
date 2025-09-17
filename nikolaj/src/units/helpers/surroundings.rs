@@ -1,7 +1,7 @@
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
 
-
+#[derive(Clone)]
 pub struct SurroundingsInfo {
     pub best_target_in_range: Option<Unit>,
     pub better_target_off_range: Option<Unit>,
@@ -61,6 +61,7 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo
                 }
             }
         }
+        surroundings.closest_counter = None; // TODO
     }
     
 
