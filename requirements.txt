@@ -1,8 +1,0 @@
-numpy >= 1.19.2
-s2clientprotocol >= 5.0.12.91115.0
-scipy >= 1.7.0
-mpyq >= 0.2.5
-loguru >= 0.7.0
-protobuf == 3.20.3
-portpicker >= 1.6.0
-aiohttp >= 3.9.3
