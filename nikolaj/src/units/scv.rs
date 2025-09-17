@@ -268,7 +268,9 @@ impl WorkerAllocator {
             let worker_role = self.worker_roles.get(&worker_tag).unwrap_or(&WorkerRole::Idle).clone();
             let gas_priority = self.get_resource_priority_gas();
             if worker_role == WorkerRole::Idle {
-                self.unassign_worker(worker_tag);
+                if self.check_if_resource_assigned(worker_tag) {
+                    continue;
+                }
                 if gas_priority && !self.saturation.refinery_tags_undersaturated.is_empty() {
                     self.assign_worker_to_gas(worker_tag, units);
                 } else {
@@ -303,6 +305,15 @@ impl WorkerAllocator {
             }
             self.update_saturation();
         }
+    }
+    fn check_if_resource_assigned(&mut self, worker_tag: u64) -> bool {
+        for (_resource_tag, allocation) in self.resources.iter() {
+            if allocation.workers.contains(&worker_tag) {
+                self.worker_roles.insert(worker_tag, allocation.worker_role.clone());
+                return true;
+            }
+        }
+        false
     }
     fn get_resource_priority_gas(&self) -> bool {
         const GAS_PRIORITY_THRESHOLD: f32 = 2.5;
