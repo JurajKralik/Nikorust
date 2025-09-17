@@ -1,5 +1,5 @@
-#![allow(non_snake_case)]
 use rust_sc2::{bot, geometry::*, prelude::*};
+
 mod debug;
 mod ex_main;
 mod helpers;
@@ -17,6 +17,7 @@ use crate::structures::factory::*;
 use crate::structures::refinery::*;
 use crate::structures::starport::*;
 use crate::units::scv::*;
+use crate::units::combat_units::*;
 
 
 #[bot]
@@ -73,6 +74,7 @@ impl Player for Nikolaj {
         starport_control(self);
         strategy_step(self);
         debug_show_strategy_points(self);
+        army_step(self);
         Ok(())
     }
     fn on_end(&self, _result: GameResult) -> SC2Result<()> {
