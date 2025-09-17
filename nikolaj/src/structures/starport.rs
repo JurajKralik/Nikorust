@@ -22,6 +22,13 @@ fn should_try_build_starport(bot: &Nikolaj) -> bool {
 		return false;
 	}
 
+	// Under construction
+	for under_construction in bot.construction_info.under_construction.iter() {
+		if under_construction.structure == UnitTypeId::Starport {
+			return false;
+		}
+	}
+
 	if !bot.can_afford(UnitTypeId::Starport, false) {
 		return false;
 	}

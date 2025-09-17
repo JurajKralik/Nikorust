@@ -24,6 +24,13 @@ fn should_try_build_factory(bot: &Nikolaj) -> bool {
 		return false;
 	}
 
+	// Under construction
+	for under_construction in bot.construction_info.under_construction.iter() {
+		if under_construction.structure == UnitTypeId::Factory {
+			return false;
+		}
+	}
+
 	// Can't afford it
 	if !bot.can_afford(UnitTypeId::Factory, false) {
 		return false;

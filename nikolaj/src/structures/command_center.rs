@@ -20,6 +20,13 @@ pub fn construct_command_centers(bot: &mut Nikolaj) {
         return;
     }
 
+    // Under construction
+    for under_construction in bot.construction_info.under_construction.iter() {
+        if under_construction.structure == UnitTypeId::CommandCenter {
+            return;
+        }
+    }
+
     // Resources
     let minerals = bot.minerals;
     if minerals < 400 {

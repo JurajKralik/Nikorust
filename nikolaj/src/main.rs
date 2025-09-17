@@ -6,6 +6,7 @@ mod helpers;
 mod structures;
 mod units;
 
+use crate::helpers::construction::*;
 use crate::structures::command_center::*;
 use crate::structures::supply_depots::*;
 use crate::structures::barracks::*;
@@ -21,6 +22,7 @@ use crate::units::scv::*;
 struct Nikolaj {
     iteration: usize,
     worker_allocator: WorkerAllocator,
+    construction_info: ConstructionInfo,
     scanner_sweep_time: f32,
     enemy_cloaking: bool,
     enemy_flooding: bool,
@@ -57,6 +59,7 @@ impl Player for Nikolaj {
         debug::debug_show_mining(self);
         debug::debug_show_repair(self);
         debug::debug_show_worker_roles(self);
+        refresh_construction_info(self);
         decide_strategy(self);
         construct_command_centers(self);
         townhall_control(self);

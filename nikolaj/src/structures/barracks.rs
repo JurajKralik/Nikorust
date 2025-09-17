@@ -24,6 +24,13 @@ fn should_try_build_barracks(bot: &Nikolaj) -> bool {
 		return false;
 	}
 
+	// Under construction
+	for under_construction in bot.construction_info.under_construction.iter() {
+		if under_construction.structure == UnitTypeId::Barracks {
+			return false;
+		}
+	}
+
 	// Can't afford it
 	if !bot.can_afford(UnitTypeId::Barracks, false) {
 		return false;

@@ -7,6 +7,12 @@ pub fn construct_refinery(bot: &mut Nikolaj) {
         return;
     }
 
+    for under_construction in bot.construction_info.under_construction.iter() {
+        if under_construction.structure == UnitTypeId::Refinery {
+            return;
+        }
+    }
+
     if bot.already_pending(UnitTypeId::Refinery) > 0 {
         return;
     }

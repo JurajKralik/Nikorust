@@ -23,6 +23,12 @@ fn check_depots_needed(bot: &mut Nikolaj) -> bool {
     let supply_cap = bot.supply_cap;
     let supply_used = bot.supply_used;
 
+    // Under construction
+    for under_construction in bot.construction_info.under_construction.iter() {
+        if under_construction.structure == UnitTypeId::SupplyDepot {
+            return false;
+        }
+    }
     // Stop
     if supply_cap > 199 || bot.units.my.townhalls.is_empty() {
         return false;
