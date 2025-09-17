@@ -1,9 +1,13 @@
 # Nikolaj (Rust version)
 
 ## Intro
-Rust version on Nikolaj (Python) SC2 AI.  
-Made using rust-sc2 library.  
+Rust version of Nikolaj (Python) SC2 AI.  
+
+Made with [rust-sc2 library](https://github.com/UltraMachine/rust-sc2)
+
 Idea is to make slow push Terran BOT same as in the python, but with less performance limitation.
+
+Copying of Nikolaj's parts is permitted, but please follow the [guidelines](https://aiarena.net/wiki/bot-development/getting-started/#wiki-toc-using-existing-bots-as-a-reference-or-starting-point).
 ## Structures
 
 <summary><strong>Command Center</strong></summary>
