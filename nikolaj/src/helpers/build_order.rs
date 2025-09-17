@@ -113,7 +113,7 @@ fn decide_starport(bot: &mut Nikolaj) {
         + bot.already_pending(UnitTypeId::Marauder);
     
     // Detection
-    if bot.enemy_cloaking && ravens == 0 {
+    if bot.strategy_data.enemy_cloaking && ravens == 0 {
         bot.starport_priority = Some(UnitTypeId::Raven);
     // Bio squads
     } else if bio > 4 && ((bio + 1) / 4) as usize > medivacs {

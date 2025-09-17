@@ -6,7 +6,7 @@ use std::collections::{HashMap, HashSet};
 
 pub fn scv_step(bot: &mut Nikolaj) {
     // Worker rush
-    if bot.enemy_worker_rush {
+    if bot.strategy_data.enemy_worker_rush {
         counter_worker_rush(bot); // TODO: implement
         return;
     }
@@ -21,7 +21,7 @@ pub fn scv_step(bot: &mut Nikolaj) {
     bot.worker_allocator.assign_repairmen(&bot.units.clone());
 
     // Ramp blocking
-    if bot.enemy_ramp_blocking {
+    if bot.strategy_data.enemy_ramp_blocking {
         counter_ramp_blocking(bot); // TODO: implement
     }
 

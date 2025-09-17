@@ -1,20 +1,26 @@
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
 
-
 pub fn strategy_step(bot: &mut Nikolaj) {
     refresh_idle_point(bot);
     refresh_defense_point(bot);
     refresh_attack_point(bot);
     refresh_harass_points(bot);
     refresh_repair_points(bot);
+    enemy_army_snapshot(bot);
+    decide_offensive(bot);
+    read_enemy_strategy(bot);
 }
 fn refresh_idle_point(bot: &mut Nikolaj) {
     let bases_amount = bot.units.my.townhalls.ready().len();
     if bases_amount == 1 {
         if let Some(base) = bot.units.my.townhalls.ready().first() {
             if base.position() == bot.start_location {
-                let ramp = bot.ramps.my.barracks_in_middle().unwrap_or(Point2 { x: 0.0, y: 0.0 });
+                let ramp = bot
+                    .ramps
+                    .my
+                    .barracks_in_middle()
+                    .unwrap_or(Point2 { x: 0.0, y: 0.0 });
                 bot.strategy_data.idle_point = ramp.towards(bot.start_location, 8.0);
                 return;
             }
@@ -77,7 +83,11 @@ fn refresh_defense_point(bot: &mut Nikolaj) {
     if let Some(closest) = closest_enemy {
         let defense_point = {
             if let Some(closest_structure) = bot.units.my.structures.closest(closest.position()) {
-                Some(closest_structure.position().towards(closest.position(), 4.0))
+                Some(
+                    closest_structure
+                        .position()
+                        .towards(closest.position(), 4.0),
+                )
             } else {
                 None
             }
@@ -94,7 +104,12 @@ fn refresh_attack_point(bot: &mut Nikolaj) {
     let enemy_structures = bot.units.enemy.structures.clone();
     enemy_structures.iter().sort_by_distance(bot.start_location);
     let my_units = bot.units.my.units.clone();
-    let ramp = bot.ramps.enemy.barracks_in_middle().unwrap_or(Point2 { x: 0.0, y: 0.0 }).towards(bot.enemy_start, -2.0);
+    let ramp = bot
+        .ramps
+        .enemy
+        .barracks_in_middle()
+        .unwrap_or(Point2 { x: 0.0, y: 0.0 })
+        .towards(bot.enemy_start, -2.0);
 
     if !enemy_structures.is_empty() {
         let mut closest_structure: Option<Unit> = None;
@@ -181,9 +196,247 @@ fn refresh_repair_points(bot: &mut Nikolaj) {
     }
     bot.strategy_data.repair_points = repair_points;
 }
+fn enemy_army_snapshot(bot: &mut Nikolaj) {
+    let visible_enemies = get_visible_enemies(bot);
+    let appended_snapshot = get_appended_enemy_army_snapshot(bot, visible_enemies);
+    bot.strategy_data.enemy_army = appended_snapshot;
+    delete_outdated_enemy_snapshots(bot);
+    let dead_units = bot.state.observation.raw.dead_units.clone();
+    delete_dead_enemy_snapshots(bot, dead_units);
+}
+fn get_visible_enemies(bot: &Nikolaj) -> Vec<UnitSnapshot> {
+    let enemies = bot.units.enemy.units.clone();
+    let mut currently_visible_army: Vec<UnitSnapshot> = Vec::new();
+    for enemy in enemies {
+        if !enemy.can_attack() || enemy.type_id().is_worker() {
+            continue;
+        }
+        let health = (enemy.health().unwrap_or(0) + enemy.shield().unwrap_or(0)) as f32;
+        let supply = enemy.supply_cost() as usize;
+        let snapshot = UnitSnapshot {
+            id: enemy.tag(),
+            type_id: enemy.type_id(),
+            position: enemy.position(),
+            health: health,
+            supply: supply,
+            last_seen: bot.time,
+        };
+        currently_visible_army.push(snapshot);
+    }
+    currently_visible_army
+}
+fn get_appended_enemy_army_snapshot(
+    bot: &mut Nikolaj,
+    visible_enemies: Vec<UnitSnapshot>,
+) -> Vec<UnitSnapshot> {
+    let mut current_snapshot: Vec<UnitSnapshot> = bot.strategy_data.enemy_army.clone();
+    for visible in visible_enemies {
+        if let Some(existing) = current_snapshot.iter_mut().find(|e| e.id == visible.id) {
+            existing.position = visible.position;
+            existing.health = visible.health;
+            existing.last_seen = bot.time;
+            existing.supply = visible.supply;
+        } else {
+            current_snapshot.push(visible.clone());
+        }
+    }
+    current_snapshot
+}
+fn delete_outdated_enemy_snapshots(bot: &mut Nikolaj) {
+    let current_time = bot.time;
+    bot.strategy_data
+        .enemy_army
+        .retain(|snapshot| current_time - snapshot.last_seen <= 120.0);
+}
+fn delete_dead_enemy_snapshots(bot: &mut Nikolaj, dead_units: Vec<u64>) {
+    bot.strategy_data
+        .enemy_army
+        .retain(|snapshot| !dead_units.contains(&snapshot.id));
+}
+fn decide_offensive(bot: &mut Nikolaj) {
+    let enemy_supply = bot.strategy_data.get_army_supply();
+    let my_supply = bot.supply_army;
 
+    // Initial
+    if enemy_supply == 0 {
+        if my_supply > 12 {
+            bot.strategy_data.attack = true;
+        } else {
+            bot.strategy_data.attack = false;
+        }
+        return;
+    }
+    // Midgame
+    if enemy_supply < 100 {
+        if my_supply >= enemy_supply as u32 + 10 {
+            bot.strategy_data.attack = true;
+        } else {
+            bot.strategy_data.attack = false;
+        }
+        return;
+    }
+    // Lategame
+    if my_supply >= enemy_supply as u32 - 10 {
+        bot.strategy_data.attack = true;
+    } else {
+        bot.strategy_data.attack = false;
+    }
+}
+fn read_enemy_strategy(bot: &mut Nikolaj) {
+    // Worker rush and ramp blocking
+    if bot.time < 60.0 * 3.0 {
+        detect_enemy_worker_rush(bot);
+        if bot.time - bot.strategy_data.enemy_worker_rush_time > 5.0 {
+            bot.strategy_data.enemy_worker_rush = false;
+        }
+        detect_enemy_ramp_blocking(bot);
+    }
 
+    detect_enemy_flooding(bot);
+    detect_cloaking_enemy(bot);
+}
+fn detect_enemy_worker_rush(bot: &mut Nikolaj) {
+    let enemy_workers = bot.units.enemy.workers.clone();
+    let mut offensive_workers = 0;
+    for worker in enemy_workers {
+        let distance_to_my_base = worker.position().distance(bot.start_location);
+        let distance_to_enemy_base = worker.position().distance(bot.enemy_start);
+        if distance_to_my_base < distance_to_enemy_base {
+            offensive_workers += 1;
+        }
+    }
+    if offensive_workers >= 4 {
+        bot.strategy_data.enemy_worker_rush_time = bot.time;
+        if !bot.strategy_data.enemy_worker_rush {
+            println!(
+                "Strategy: Detected enemy worker rush at time {:.1}",
+                bot.time
+            );
+        }
+        bot.strategy_data.enemy_worker_rush = true;
+    }
+}
+fn detect_enemy_ramp_blocking(bot: &mut Nikolaj) {
+    let enemy_workers = bot.units.enemy.workers.clone();
+    let block_positions = bot.ramps.my.corner_depots();
+    let ramp_center = bot.ramps.my.barracks_in_middle();
+    if bot.strategy_data.enemy_ramp_blocking {
+        if enemy_workers
+            .closer(10.0, ramp_center.unwrap_or(Point2 { x: 0.0, y: 0.0 }))
+            .is_empty()
+        {
+            bot.strategy_data.enemy_ramp_blocking = false;
+            bot.strategy_data.enemy_ramp_blocking_steps = 0;
+            println!(
+                "Strategy: Enemy ramp blocking ended at time {:.1}",
+                bot.time
+            );
+        }
+    }
+    let mut blocking = false;
+    if let Some(positions) = block_positions {
+        for position in positions {
+            if !enemy_workers.closer(1.0, position).is_empty() {
+                blocking = true;
+                continue;
+            }
+        }
+    }
+    if blocking {
+        bot.strategy_data.enemy_ramp_blocking_steps += 1;
+        bot.strategy_data.enemy_ramp_blocking_time = bot.time;
+    }
+    if bot.time - bot.strategy_data.enemy_ramp_blocking_time > 3.0 {
+        bot.strategy_data.enemy_ramp_blocking_steps = 0;
+    }
+    if bot.strategy_data.enemy_ramp_blocking_steps > 8 {
+        bot.strategy_data.enemy_ramp_blocking = true;
+        println!(
+            "Strategy: Detected enemy ramp blocking at time {:.1}",
+            bot.time
+        );
+    }
+}
+fn detect_enemy_flooding(bot: &mut Nikolaj) {
+    if bot.time > 60.0 * 5.0 || bot.strategy_data.enemy_flooding {
+        bot.strategy_data.enemy_flooding = false;
+        return;
+    }
+
+    let enemy_units = bot.units.enemy.units.clone();
+    let mut offensive_units = 0;
+    for enemy in enemy_units {
+        if !enemy.can_attack() || enemy.type_id().is_worker() {
+            continue;
+        }
+        let distance_to_my_base = enemy.position().distance(bot.start_location);
+        let distance_to_enemy_base = enemy.position().distance(bot.enemy_start);
+        if distance_to_my_base < distance_to_enemy_base + 10.0 {
+            offensive_units += 1;
+        }
+    }
+    if offensive_units >= 5 {
+        println!("Strategy: Detected enemy flooding at time {:.1}", bot.time);
+        bot.strategy_data.enemy_flooding = true;
+    }
+}
+fn detect_cloaking_enemy(bot: &mut Nikolaj) {
+    if bot.strategy_data.enemy_cloaking {
+        return;
+    }
+
+    let enemy_units = bot.strategy_data.enemy_army.clone();
+    let cloaking_units = [
+        UnitTypeId::Banshee,
+        UnitTypeId::Ghost,
+        UnitTypeId::WidowMine,
+        UnitTypeId::WidowMineBurrowed,
+        UnitTypeId::Roach,
+        UnitTypeId::RoachBurrowed,
+        UnitTypeId::DarkTemplar,
+        UnitTypeId::Mothership,
+        UnitTypeId::LurkerMP,
+        UnitTypeId::LurkerMPBurrowed,
+        UnitTypeId::LurkerMPEgg,
+    ];
+    for enemy in enemy_units {
+        let enemy_type = enemy.type_id;
+        if cloaking_units.contains(&enemy_type) {
+            if !bot.strategy_data.enemy_cloaking {
+                println!(
+                    "Strategy: Detected enemy cloaking unit {:?} at time {:.1}",
+                    enemy_type,
+                    bot.time
+                );
+            }
+            bot.strategy_data.enemy_cloaking = true;
+            return;
+        }
+    }
+    let enemy_structures = bot.units.enemy.structures.clone();
+    let cloaking_structures = [
+        UnitTypeId::DarkShrine,
+        UnitTypeId::LurkerDenMP,
+        UnitTypeId::GhostAcademy,
+        UnitTypeId::StarportTechLab,
+    ];
+    for structure in enemy_structures {
+        let structure_type = structure.type_id();
+        if cloaking_structures.contains(&structure_type) {
+            if !bot.strategy_data.enemy_cloaking {
+                println!(
+                    "Strategy: Detected enemy cloaking structure {:?} at time {:.1}",
+                    structure_type,
+                    bot.time
+                );
+            }
+            bot.strategy_data.enemy_cloaking = true;
+            return;
+        }
+    }
+}
 pub struct StrategyData {
+    pub enemy_army: Vec<UnitSnapshot>,
     pub idle_point: Point2,
     pub defense_point: Point2,
     pub attack_point: Point2,
@@ -191,11 +444,19 @@ pub struct StrategyData {
     pub repair_points: Vec<Point2>,
     pub defend: bool,
     pub attack: bool,
+    pub enemy_cloaking: bool,
+    pub enemy_flooding: bool,
+    pub enemy_worker_rush: bool,
+    pub enemy_worker_rush_time: f32,
+    pub enemy_ramp_blocking: bool,
+    pub enemy_ramp_blocking_steps: usize,
+    pub enemy_ramp_blocking_time: f32,
 }
 
 impl Default for StrategyData {
     fn default() -> Self {
         StrategyData {
+            enemy_army: Vec::new(),
             idle_point: Point2::new(0.0, 0.0),
             defense_point: Point2::new(0.0, 0.0),
             attack_point: Point2::new(0.0, 0.0),
@@ -203,6 +464,29 @@ impl Default for StrategyData {
             repair_points: Vec::new(),
             defend: false,
             attack: false,
+            enemy_cloaking: false,
+            enemy_flooding: false,
+            enemy_worker_rush: false,
+            enemy_worker_rush_time: -6.0,
+            enemy_ramp_blocking: false,
+            enemy_ramp_blocking_steps: 0,
+            enemy_ramp_blocking_time: -6.0,
         }
     }
+}
+
+impl StrategyData {
+    pub fn get_army_supply(&self) -> usize {
+        self.enemy_army.iter().map(|unit| unit.supply).sum()
+    }
+}
+
+#[derive(Clone)]
+pub struct UnitSnapshot {
+    pub id: u64,
+    pub type_id: UnitTypeId,
+    pub position: Point2,
+    pub health: f32,
+    pub supply: usize,
+    pub last_seen: f32,
 }

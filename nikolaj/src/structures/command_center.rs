@@ -157,7 +157,7 @@ pub fn townhall_control(bot: &mut Nikolaj) {
                 let mut mule_drop = false;
                 if let Some(energy) = base.energy() {
                     let mut energy_needed = 50;
-                    if bot.enemy_cloaking {
+                    if bot.strategy_data.enemy_cloaking {
                         energy_needed = 100;
                     }
                     if energy >= energy_needed {
@@ -214,7 +214,7 @@ pub fn townhall_control(bot: &mut Nikolaj) {
                         .of_type_including_alias(UnitTypeId::OrbitalCommand)
                         .len()
                         > 1
-                        || (bot.enemy_flooding
+                        || (bot.strategy_data.enemy_flooding
                             && bot
                                 .units
                                 .my
