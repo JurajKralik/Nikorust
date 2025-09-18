@@ -25,6 +25,7 @@ use crate::units::helpers::combat_units::*;
 struct Nikolaj {
     iteration: usize,
     worker_allocator: WorkerAllocator,
+    debugger: NikolajDebugger,
     strategy_data: StrategyData,
     construction_info: ConstructionInfo,
     scanner_sweep_time: f32,
@@ -55,10 +56,6 @@ impl Player for Nikolaj {
     fn on_step(&mut self, _iteration: usize) -> SC2Result<()> {
         self.iteration = _iteration;
         scv_step(self);
-        debug_show_bases(self);
-        debug_show_mining(self);
-        debug_show_repair(self);
-        debug_show_worker_roles(self);
         refresh_construction_info(self);
         decide_build_strategy(self);
         construct_command_centers(self);
@@ -73,8 +70,8 @@ impl Player for Nikolaj {
         factory_control(self);
         starport_control(self);
         strategy_step(self);
-        debug_show_strategy_points(self);
         army_step(self);
+        debug_step(self);
         Ok(())
     }
     fn on_end(&self, _result: GameResult) -> SC2Result<()> {

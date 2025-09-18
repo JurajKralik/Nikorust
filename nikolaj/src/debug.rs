@@ -1,8 +1,37 @@
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
-use crate::units::scv::*;
-use std::collections::HashMap;
+use crate::units::helpers::workers_assignments::*;
+use std::{collections::HashMap,};
 
+
+#[derive(Debug, Clone)]
+pub struct NikolajDebugger{
+    pub printing_resource_assignments: bool,
+    pub printing_new_bases_assignments: bool,
+    pub printing_new_worker_assignments: bool,
+}
+impl Default for NikolajDebugger {
+    fn default() -> Self {
+        Self {
+            printing_resource_assignments: false,
+            printing_new_bases_assignments: true,
+            printing_new_worker_assignments: true,
+        }
+    }
+}
+
+pub fn debug_step(
+    bot: &mut Nikolaj
+) {
+    debug_show_bases(bot);
+    debug_show_mining(bot);
+    debug_show_repair(bot);
+    debug_show_worker_roles(bot);
+    debug_show_strategy_points(bot);
+    if bot.debugger.printing_resource_assignments {
+        debug_print_resource_assignments(bot);
+    }
+}
 // Debugging
 pub fn debug_show_bases(
     bot: &mut Nikolaj
@@ -197,4 +226,33 @@ pub fn debug_show_strategy_points(
         bot.debug_text(&format!("REPAIR {}", i + 1), *point, "green", Some(1));
     }
     
+}
+
+pub fn debug_print_resource_assignments(
+    bot: &mut Nikolaj
+) {
+    println!("--- Resource Assignments ---");
+    for (tag, alloc) in &bot.worker_allocator.resources {
+        let workers: Vec<String> = alloc.workers.iter().map(|w| w.to_string()).collect();
+        println!(
+            "Resource Tag: {}, Role: {:?}, Workers: [{}]", 
+            tag, 
+            alloc.worker_role, 
+            workers.join(", ")
+        );
+    }
+    println!("----------------------------");
+}
+
+pub fn print_new_bases_assignments(old_bases: &Vec<u64>, new_bases: &Vec<u64>) {
+    for base in new_bases {
+        if !old_bases.contains(base) {
+            println!("Debugger: New base added with tag {}", base);
+        }
+    }
+    for base in old_bases {
+        if !new_bases.contains(base) {
+            println!("Debugger: Base removed with tag {}", base);
+        }
+    }
 }

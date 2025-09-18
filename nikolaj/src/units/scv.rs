@@ -2,6 +2,8 @@ use crate::Nikolaj;
 use rust_sc2::prelude::*;
 use rust_sc2::units::AllUnits;
 use std::collections::{HashMap, HashSet};
+use crate::units::helpers::workers_assignments::*;
+use crate::debug::*;
 
 
 pub fn scv_step(bot: &mut Nikolaj) {
@@ -12,8 +14,12 @@ pub fn scv_step(bot: &mut Nikolaj) {
     }
 
     // Bases
+    let current_bases = bot.worker_allocator.bases.clone();
     bot.worker_allocator.bases = get_mining_bases(&bot.units);
-    
+    if bot.debugger.printing_new_bases_assignments {
+        print_new_bases_assignments(&current_bases, &bot.worker_allocator.bases.clone());
+    }
+
     // Repair
     let bases_tags = bot.worker_allocator.bases.iter().clone();
     let damaged_targets = collect_damaged_targets(&bot.units, bases_tags);
@@ -36,6 +42,7 @@ pub fn scv_step(bot: &mut Nikolaj) {
 
 #[derive(Debug, Default)]
 pub struct WorkerAllocator {
+    pub debugger: NikolajDebugger,
     pub bases: Vec<u64>,
     pub repair: HashMap<u64, RepairAllocation>,
     pub resources: HashMap<u64, ResourceAllocation>,
@@ -170,6 +177,7 @@ impl WorkerAllocator {
         for worker in units.my.workers.ready().clone() {
             let worker_tag = worker.tag();
             if !self.worker_roles.contains_key(&worker_tag) {
+
                 self.worker_roles.insert(worker_tag, WorkerRole::Idle);
             } else if self.worker_roles.get(&worker_tag).unwrap() == &WorkerRole::Busy {
                 if worker.is_idle() || worker.is_gathering() || worker.is_repairing() {
@@ -511,38 +519,6 @@ impl WorkerAllocator {
         }
         None
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum WorkerRole {
-    Mineral,
-    Gas,
-    Repair,
-    Busy,
-    Idle
-}
-
-#[derive(Debug)]
-pub struct RepairAllocation {
-    pub tag: u64,
-    pub is_structure: bool,
-    pub workers: Vec<u64>,
-    pub max_workers: usize,
-}
-
-#[derive(Debug)]
-pub struct ResourceAllocation {
-    pub resource_tag: u64,
-    pub worker_role: WorkerRole,
-    pub workers: Vec<u64>,
-}
-
-#[derive(Debug, Default)]
-pub struct ResourceSaturation {
-    pub mineral_tags_undersaturated: Vec<u64>,
-    pub mineral_tags_oversaturated: Vec<u64>,
-    pub refinery_tags_undersaturated: Vec<u64>,
-    pub refinery_tags_oversaturated: Vec<u64>,
 }
 
 // Helpers
