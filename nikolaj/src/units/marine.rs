@@ -10,6 +10,7 @@ pub fn marine_control(bot: &mut Nikolaj, unit: &Unit) {
     let weapon_ready = unit.weapon_cooldown().unwrap_or(0.0) < 0.2;
 
     if weapon_ready {
+        use_stimpack(unit, &surroundings.clone());
         // Direct attack
         if let Some(target) = surroundings.clone().best_target_in_range {
             unit.attack(Target::Tag(target.tag()), false);

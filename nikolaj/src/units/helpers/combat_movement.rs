@@ -116,3 +116,15 @@ fn combat_grid8_pathable(bot: &mut Nikolaj, position: Point2, distance: f32) -> 
         .filter(|p| bot.is_pathable(*p))
         .collect()
 }
+
+pub fn use_stimpack(unit: &Unit, surroundings: &SurroundingsInfo) {
+    if (surroundings.best_target_in_range.is_some()
+        || surroundings.better_target_off_range.is_some())
+        && !unit.has_buff(BuffId::Stimpack)
+        && !unit.has_buff(BuffId::StimpackMarauder)
+        && unit.health_percentage().unwrap_or(1.0) > 0.5
+    {
+        unit.use_ability(AbilityId::EffectStimMarine, false);
+        unit.use_ability(AbilityId::EffectStimMarauder, false);
+    }
+}

@@ -63,6 +63,9 @@ pub fn army_step(bot: &mut Nikolaj) {
             UnitTypeId::Battlecruiser => {
                 battlecruiser_control(bot, unit);
             }
+            UnitTypeId::MULE => {
+                continue;
+            }
             _ => {
                 println!("No control function for unit type: {:?}", unit.type_id());
             }
