@@ -3,7 +3,6 @@ use rust_sc2::prelude::*;
 use rust_sc2::units::AllUnits;
 use std::collections::{HashMap, HashSet};
 use crate::units::helpers::workers_assignments::*;
-use crate::debug::*;
 
 
 pub fn scv_step(bot: &mut Nikolaj) {
@@ -14,12 +13,8 @@ pub fn scv_step(bot: &mut Nikolaj) {
     }
 
     // Bases
-    let current_bases = bot.worker_allocator.bases.clone();
     bot.worker_allocator.bases = get_mining_bases(&bot.units);
-    if bot.debugger.printing_new_bases_assignments {
-        print_new_bases_assignments(&current_bases, &bot.worker_allocator.bases.clone());
-    }
-
+    
     // Repair
     let bases_tags = bot.worker_allocator.bases.iter().clone();
     let damaged_targets = collect_damaged_targets(&bot.units, bases_tags);
@@ -42,7 +37,6 @@ pub fn scv_step(bot: &mut Nikolaj) {
 
 #[derive(Debug, Default)]
 pub struct WorkerAllocator {
-    pub debugger: NikolajDebugger,
     pub bases: Vec<u64>,
     pub repair: HashMap<u64, RepairAllocation>,
     pub resources: HashMap<u64, ResourceAllocation>,
@@ -51,6 +45,60 @@ pub struct WorkerAllocator {
 }
 
 impl WorkerAllocator {
+    fn set_worker_role(&mut self, worker_tag: u64, new_role: WorkerRole) {
+        match self.worker_roles.insert(worker_tag, new_role) {
+            Some(old_role) if old_role != new_role => {
+                println!(
+                    "[ALLOCATOR] Worker {} changed role {:?} -> {:?}",
+                    worker_tag, old_role, new_role
+                );
+            }
+            None => {
+                println!(
+                    "[ALLOCATOR] Worker {} assigned initial role {:?}",
+                    worker_tag, new_role
+                );
+            }
+            _ => {}
+        }
+    }
+
+    fn add_resource(&mut self, tag: u64, role: WorkerRole) {
+        if !self.resources.contains_key(&tag) {
+            println!("[ALLOCATOR] Added {:?} resource {}", role, tag);
+            self.resources.insert(
+                tag,
+                ResourceAllocation {
+                    resource_tag: tag,
+                    worker_role: role,
+                    workers: Vec::new(),
+                },
+            );
+        }
+    }
+
+    fn remove_resource(&mut self, tag: u64) {
+        if self.resources.remove(&tag).is_some() {
+            println!("[ALLOCATOR] Removed resource {}", tag);
+        }
+    }
+
+    fn add_repair_target(&mut self, tag: u64, alloc: RepairAllocation) {
+        if !self.repair.contains_key(&tag) {
+            println!(
+                "[ALLOCATOR] Added repair target {} (max_workers = {})",
+                tag, alloc.max_workers
+            );
+            self.repair.insert(tag, alloc);
+        }
+    }
+
+    fn remove_repair_target(&mut self, tag: u64) {
+        if self.repair.remove(&tag).is_some() {
+            println!("[ALLOCATOR] Removed repair target {}", tag);
+        }
+    }
+
     fn update_repair_targets(
         &mut self,
         units: &AllUnits,
@@ -60,17 +108,18 @@ impl WorkerAllocator {
         let bases_tags = self.bases.iter().clone();
         let bases = units.my.structures.find_tags(bases_tags);
 
-        // Check existing repair targets
         let mut invalid_tags: Vec<u64> = Vec::new();
+        let mut workers_to_idle: Vec<u64> = Vec::new(); // <--- collect role changes here
+
         for (tag, alloc) in self.repair.iter_mut() {
             if valid_tags.contains(tag) {
                 continue;
             }
             let target: Unit;
             if alloc.is_structure {
-                target = units.my.structures.iter().find_tag(tag.clone()).unwrap().clone();
+                target = units.my.structures.iter().find_tag(*tag).unwrap().clone();
             } else {
-                target = units.my.units.iter().find_tag(tag.clone()).unwrap().clone();
+                target = units.my.units.iter().find_tag(*tag).unwrap().clone();
                 let closest_base_distance = bases.closest_distance(target.position()).unwrap_or(0.0);
                 if closest_base_distance > 20.0 {
                     invalid_tags.push(*tag);
@@ -93,55 +142,55 @@ impl WorkerAllocator {
             }
             invalid_tags.push(*tag);
             for worker_tag in alloc.workers.clone() {
-                if self.worker_roles.contains_key(&worker_tag) {
-                    self.worker_roles.insert(worker_tag, WorkerRole::Idle);
-                }
+                workers_to_idle.push(worker_tag);
             }
         }
+
+        for worker_tag in workers_to_idle {
+            self.set_worker_role(worker_tag, WorkerRole::Idle);
+        }
+
         let workers_tags = units.my.workers.iter().map(|w| w.tag()).collect::<HashSet<u64>>();
         for tag in invalid_tags {
-            // Free workers
             if let Some(alloc) = self.repair.get(&tag) {
                 for worker_tag in alloc.workers.clone() {
                     if !workers_tags.contains(&worker_tag) {
-                        if self.worker_roles.contains_key(&worker_tag) {
-                            self.worker_roles.remove(&worker_tag);
-                        }
+                        self.worker_roles.remove(&worker_tag);
                     } else {
-                        self.worker_roles.insert(worker_tag, WorkerRole::Idle);
+                        self.set_worker_role(worker_tag, WorkerRole::Idle);
                     }
                 }
             }
-            // Remove invalid repair target
-            self.repair.remove(&tag);
+            self.remove_repair_target(tag);
         }
-        // Add new repair targets
+
         for (tag, alloc) in damaged_targets {
-            if self.repair.contains_key(&tag) {
-                continue;
-            }
-            self.repair.insert(tag, alloc);
+            self.add_repair_target(tag, alloc);
         }
     }
+
     fn assign_repairmen(&mut self, units: &AllUnits) {
         let workers = units.my.workers.ready().clone();
         let worker_tags = workers.iter().map(|w| w.tag()).collect::<HashSet<u64>>();
+
+        let mut workers_to_assign: Vec<u64> = Vec::new();
+        let mut repair_orders: Vec<(u64, u64)> = Vec::new(); 
+
         for (tag, alloc) in self.repair.iter_mut() {
             let mut current_workers = alloc.workers.clone();
             let max_workers = alloc.max_workers;
-            let target: Unit;
-            if alloc.is_structure {
-                target = units.my.structures.iter().find_tag(tag.clone()).unwrap().clone();
+            let target: Unit = if alloc.is_structure {
+                units.my.structures.iter().find_tag(*tag).unwrap().clone()
             } else {
-                target = units.my.units.iter().find_tag(tag.clone()).unwrap().clone();
-            }
-            // Check if workers are still valid
+                units.my.units.iter().find_tag(*tag).unwrap().clone()
+            };
+
             for worker in current_workers.clone() {
                 if !worker_tags.contains(&worker) {
                     current_workers.retain(|w| *w != worker);
                 }
             }
-            // Assign new workers
+
             if current_workers.len() < max_workers {
                 let workers_sorted = workers.iter().sort_by_distance(target.clone());
                 for worker in workers_sorted {
@@ -152,87 +201,96 @@ impl WorkerAllocator {
                     if worker.distance(target.clone()) > 25.0 {
                         break;
                     }
-                    if self.worker_roles.contains_key(&worker_tag) {
-                        let worker_role = self.worker_roles.get(&worker_tag).unwrap_or(&WorkerRole::Idle).clone();
-                        if worker_role != WorkerRole::Busy && worker_role != WorkerRole::Repair {
+                    if let Some(role) = self.worker_roles.get(&worker_tag) {
+                        if *role == WorkerRole::Busy || *role == WorkerRole::Repair {
                             continue;
                         }
                     }
                     current_workers.push(worker_tag);
                 }
             }
+
             alloc.workers = current_workers.clone();
-            // Send repair commands
+
             for worker_tag in current_workers {
                 let worker = units.my.workers.iter().find_tag(worker_tag).unwrap().clone();
                 if worker.is_repairing() {
                     continue;
                 }
-                self.worker_roles.insert(worker_tag, WorkerRole::Repair);
-                worker.repair(tag.clone(), false);
+                workers_to_assign.push(worker_tag);
+                repair_orders.push((worker_tag, *tag));
+            }
+        }
+
+        for worker_tag in workers_to_assign {
+            self.set_worker_role(worker_tag, WorkerRole::Repair);
+        }
+        for (worker_tag, target_tag) in repair_orders {
+            if let Some(worker) = units.my.workers.iter().find_tag(worker_tag) {
+                worker.repair(target_tag, false);
             }
         }
     }
+
+
     fn update_idle_workers(&mut self, units: &AllUnits) {
         for worker in units.my.workers.ready().clone() {
             let worker_tag = worker.tag();
             if !self.worker_roles.contains_key(&worker_tag) {
-
-                self.worker_roles.insert(worker_tag, WorkerRole::Idle);
+                self.set_worker_role(worker_tag, WorkerRole::Idle);
             } else if self.worker_roles.get(&worker_tag).unwrap() == &WorkerRole::Busy {
                 if worker.is_idle() || worker.is_gathering() || worker.is_repairing() {
-                    self.worker_roles.insert(worker_tag, WorkerRole::Idle);
+                    self.set_worker_role(worker_tag, WorkerRole::Idle);
                 }
             }
         }
     }
+
     fn update_resources(
         &mut self,
         valid_minerals_and_refineries: (HashSet<u64>, HashSet<u64>),
-        units: &AllUnits
+        units: &AllUnits,
     ) {
         let (valid_minerals, valid_refineries) = valid_minerals_and_refineries;
         let valid_resources: HashSet<u64> = valid_minerals.union(&valid_refineries).cloned().collect();
-        self.remove_invalid_resources(&valid_resources.clone(), units);
-        self.add_new_resources(&valid_minerals, &valid_refineries);
+        self.remove_invalid_resources(&valid_resources, units);
+        for tag in valid_minerals {
+            self.add_resource(tag, WorkerRole::Mineral);
+        }
+        for tag in valid_refineries {
+            self.add_resource(tag, WorkerRole::Gas);
+        }
     }
+
     fn remove_invalid_resources(&mut self, valid_resources: &HashSet<u64>, units: &AllUnits) {
         let worker_tags = units.my.workers.iter().map(|w| w.tag()).collect::<HashSet<u64>>();
+
         let mut invalid_resources_tags: Vec<u64> = Vec::new();
-        for (tag, alloc) in self.resources.iter_mut() {
+        let mut workers_to_idle: Vec<u64> = Vec::new();
+
+        for (tag, alloc) in self.resources.iter() {
             if !valid_resources.contains(tag) {
                 invalid_resources_tags.push(*tag);
+
                 for worker_tag in alloc.workers.clone() {
                     if !worker_tags.contains(&worker_tag) {
-                        if self.worker_roles.contains_key(&worker_tag) {
-                            self.worker_roles.remove(&worker_tag);
-                        }
+                        self.worker_roles.remove(&worker_tag);
                     } else {
-                        self.worker_roles.insert(worker_tag, WorkerRole::Idle);
+                        workers_to_idle.push(worker_tag);
                     }
                 }
             }
         }
+        for worker_tag in workers_to_idle {
+            self.set_worker_role(worker_tag, WorkerRole::Idle);
+        }
+
         for tag in invalid_resources_tags {
-            self.resources.remove(&tag);
+            self.remove_resource(tag);
         }
     }
-    fn add_new_resources(&mut self, valid_minerals: &HashSet<u64>, valid_refineries: &HashSet<u64>) {
-        for tag in valid_minerals {
-            self.resources.insert(*tag, ResourceAllocation {
-                resource_tag: *tag,
-                worker_role: WorkerRole::Mineral,
-                workers: Vec::new(),
-            });
-        }
-        for tag in valid_refineries {
-            self.resources.insert(*tag, ResourceAllocation {
-                resource_tag: *tag,
-                worker_role: WorkerRole::Gas,
-                workers: Vec::new(),
-            });
-        }
-    }
+
+
     fn update_saturation(&mut self) {
         self.saturation = ResourceSaturation {
             mineral_tags_undersaturated: Vec::new(),
@@ -246,18 +304,14 @@ impl WorkerAllocator {
                 WorkerRole::Mineral => {
                     if workers_count < 2 {
                         self.saturation.mineral_tags_undersaturated.push(*resource_tag);
-                    } else if workers_count == 2 {
-                        continue;
-                    } else {
+                    } else if workers_count > 2 {
                         self.saturation.mineral_tags_oversaturated.push(*resource_tag);
                     }
                 }
                 WorkerRole::Gas => {
                     if workers_count < 3 {
                         self.saturation.refinery_tags_undersaturated.push(*resource_tag);
-                    } else if workers_count == 3 {
-                        continue;
-                    } else {
+                    } else if workers_count > 3 {
                         self.saturation.refinery_tags_oversaturated.push(*resource_tag);
                     }
                 }
@@ -265,12 +319,13 @@ impl WorkerAllocator {
             }
         }
     }
+
     fn assign_resource_workers(&mut self, units: &AllUnits) {
         let workers = units.my.workers.ready().clone();
         for worker in workers {
             let worker_tag = worker.tag();
             if !self.worker_roles.contains_key(&worker_tag) {
-                self.worker_roles.insert(worker_tag, WorkerRole::Idle);
+                self.set_worker_role(worker_tag, WorkerRole::Idle);
                 println!("New worker without role detected: {}", worker_tag);
             }
             let worker_role = self.worker_roles.get(&worker_tag).unwrap_or(&WorkerRole::Idle).clone();
@@ -285,44 +340,22 @@ impl WorkerAllocator {
                     self.assign_worker_to_minerals(worker_tag, units);
                 }
             } else if worker_role == WorkerRole::Mineral {
-                if let Some(mineral_allocation) = self.resources.get(&worker_tag) {
-                    let on_oversaturation = self.saturation.mineral_tags_oversaturated.contains(&mineral_allocation.resource_tag);
-                    if on_oversaturation {
-                        if !self.saturation.refinery_tags_undersaturated.is_empty() {
-                            self.unassign_worker(worker_tag);
-                            self.assign_worker_to_gas(worker_tag, units);
-                        } else if !self.saturation.mineral_tags_undersaturated.is_empty() {
-                            self.unassign_worker(worker_tag);
-                            self.assign_worker_to_minerals(worker_tag, units);
-                        }
-                    }
-                }
             } else if worker_role == WorkerRole::Gas {
-                if let Some(gas_allocation) = self.resources.get(&worker_tag) {
-                    let on_oversaturation = self.saturation.refinery_tags_oversaturated.contains(&gas_allocation.resource_tag);
-                    if on_oversaturation {
-                        if !self.saturation.mineral_tags_undersaturated.is_empty() {
-                            self.unassign_worker(worker_tag);
-                            self.assign_worker_to_minerals(worker_tag, units);
-                        } else if !self.saturation.refinery_tags_undersaturated.is_empty() {
-                            self.unassign_worker(worker_tag);
-                            self.assign_worker_to_gas(worker_tag, units);
-                        }
-                    }
-                }
             }
             self.update_saturation();
         }
     }
+
     fn check_if_resource_assigned(&mut self, worker_tag: u64) -> bool {
         for (_resource_tag, allocation) in self.resources.iter() {
             if allocation.workers.contains(&worker_tag) {
-                self.worker_roles.insert(worker_tag, allocation.worker_role.clone());
+                self.set_worker_role(worker_tag, allocation.worker_role.clone());
                 return true;
             }
         }
         false
     }
+
     fn get_resource_priority_gas(&self) -> bool {
         const GAS_PRIORITY_THRESHOLD: f32 = 2.5;
         let mineral_workers = self.worker_roles.values().filter(|&&role| role == WorkerRole::Mineral).count() as f32;
@@ -332,21 +365,21 @@ impl WorkerAllocator {
         }
         mineral_workers / gas_workers < GAS_PRIORITY_THRESHOLD
     }
+
     fn assign_worker_to_minerals(&mut self, worker_tag: u64, units: &AllUnits) {
         let undersaturated_mineral_tags = &self.saturation.mineral_tags_undersaturated;
         let mut minerals: Units = units.mineral_fields.clone();
         let worker = units.my.workers.iter().find_tag(worker_tag).unwrap().clone();
-        // Try undersaturated minerals first
+
         if !undersaturated_mineral_tags.is_empty() {
             minerals = minerals.find_tags(undersaturated_mineral_tags.iter());
             if let Some(closest_mineral) = minerals.closest(worker.position()) {
                 if let Some(allocation) = self.resources.get_mut(&closest_mineral.tag()) {
                     allocation.workers.push(worker_tag);
-                    self.worker_roles.insert(worker_tag, WorkerRole::Mineral);
+                    self.set_worker_role(worker_tag, WorkerRole::Mineral);
                     worker.gather(closest_mineral.tag(), false);
                 }
             }
-        // Lowest saturated minerals next
         } else {
             minerals.iter().sort_by_distance(worker.position());
             let mut lowest_saturated_count = usize::MAX;
@@ -364,12 +397,13 @@ impl WorkerAllocator {
             if let Some(mineral_tag) = lowest_saturated_tag {
                 if let Some(allocation) = self.resources.get_mut(&mineral_tag) {
                     allocation.workers.push(worker_tag);
-                    self.worker_roles.insert(worker_tag, WorkerRole::Mineral);
+                    self.set_worker_role(worker_tag, WorkerRole::Mineral);
                     worker.gather(mineral_tag, false);
                 }
             }
         }
     }
+
     fn assign_worker_to_gas(&mut self, worker_tag: u64, units: &AllUnits) {
         let refinery_tags = &self.saturation.refinery_tags_undersaturated;
         if refinery_tags.is_empty() {
@@ -380,20 +414,12 @@ impl WorkerAllocator {
         if let Some(closest_refinery) = refineries.closest(worker.position()) {
             if let Some(allocation) = self.resources.get_mut(&closest_refinery.tag()) {
                 allocation.workers.push(worker_tag);
-                self.worker_roles.insert(worker_tag, WorkerRole::Gas);
+                self.set_worker_role(worker_tag, WorkerRole::Gas);
                 worker.gather(closest_refinery.tag(), false);
             }
         }
     }
-    fn unassign_worker(&mut self, worker_tag: u64) {
-        for (_resource_tag, allocation) in self.resources.iter_mut() {
-            if allocation.workers.contains(&worker_tag) {
-                allocation.workers.remove(worker_tag as usize);
-                return;
-            }
-        }
-        self.worker_roles.insert(worker_tag, WorkerRole::Idle);
-    }
+
     fn workers_movement(&self, units: &AllUnits) {
         const GATHER_OFFSET: f32 = 0.5;
         const RETURN_OFFSET: f32 = 0.5;
@@ -478,24 +504,26 @@ impl WorkerAllocator {
             }
         }
     }
+
     pub fn get_closest_worker(&mut self, units: &AllUnits, position: Point2) -> Option<u64> {
         let mut closest_worker = self.get_closest_worker_by_role(units, position, WorkerRole::Idle, &self.worker_roles.clone());
-        if closest_worker.is_some() {
-            self.worker_roles.insert(closest_worker.unwrap(), WorkerRole::Busy);
-            return closest_worker;
+        if let Some(tag) = closest_worker {
+            self.set_worker_role(tag, WorkerRole::Busy);
+            return Some(tag);
         }
         closest_worker = self.get_closest_worker_by_role(units, position, WorkerRole::Mineral, &self.worker_roles.clone());
-        if closest_worker.is_some() {
-            self.worker_roles.insert(closest_worker.unwrap(), WorkerRole::Busy);
-            return closest_worker;
+        if let Some(tag) = closest_worker {
+            self.set_worker_role(tag, WorkerRole::Busy);
+            return Some(tag);
         }
         closest_worker = self.get_closest_worker_by_role(units, position, WorkerRole::Gas, &self.worker_roles.clone());
-        if closest_worker.is_some() {
-            self.worker_roles.insert(closest_worker.unwrap(), WorkerRole::Busy);
-            return closest_worker;
+        if let Some(tag) = closest_worker {
+            self.set_worker_role(tag, WorkerRole::Busy);
+            return Some(tag);
         }
         None
     }
+
     fn get_closest_worker_by_role(
         &self, units: &AllUnits, position: Point2, role: WorkerRole, roles: &HashMap<u64, WorkerRole>
     ) -> Option<u64> {
@@ -514,10 +542,7 @@ impl WorkerAllocator {
                 }
             }
         }
-        if let Some(tag) = closest_worker_tag {
-            return Some(tag).clone();
-        }
-        None
+        closest_worker_tag
     }
 }
 

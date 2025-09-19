@@ -7,7 +7,7 @@ pub enum WorkerRole {
     Idle
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct RepairAllocation {
     pub tag: u64,
     pub is_structure: bool,
