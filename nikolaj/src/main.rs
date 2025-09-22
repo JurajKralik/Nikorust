@@ -51,6 +51,7 @@ impl Player for Nikolaj {
         self.starport_priority = None;
         self.starter_reaper = true;
         self.starter_banshee = true;
+        self.worker_allocator.debugger = self.debugger.clone();
         Ok(())
     }
     fn on_step(&mut self, _iteration: usize) -> SC2Result<()> {

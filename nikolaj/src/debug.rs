@@ -6,16 +6,20 @@ use std::{collections::HashMap,};
 
 #[derive(Debug, Clone)]
 pub struct NikolajDebugger{
-    pub printing_resource_assignments: bool,
-    pub printing_new_bases_assignments: bool,
-    pub printing_new_worker_assignments: bool,
+    pub printing_full_resource_assignments: bool,
+    pub printing_bases_assignments: bool,
+    pub printing_workers_assignments: bool,
+    pub printing_resources_assignments: bool,
+    pub printing_repair_targets_assignments: bool,
 }
 impl Default for NikolajDebugger {
     fn default() -> Self {
         Self {
-            printing_resource_assignments: false,
-            printing_new_bases_assignments: true,
-            printing_new_worker_assignments: true,
+            printing_full_resource_assignments: false,
+            printing_bases_assignments: true,
+            printing_workers_assignments: true,
+            printing_resources_assignments: true,
+            printing_repair_targets_assignments: true,
         }
     }
 }
@@ -28,7 +32,7 @@ pub fn debug_step(
     debug_show_repair(bot);
     debug_show_worker_roles(bot);
     debug_show_strategy_points(bot);
-    if bot.debugger.printing_resource_assignments {
+    if bot.debugger.printing_full_resource_assignments {
         debug_print_resource_assignments(bot);
     }
 }

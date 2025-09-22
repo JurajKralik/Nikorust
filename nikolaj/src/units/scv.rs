@@ -1,4 +1,4 @@
-use crate::Nikolaj;
+use crate::{debug::{print_new_bases_assignments, NikolajDebugger}, Nikolaj};
 use rust_sc2::prelude::*;
 use rust_sc2::units::AllUnits;
 use std::collections::{HashMap, HashSet};
@@ -13,7 +13,11 @@ pub fn scv_step(bot: &mut Nikolaj) {
     }
 
     // Bases
+    let current_bases = bot.worker_allocator.bases.clone();
     bot.worker_allocator.bases = get_mining_bases(&bot.units);
+    if bot.debugger.printing_bases_assignments {
+        print_new_bases_assignments(&current_bases, &bot.worker_allocator.bases.clone());
+    }
     
     // Repair
     let bases_tags = bot.worker_allocator.bases.iter().clone();
@@ -37,6 +41,7 @@ pub fn scv_step(bot: &mut Nikolaj) {
 
 #[derive(Debug, Default)]
 pub struct WorkerAllocator {
+    pub debugger: NikolajDebugger,
     pub bases: Vec<u64>,
     pub repair: HashMap<u64, RepairAllocation>,
     pub resources: HashMap<u64, ResourceAllocation>,
@@ -46,26 +51,37 @@ pub struct WorkerAllocator {
 
 impl WorkerAllocator {
     fn set_worker_role(&mut self, worker_tag: u64, new_role: WorkerRole) {
+        let printing =self.debugger.printing_workers_assignments;
         match self.worker_roles.insert(worker_tag, new_role) {
             Some(old_role) if old_role != new_role => {
-                println!(
-                    "[ALLOCATOR] Worker {} changed role {:?} -> {:?}",
-                    worker_tag, old_role, new_role
-                );
+                if printing {
+                    println!(
+                        "[ALLOCATOR] Worker {} changed role {:?} -> {:?}",
+                        worker_tag, old_role, new_role
+                    );
+                }
             }
             None => {
-                println!(
-                    "[ALLOCATOR] Worker {} assigned initial role {:?}",
-                    worker_tag, new_role
-                );
+                if printing {
+                    println!(
+                        "[ALLOCATOR] Worker {} assigned initial role {:?}",
+                        worker_tag, new_role
+                    );
+                }
             }
             _ => {}
         }
     }
 
     fn add_resource(&mut self, tag: u64, role: WorkerRole) {
+        let printing = self.debugger.printing_resources_assignments;
         if !self.resources.contains_key(&tag) {
-            println!("[ALLOCATOR] Added {:?} resource {}", role, tag);
+            if printing {
+                println!(
+                    "[ALLOCATOR] Added {:?} resource {}",
+                    role, tag
+                );
+            }
             self.resources.insert(
                 tag,
                 ResourceAllocation {
@@ -78,8 +94,11 @@ impl WorkerAllocator {
     }
 
     fn remove_resource(&mut self, tag: u64) {
+        let printing = self.debugger.printing_resources_assignments;
         if self.resources.remove(&tag).is_some() {
-            println!("[ALLOCATOR] Removed resource {}", tag);
+            if printing {
+                println!("[ALLOCATOR] Removed resource {}", tag);
+            }
         }
     }
 
