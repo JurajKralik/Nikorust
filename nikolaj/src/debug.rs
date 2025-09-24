@@ -275,7 +275,7 @@ pub fn debug_show_strategy_points(
     // Defense point
     let defense_point = bot.strategy_data.defense_point;
     bot.debug_sphere(defense_point, 0.5, "yellow");
-    bot.debug_text("DEFENSE", defense_point, "yellow", Some(1));
+    bot.debug_text("DEFENSE", defense_point, "yellow", Some(14));
 
     // Attack point
     let attack_point = bot.strategy_data.attack_point;

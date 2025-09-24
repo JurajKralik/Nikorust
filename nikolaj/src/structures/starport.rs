@@ -98,7 +98,7 @@ fn handle_grounded_starport(bot: &mut Nikolaj) {
 
 	for starport in bot.units.my.structures.of_type(UnitTypeId::Starport).idle().clone() {
 		if starport.rally_targets().is_empty() {
-			if let Some(base) = bot.units.my.townhalls.first() {
+			if let Some(base) = bot.units.my.townhalls.closest(bot.start_location)  {
 				starport.smart(Target::Pos(base.position()), false);
 			}
 		}
