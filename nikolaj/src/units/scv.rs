@@ -422,13 +422,13 @@ impl WorkerAllocator {
     }
 
     fn get_resource_priority_gas(&self) -> bool {
-        const GAS_PRIORITY_THRESHOLD: f32 = 1.5;
+        const GAS_PRIORITY_THRESHOLD: f32 = 3.0;
         let mineral_workers = self.worker_roles.values().filter(|&&role| role == WorkerRole::Mineral).count() as f32;
         let gas_workers = self.worker_roles.values().filter(|&&role| role == WorkerRole::Gas).count() as f32;
-        if gas_workers < 3.0 {
+        if gas_workers < 5.0 && mineral_workers > 10.0 {
             return true;
         }
-        mineral_workers / gas_workers < GAS_PRIORITY_THRESHOLD
+        mineral_workers > gas_workers * GAS_PRIORITY_THRESHOLD
     }
 
     fn assign_worker_to_minerals(&mut self, worker_tag: u64, units: &AllUnits) {
