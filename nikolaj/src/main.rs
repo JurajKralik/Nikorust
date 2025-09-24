@@ -112,8 +112,9 @@ impl Nikolaj {
             "yellow" => Some((255, 255, 0)),
             "magenta" => Some((255, 0, 255)),
             "white" => Some((255, 255, 255)),
+            "orange" => Some((255, 165, 0)),
             "black" => Some((0, 0, 0)),
-            _ => None,
+            _ => self.get_debug_color("white"),
         }
     }
     fn debug_translate_point(&self, position_p2: Point2) -> Point3 {
@@ -164,7 +165,7 @@ fn main() -> SC2Result<()> {
         Computer::new(Race::Terran, Difficulty::VeryHard, None),
         "BerlingradAIE",
         LaunchOptions {
-            realtime: true,
+            realtime: false,
             ..Default::default()
         },
     )

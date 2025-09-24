@@ -1,8 +1,10 @@
-use crate::{debug::{print_new_bases_assignments, NikolajDebugger}, Nikolaj};
+use crate::Nikolaj;
+use crate::debug::*;
 use rust_sc2::prelude::*;
 use rust_sc2::units::AllUnits;
 use std::collections::{HashMap, HashSet};
 use crate::units::helpers::workers_assignments::*;
+use crate::helpers::construction::*;
 
 
 pub fn scv_step(bot: &mut Nikolaj) {
@@ -11,6 +13,9 @@ pub fn scv_step(bot: &mut Nikolaj) {
         counter_worker_rush(bot); // TODO: implement
         return;
     }
+
+    // Construction workers
+    bot.worker_allocator.construction_workers = collect_construction_workers(&bot.units, &bot.construction_info);
 
     // Bases
     let current_bases = bot.worker_allocator.bases.clone();
@@ -47,6 +52,7 @@ pub struct WorkerAllocator {
     pub resources: HashMap<u64, ResourceAllocation>,
     pub worker_roles: HashMap<u64, WorkerRole>,
     pub saturation: ResourceSaturation,
+    pub construction_workers: HashSet<u64>,
 }
 
 impl WorkerAllocator {
@@ -283,6 +289,9 @@ impl WorkerAllocator {
                 }
                 self.set_worker_role(worker_tag, WorkerRole::Idle);
             } else if self.worker_roles.get(&worker_tag).unwrap() == &WorkerRole::Busy {
+                if self.construction_workers.contains(&worker_tag) {
+                    continue;
+                }
                 if worker.is_idle() || worker.is_gathering() || worker.is_repairing() {
                     if self.debugger.printing_workers_assignments {
                         println!("Worker {} finished task. Set to Idle", worker_tag);
@@ -413,11 +422,11 @@ impl WorkerAllocator {
     }
 
     fn get_resource_priority_gas(&self) -> bool {
-        const GAS_PRIORITY_THRESHOLD: f32 = 2.5;
+        const GAS_PRIORITY_THRESHOLD: f32 = 1.5;
         let mineral_workers = self.worker_roles.values().filter(|&&role| role == WorkerRole::Mineral).count() as f32;
         let gas_workers = self.worker_roles.values().filter(|&&role| role == WorkerRole::Gas).count() as f32;
-        if gas_workers == 0.0 {
-            return mineral_workers < GAS_PRIORITY_THRESHOLD;
+        if gas_workers < 3.0 {
+            return true;
         }
         mineral_workers / gas_workers < GAS_PRIORITY_THRESHOLD
     }
@@ -476,7 +485,7 @@ impl WorkerAllocator {
         }
     }
 
-    fn workers_movement(&self, units: &AllUnits) {
+    fn workers_movement(&mut self, units: &AllUnits) {
         let workers = units.my.workers.ready().clone();
         for worker in workers {
             let worker_tag = worker.tag();
@@ -489,7 +498,8 @@ impl WorkerAllocator {
                 } else if role == &WorkerRole::Repair {
                     self.command_repair(worker.clone(), worker_tag, units);
                 } else if role == &WorkerRole::Mineral {
-                    self.command_gather_mineral(worker.clone(), worker_tag, units);
+                    let mining_step = self.command_gather_mineral(worker.clone(), worker_tag, units);
+                    self.debugger.add_mining_step(worker_tag, mining_step);
                 } else if role == &WorkerRole::Gas {
                     self.command_gather_gas(worker.clone(), worker_tag, units);
                 }
@@ -518,10 +528,10 @@ impl WorkerAllocator {
         }
     }
 
-    fn command_gather_mineral(&self, worker: Unit, worker_tag: u64, units: &AllUnits) {
-        const CHECK_OFFSET: f32 = 0.5;
-        const COMMAND_OFFSET: f32 = 0.3;
-        const MINIMUM_RANGE: f32 = 2.5;
+    fn command_gather_mineral(&self, worker: Unit, worker_tag: u64, units: &AllUnits) -> WorkersMiningSteps{
+        const CHECK_OFFSET: f32 = 0.3;
+        const COMMAND_OFFSET: f32 = 0.2;
+        const MINIMUM_RANGE: f32 = 1.5;
 
         for alloc in self.resources.values() {
             if alloc.workers.contains(&worker_tag) {
@@ -530,73 +540,85 @@ impl WorkerAllocator {
                     if let Some(closest_base) = units.my.townhalls.closest(worker.clone().position()) {
                         // Gather
                         if !worker.clone().is_carrying_resource() {
-                            let target_distance = worker.clone().distance(target.position()) + target.radius();
+                            let target_distance = worker.clone().distance(target.position()) - target.radius();
                             // Mineral walk - too far
                             if target_distance > MINIMUM_RANGE {
+                                let mining_step = WorkersMiningSteps::MineralFarAway;
                                 // Antispam - already gathering
                                 if let Some(order) = worker.order() {
                                     if order.1 == Target::Tag(target_tag) {
-                                        return;
+                                        return mining_step;
                                     }
                                 }
                                 worker.gather(target_tag, false);
-                            }
+                                return mining_step;
                             // Get to position
-                            else if target_distance > CHECK_OFFSET {
+                            } else if target_distance > CHECK_OFFSET {
                                 let offset = target.radius() + COMMAND_OFFSET;
                                 let mineral_offset_position = target.position().towards(worker.clone().position(), offset);
+                                let mining_step = WorkersMiningSteps::MineralOffsetWalk;
                                 // Antispam - already moving close
                                 if let Some(order) = worker.order() {
                                     if let Target::Pos(pos) = order.1 {
                                         if pos.distance(mineral_offset_position) < COMMAND_OFFSET {
-                                            return;
+                                            return mining_step;
                                         }
                                     }
                                 }
                                 worker.move_to(Target::Pos(mineral_offset_position), false);
+                                return mining_step;
                             // Gather
                             } else {
+                                let mining_step = WorkersMiningSteps::MineralGather;
                                 // Antispam - already gathering
                                 if let Some(order) = worker.order() {
                                     if order.1 == Target::Tag(target_tag) {
-                                        return;
+                                        return mining_step;
                                     }
                                 }
                                 worker.gather(target_tag, false);
+                                return mining_step;
                             }
+                        // Return
                         } else {
-                            let return_distance = worker.clone().distance(closest_base.position()) + closest_base.radius();
+                            let return_distance = worker.clone().distance(closest_base.position()) - closest_base.radius();
                             // Too far
                             if return_distance > MINIMUM_RANGE {
+                                let mining_step = WorkersMiningSteps::BaseFarAway;
                                 // Antispam - already returning
                                 if let Some(order) = worker.order() {
                                     if order.1 == Target::Tag(closest_base.tag()) {
-                                        return;
+                                        return mining_step;
                                     }
                                 }
                                 worker.smart(Target::Tag(closest_base.tag()), false);
+                                return mining_step;
                             // Get to position
                             } else if return_distance > CHECK_OFFSET {
+                                let mining_step = WorkersMiningSteps::BaseOffsetWalk;
                                 let offset = closest_base.radius() + COMMAND_OFFSET;
                                 let base_offset_position = closest_base.position().towards(worker.clone().position(), offset);
                                 // Antispam - already moving close
                                 if let Some(order) = worker.order() {
                                     if let Target::Pos(pos) = order.1 {
                                         if pos.distance(base_offset_position) < COMMAND_OFFSET {
-                                            return;
+                                            return mining_step;
                                         }
                                     }
                                 }
                                 worker.move_to(Target::Pos(base_offset_position), false);
+                                return mining_step;
                             // Return
                             } else {
                                 // Antispam - already returning
+                                let mining_step = WorkersMiningSteps::BaseReturn;
                                 if let Some(order) = worker.order() {
                                     if order.1 == Target::Tag(closest_base.tag()) {
-                                        return;
+                                        return mining_step;
                                     }
                                 }
                                 worker.smart(Target::Tag(closest_base.tag()), false);
+                                return mining_step;
                             }
                         }
                     } else {
@@ -605,10 +627,11 @@ impl WorkerAllocator {
                 } else {
                     println!("Mineral with tag {} not found", target_tag);
                 }
-                return;
+                return WorkersMiningSteps::None;
             }
         }
         println!("Worker {} not assigned to any mineral", worker_tag);
+        return WorkersMiningSteps::None;
     }
 
     fn command_gather_gas(&self, worker: Unit, worker_tag: u64, units: &AllUnits) {
@@ -784,4 +807,14 @@ fn collect_damaged_targets(units: &AllUnits, bases_tags: std::slice::Iter<u64>) 
         }
     }
     damaged_targets
+}
+
+fn collect_construction_workers(units: &AllUnits, construction_info: &ConstructionInfo) -> HashSet<u64> {
+    let mut workers = HashSet::new();
+    for under_construction in &construction_info.under_construction {
+        if units.my.workers.iter().find_tag(under_construction.worker_tag).is_some() {
+            workers.insert(under_construction.worker_tag);
+        }
+    }
+    workers
 }

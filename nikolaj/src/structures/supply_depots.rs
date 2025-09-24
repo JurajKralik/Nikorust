@@ -29,6 +29,10 @@ fn check_depots_needed(bot: &mut Nikolaj) -> bool {
             return false;
         }
     }
+    // Resource check
+    if !bot.can_afford(UnitTypeId::SupplyDepot, false) {
+        return false;
+    }
     // Stop
     if supply_cap > 199 || bot.units.my.townhalls.is_empty() {
         return false;

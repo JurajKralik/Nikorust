@@ -93,7 +93,7 @@ pub fn build(bot: &mut Nikolaj, position: Point2, structure: UnitTypeId) {
 pub fn refresh_construction_info(bot: &mut Nikolaj) {
     let time_now = bot.time;
     for under_construction in bot.construction_info.under_construction.clone().iter() {
-        if time_now - under_construction.time_started > 5.0 {
+        if time_now - under_construction.time_started > 15.0 {
             bot.construction_info.under_construction.retain(|x| x.worker_tag != under_construction.worker_tag);
         }
     }
