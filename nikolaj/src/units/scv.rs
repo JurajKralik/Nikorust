@@ -104,17 +104,21 @@ impl WorkerAllocator {
 
     fn add_repair_target(&mut self, tag: u64, alloc: RepairAllocation) {
         if !self.repair.contains_key(&tag) {
-            println!(
-                "[ALLOCATOR] Added repair target {} (max_workers = {})",
-                tag, alloc.max_workers
-            );
+            if self.debugger.printing_repair_targets_assignments {
+                println!(
+                    "[ALLOCATOR] Added repair target {} (max_workers = {})",
+                    tag, alloc.max_workers
+                );
+            }
             self.repair.insert(tag, alloc);
         }
     }
 
     fn remove_repair_target(&mut self, tag: u64) {
         if self.repair.remove(&tag).is_some() {
-            println!("[ALLOCATOR] Removed repair target {}", tag);
+            if self.debugger.printing_repair_targets_assignments {
+                println!("[ALLOCATOR] Removed repair target {}", tag);
+            }
         }
     }
 
@@ -128,7 +132,7 @@ impl WorkerAllocator {
         let bases = units.my.structures.find_tags(bases_tags);
 
         let mut invalid_tags: Vec<u64> = Vec::new();
-        let mut workers_to_idle: Vec<u64> = Vec::new(); // <--- collect role changes here
+        let mut workers_to_idle: Vec<u64> = Vec::new();
 
         for (tag, alloc) in self.repair.iter_mut() {
             if valid_tags.contains(tag) {
@@ -174,11 +178,26 @@ impl WorkerAllocator {
             if let Some(alloc) = self.repair.get(&tag) {
                 for worker_tag in alloc.workers.clone() {
                     if !workers_tags.contains(&worker_tag) {
+                        if self.debugger.printing_workers_assignments {
+                            println!(
+                                "[ALLOCATOR] Worker {} dead. Removed from repair target {}",
+                                worker_tag, tag
+                            );
+                        }
                         self.worker_roles.remove(&worker_tag);
                     } else {
+                        if self.debugger.printing_workers_assignments {
+                            println!(
+                                "[ALLOCATOR] Worker {} set to Idle. Removed from repair target {}",
+                                worker_tag, tag
+                            );
+                        }
                         self.set_worker_role(worker_tag, WorkerRole::Idle);
                     }
                 }
+            }
+            if self.debugger.printing_repair_targets_assignments {
+                println!("[ALLOCATOR] Removed repair target {}", tag);
             }
             self.remove_repair_target(tag);
         }
@@ -242,6 +261,9 @@ impl WorkerAllocator {
         }
 
         for worker_tag in workers_to_assign {
+            if self.debugger.printing_workers_assignments {
+                println!("[ALLOCATOR] Worker {} assigned to Repair", worker_tag);
+            }
             self.set_worker_role(worker_tag, WorkerRole::Repair);
         }
         for (worker_tag, target_tag) in repair_orders {
@@ -256,9 +278,15 @@ impl WorkerAllocator {
         for worker in units.my.workers.ready().clone() {
             let worker_tag = worker.tag();
             if !self.worker_roles.contains_key(&worker_tag) {
+                if self.debugger.printing_workers_assignments {
+                    println!("New worker without role detected: {}", worker_tag);
+                }
                 self.set_worker_role(worker_tag, WorkerRole::Idle);
             } else if self.worker_roles.get(&worker_tag).unwrap() == &WorkerRole::Busy {
                 if worker.is_idle() || worker.is_gathering() || worker.is_repairing() {
+                    if self.debugger.printing_workers_assignments {
+                        println!("Worker {} finished task. Set to Idle", worker_tag);
+                    }
                     self.set_worker_role(worker_tag, WorkerRole::Idle);
                 }
             }
@@ -301,10 +329,19 @@ impl WorkerAllocator {
             }
         }
         for worker_tag in workers_to_idle {
+            if self.debugger.printing_workers_assignments {
+                println!(
+                    "[ALLOCATOR] Worker {} set to Idle. Removed from resource",
+                    worker_tag
+                );
+            }
             self.set_worker_role(worker_tag, WorkerRole::Idle);
         }
 
         for tag in invalid_resources_tags {
+            if self.debugger.printing_full_resource_assignments {
+                println!("[ALLOCATOR] Removed resource {}", tag);
+            }
             self.remove_resource(tag);
         }
     }
@@ -440,8 +477,6 @@ impl WorkerAllocator {
     }
 
     fn workers_movement(&self, units: &AllUnits) {
-        const GATHER_OFFSET: f32 = 0.5;
-        const RETURN_OFFSET: f32 = 0.5;
         let workers = units.my.workers.ready().clone();
         for worker in workers {
             let worker_tag = worker.tag();
@@ -452,76 +487,161 @@ impl WorkerAllocator {
                 } else if role == &WorkerRole::Busy {
                     continue;
                 } else if role == &WorkerRole::Repair {
-                    for alloc in self.repair.values() {
-                        if alloc.workers.contains(&worker_tag) {
-                            let target_tag = alloc.tag;
-                            let target: Unit;
-                            if alloc.is_structure {
-                                target = units.my.structures.iter().find_tag(target_tag).unwrap().clone();
-                            } else {
-                                target = units.my.units.iter().find_tag(target_tag).unwrap().clone();
-                            }
-                            worker.repair(target.tag(), false);
-                            break;
-                        }
-                    }
+                    self.command_repair(worker.clone(), worker_tag, units);
                 } else if role == &WorkerRole::Mineral {
-                    for alloc in self.resources.values() {
-                        if alloc.worker_role != WorkerRole::Mineral {
-                            continue;
-                        }
-                        if alloc.workers.contains(&worker_tag) {
-                            let target_tag = alloc.resource_tag;
-                            let target = units.mineral_fields.iter().find_tag(target_tag).unwrap().clone();
-                            let closest_base = units.my.townhalls.closest(worker.clone().position());
-                            if let Some(closest_base) = closest_base {
-                                if worker.clone().is_carrying_resource() {
-                                    if worker.clone().distance(closest_base.position()) > closest_base.radius() + RETURN_OFFSET {
-                                        let return_position = closest_base.position().towards(worker.clone().position(), closest_base.radius() + RETURN_OFFSET);
-                                        worker.move_to(Target::Pos(return_position), false);
-                                        worker.smart(Target::Tag(closest_base.tag()), true);
-                                    } else {
-                                        let return_position = target.position().towards(worker.clone().position(), target.radius() + RETURN_OFFSET);
-                                        worker.smart(Target::Tag(closest_base.tag()), false);
-                                        worker.move_to(Target::Pos(return_position), true);
-                                    }
-                                } else {
-                                    if worker.clone().distance(target.position()) > target.radius() + GATHER_OFFSET {
-                                        let gather_position = target.position().towards(worker.clone().position(), target.radius() + GATHER_OFFSET);
-                                        worker.move_to(Target::Pos(gather_position), false);
-                                        worker.gather(target.tag(), true);
-                                    } else {
-                                        let gather_position = target.position().towards(worker.clone().position(), target.radius() + GATHER_OFFSET);
-                                        worker.gather(target.tag(), false);
-                                        worker.move_to(Target::Pos(gather_position), true);
-                                    }
-                                }
-                            }
-                            break;
-                        }
-                    }
+                    self.command_gather_mineral(worker.clone(), worker_tag, units);
                 } else if role == &WorkerRole::Gas {
-                    for alloc in self.resources.values() {
-                        if alloc.worker_role != WorkerRole::Gas {
-                            continue;
-                        }
-                        if alloc.workers.contains(&worker_tag) {
-                            let target_tag = alloc.resource_tag;
-                            let target = units.my.structures.iter().find_tag(target_tag).unwrap().clone();
-                            let closest_base = units.my.townhalls.closest(worker.clone().position());
-                            if let Some(closest_base) = closest_base {
-                                if worker.clone().is_carrying_resource() {
-                                    worker.smart(Target::Tag(closest_base.tag()), false);
-                                } else {
-                                    worker.gather(target.tag(), false);
-                                }
-                            }
-                            break;
-                        }
-                    }
+                    self.command_gather_gas(worker.clone(), worker_tag, units);
                 }
             }
         }
+    }
+    fn command_repair(&self, worker: Unit, worker_tag: u64, units: &AllUnits) {
+        for alloc in self.repair.values() {
+            if alloc.workers.contains(&worker_tag) {
+                let target_tag = alloc.tag;
+                // Already repairing
+                if let Some(order) = worker.order() {
+                    if order.1 == Target::Tag(target_tag) {
+                        return;
+                    }
+                }
+                // Repair
+                if let Some(target) = units.my.all.iter().find_tag(target_tag).clone() {
+                    if target.health_percentage().unwrap_or(1.0) < 1.0 {
+                        worker.repair(target.tag(), false);
+                    }
+                } else {
+                    println!("Repair target with tag {} not found", target_tag);
+                }
+            }
+        }
+    }
+
+    fn command_gather_mineral(&self, worker: Unit, worker_tag: u64, units: &AllUnits) {
+        const CHECK_OFFSET: f32 = 0.5;
+        const COMMAND_OFFSET: f32 = 0.3;
+        const MINIMUM_RANGE: f32 = 2.5;
+
+        for alloc in self.resources.values() {
+            if alloc.workers.contains(&worker_tag) {
+                let target_tag = alloc.resource_tag;
+                if let Some(target) = units.mineral_fields.iter().find_tag(target_tag).clone() {
+                    if let Some(closest_base) = units.my.townhalls.closest(worker.clone().position()) {
+                        // Gather
+                        if !worker.clone().is_carrying_resource() {
+                            let target_distance = worker.clone().distance(target.position()) + target.radius();
+                            // Mineral walk - too far
+                            if target_distance > MINIMUM_RANGE {
+                                // Antispam - already gathering
+                                if let Some(order) = worker.order() {
+                                    if order.1 == Target::Tag(target_tag) {
+                                        return;
+                                    }
+                                }
+                                worker.gather(target_tag, false);
+                            }
+                            // Get to position
+                            else if target_distance > CHECK_OFFSET {
+                                let offset = target.radius() + COMMAND_OFFSET;
+                                let mineral_offset_position = target.position().towards(worker.clone().position(), offset);
+                                // Antispam - already moving close
+                                if let Some(order) = worker.order() {
+                                    if let Target::Pos(pos) = order.1 {
+                                        if pos.distance(mineral_offset_position) < COMMAND_OFFSET {
+                                            return;
+                                        }
+                                    }
+                                }
+                                worker.move_to(Target::Pos(mineral_offset_position), false);
+                            // Gather
+                            } else {
+                                // Antispam - already gathering
+                                if let Some(order) = worker.order() {
+                                    if order.1 == Target::Tag(target_tag) {
+                                        return;
+                                    }
+                                }
+                                worker.gather(target_tag, false);
+                            }
+                        } else {
+                            let return_distance = worker.clone().distance(closest_base.position()) + closest_base.radius();
+                            // Too far
+                            if return_distance > MINIMUM_RANGE {
+                                // Antispam - already returning
+                                if let Some(order) = worker.order() {
+                                    if order.1 == Target::Tag(closest_base.tag()) {
+                                        return;
+                                    }
+                                }
+                                worker.smart(Target::Tag(closest_base.tag()), false);
+                            // Get to position
+                            } else if return_distance > CHECK_OFFSET {
+                                let offset = closest_base.radius() + COMMAND_OFFSET;
+                                let base_offset_position = closest_base.position().towards(worker.clone().position(), offset);
+                                // Antispam - already moving close
+                                if let Some(order) = worker.order() {
+                                    if let Target::Pos(pos) = order.1 {
+                                        if pos.distance(base_offset_position) < COMMAND_OFFSET {
+                                            return;
+                                        }
+                                    }
+                                }
+                                worker.move_to(Target::Pos(base_offset_position), false);
+                            // Return
+                            } else {
+                                // Antispam - already returning
+                                if let Some(order) = worker.order() {
+                                    if order.1 == Target::Tag(closest_base.tag()) {
+                                        return;
+                                    }
+                                }
+                                worker.smart(Target::Tag(closest_base.tag()), false);
+                            }
+                        }
+                    } else {
+                        println!("No base found for worker {}", worker_tag);
+                    }
+                } else {
+                    println!("Mineral with tag {} not found", target_tag);
+                }
+                return;
+            }
+        }
+        println!("Worker {} not assigned to any mineral", worker_tag);
+    }
+
+    fn command_gather_gas(&self, worker: Unit, worker_tag: u64, units: &AllUnits) {
+        for alloc in self.resources.values() {
+            if alloc.workers.contains(&worker_tag) {
+                let target_tag = alloc.resource_tag;
+                let target = units.my.structures.iter().find_tag(target_tag).unwrap().clone();
+                let closest_base = units.my.townhalls.closest(worker.clone().position());
+                if let Some(closest_base) = closest_base {
+                    if worker.clone().is_carrying_resource() {
+                        // Antispam - already returning
+                        if let Some(order) = worker.order() {
+                            if order.1 == Target::Tag(closest_base.tag()) {
+                                return;
+                            }
+                        }
+                        worker.smart(Target::Tag(closest_base.tag()), false);
+                    } else {
+                        // Antispam - already gathering
+                        if let Some(order) = worker.order() {
+                            if order.1 == Target::Tag(target_tag) {
+                                return;
+                            }
+                        }
+                        worker.gather(target.tag(), false);
+                    }
+                } else {
+                    println!("No base found for worker {}", worker_tag);
+                }
+                return;
+            }
+        }
+        println!("Worker {} not assigned to any refinery", worker_tag);
     }
 
     pub fn get_closest_worker(&mut self, units: &AllUnits, position: Point2) -> Option<u64> {
