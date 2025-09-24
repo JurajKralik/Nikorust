@@ -491,7 +491,7 @@ impl WorkerAllocator {
             let worker_tag = worker.tag();
             if let Some(role) = self.worker_roles.get(&worker_tag) {
                 if role == &WorkerRole::Idle {
-                    println!("Unassigned worker: {}", worker_tag);
+                    println!("Idle worker: {}", worker_tag);
                     continue;
                 } else if role == &WorkerRole::Busy {
                     continue;

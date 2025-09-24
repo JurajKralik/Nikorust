@@ -11,6 +11,7 @@ pub struct NikolajDebugger{
     pub printing_workers_assignments: bool,
     pub printing_resources_assignments: bool,
     pub printing_repair_targets_assignments: bool,
+    pub printing_construction: bool,
     pub displaying_worker_mining_steps: bool,
     pub workers_current_mining_steps: Vec<WorkersCurrentMiningStep>,
 }
@@ -22,7 +23,8 @@ impl Default for NikolajDebugger {
             printing_workers_assignments: true,
             printing_resources_assignments: true,
             printing_repair_targets_assignments: true,
-            displaying_worker_mining_steps:true,
+            printing_construction: true,
+            displaying_worker_mining_steps: true,
             workers_current_mining_steps: vec![],
         }
     }
@@ -126,8 +128,10 @@ pub fn debug_show_mining(
                         if role == &WorkerRole::Gas {
                             continue;
                         }
+
+                        println!("Debugger: (1) Worker with tag {}, role {:?} not found", worker_tag, role);
                     }
-                    println!("Debugger: (1) Worker with tag {} not found", worker_tag);
+                    println!("Debugger: (1) Worker with tag {}, without role not found", worker_tag);
                 }
             }
         }

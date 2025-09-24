@@ -88,6 +88,9 @@ pub fn build(bot: &mut Nikolaj, position: Point2, structure: UnitTypeId) {
     under_construction.structure = structure;
     under_construction.time_started = bot.time as f32 / 22.4;
     bot.construction_info.under_construction.push(under_construction);
+    if bot.debugger.printing_construction {
+        println!("Construction: Started building {:?} at {:?}", structure, bot.time);
+    }
 }
 
 pub fn refresh_construction_info(bot: &mut Nikolaj) {

@@ -19,30 +19,28 @@ pub fn factory_control(bot: &mut Nikolaj) {
 }
 
 fn should_try_build_factory(bot: &Nikolaj) -> bool {
+	// Basics
 	// Don't build if one is already in progress
 	if bot.already_pending(UnitTypeId::Factory) > 0 {
 		return false;
 	}
-
 	// Under construction
 	for under_construction in bot.construction_info.under_construction.iter() {
 		if under_construction.structure == UnitTypeId::Factory {
 			return false;
 		}
 	}
-
 	// Can't afford it
 	if !bot.can_afford(UnitTypeId::Factory, false) {
 		return false;
 	}
-
 	// Needs at least one Barracks
 	let has_barracks = bot.structure_count(UnitTypeId::Barracks)
 		+ bot.structure_count(UnitTypeId::BarracksFlying);
 	if has_barracks == 0 {
 		return false;
 	}
-
+	// Additional conditions
 	// Max 4 factories
 	let factory_total = bot.structure_count(UnitTypeId::Factory)
 		+ bot.structure_count(UnitTypeId::FactoryFlying)
@@ -50,23 +48,20 @@ fn should_try_build_factory(bot: &Nikolaj) -> bool {
 	if factory_total >= 4 {
 		return false;
 	}
-
 	// Avoid building if a Factory is flying
 	if !bot.units.my.structures.of_type(UnitTypeId::FactoryFlying).is_empty() {
 		return false;
 	}
-
 	// Avoid building if there are idle factories
 	if !bot.units.my.structures.of_type(UnitTypeId::Factory).idle().is_empty() {
 		return false;
 	}
-
 	// Prioritize Starport before 2nd+ Factory
 	if bot.structure_count(UnitTypeId::Factory) > 0 {
 		let has_starport = bot.structure_count(UnitTypeId::Starport)
 			+ bot.structure_count(UnitTypeId::StarportFlying)
 			> 0;
-		if !has_starport && bot.minerals < 300 {
+		if !has_starport || bot.minerals < 300 {
 			return false;
 		}
 	}

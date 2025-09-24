@@ -18,28 +18,28 @@ pub fn starport_control(bot: &mut Nikolaj) {
 }
 
 fn should_try_build_starport(bot: &Nikolaj) -> bool {
+	// Basics
+	// Don't build if one is already in progress
 	if bot.already_pending(UnitTypeId::Starport) > 0 {
 		return false;
 	}
-
 	// Under construction
 	for under_construction in bot.construction_info.under_construction.iter() {
 		if under_construction.structure == UnitTypeId::Starport {
 			return false;
 		}
 	}
-
+	// Can't afford it
 	if !bot.can_afford(UnitTypeId::Starport, false) {
 		return false;
 	}
-
 	// Needs at least one Factory
 	let has_factory = bot.structure_count(UnitTypeId::Factory)
 		+ bot.structure_count(UnitTypeId::FactoryFlying);
 	if has_factory == 0 {
 		return false;
 	}
-
+	// Additional conditions
 	// Max 4 Starports
 	let starport_total = bot.structure_count(UnitTypeId::Starport)
 		+ bot.structure_count(UnitTypeId::StarportFlying)
@@ -47,17 +47,21 @@ fn should_try_build_starport(bot: &Nikolaj) -> bool {
 	if starport_total >= 4 {
 		return false;
 	}
-
 	// Avoid building if one is flying
 	if !bot.units.my.structures.of_type(UnitTypeId::StarportFlying).is_empty() {
 		return false;
 	}
-
 	// Avoid building if there are idle Starports
 	if !bot.units.my.structures.of_type(UnitTypeId::Starport).idle().is_empty() {
 		return false;
 	}
-
+	// At least 2 Factories before 2nd+ Starport
+	if starport_total > 0 {
+		let factory = bot.structure_count(UnitTypeId::Factory) + bot.structure_count(UnitTypeId::FactoryFlying);
+		if factory < 2 {
+			return false;
+		}
+	}
 	true
 }
 

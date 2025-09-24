@@ -19,23 +19,21 @@ pub fn barracks_control(bot: &mut Nikolaj) {
 }
 
 fn should_try_build_barracks(bot: &Nikolaj) -> bool {
+	// Basics
 	// Don't build if one is already in progress
 	if bot.already_pending(UnitTypeId::Barracks) > 0 {
 		return false;
 	}
-
 	// Under construction
 	for under_construction in bot.construction_info.under_construction.iter() {
 		if under_construction.structure == UnitTypeId::Barracks {
 			return false;
 		}
 	}
-
 	// Can't afford it
 	if !bot.can_afford(UnitTypeId::Barracks, false) {
 		return false;
 	}
-
 	// Needs at least one supply depot
 	let depot_count = bot.structure_count(UnitTypeId::SupplyDepot)
 		+ bot.structure_count(UnitTypeId::SupplyDepotLowered);
@@ -43,6 +41,7 @@ fn should_try_build_barracks(bot: &Nikolaj) -> bool {
 		return false;
 	}
 
+	// Additional conditions
 	// Max 4 barracks (built + flying + pending)
 	let barracks_total = bot.structure_count(UnitTypeId::Barracks)
 		+ bot.structure_count(UnitTypeId::BarracksFlying)
@@ -50,7 +49,6 @@ fn should_try_build_barracks(bot: &Nikolaj) -> bool {
 	if barracks_total >= 4 {
 		return false;
 	}
-
 	// Avoid building if a Barracks is flying
 	if !bot
 		.units
@@ -61,7 +59,6 @@ fn should_try_build_barracks(bot: &Nikolaj) -> bool {
 	{
 		return false;
 	}
-
 	// Avoid building if there are idle Barracks
 	if !bot
 		.units
@@ -73,7 +70,6 @@ fn should_try_build_barracks(bot: &Nikolaj) -> bool {
 	{
 		return false;
 	}
-
 	// Prioritize Factory and Starport before 2nd+ Barracks
 	if bot.structure_count(UnitTypeId::Barracks) > 0 {
 		let has_factory = bot.structure_count(UnitTypeId::Factory)
@@ -82,11 +78,10 @@ fn should_try_build_barracks(bot: &Nikolaj) -> bool {
 		let has_starport = bot.structure_count(UnitTypeId::Starport)
 			+ bot.structure_count(UnitTypeId::StarportFlying)
 			> 0;
-		if !has_factory && !has_starport && bot.minerals < 300 {
+		if !has_factory || !has_starport || bot.minerals < 300 {
 			return false;
 		}
 	}
-
 	true
 }
 
