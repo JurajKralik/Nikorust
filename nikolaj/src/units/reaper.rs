@@ -13,24 +13,24 @@ pub fn reaper_control(bot: &mut Nikolaj, unit: &Unit) {
     if weapon_ready {
         // Direct attack
         if let Some(target) = surroundings.clone().best_target_in_range {
-            unit.attack(Target::Tag(target.tag()), false);
+            attack_no_spam(unit, Target::Tag(target.tag()));
         // Off range attack
         } else if let Some(target) = surroundings.clone().better_target_off_range {
             if !low_health || surroundings.clone().closest_threat.is_none() {
-                unit.attack(Target::Tag(target.tag()), false);
+                attack_no_spam(unit, Target::Tag(target.tag()));
             } else {
                 flee_bio(bot, unit, surroundings.clone());
             }
         // Join defense or attack
         } else if bot.strategy_data.defend {
             let defend_point = bot.strategy_data.defense_point;
-            unit.attack(Target::Pos(defend_point), false);
+            attack_no_spam(unit, Target::Pos(defend_point));
         } else if bot.strategy_data.attack {
             if unit.distance(bot.strategy_data.army_center) > 8.0 {
-                unit.attack(Target::Pos(bot.strategy_data.army_center), false);
+                attack_no_spam(unit, Target::Pos(bot.strategy_data.army_center));
             } else {
                 let attack_point = bot.strategy_data.attack_point;
-                unit.attack(Target::Pos(attack_point), false);
+                attack_no_spam(unit, Target::Pos(attack_point));
             }
         // Idle
         } else {

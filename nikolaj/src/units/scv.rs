@@ -285,7 +285,7 @@ impl WorkerAllocator {
             let worker_tag = worker.tag();
             if !self.worker_roles.contains_key(&worker_tag) {
                 if self.debugger.printing_workers_assignments {
-                    println!("New worker without role detected: {}", worker_tag);
+                    println!("[Allocator] New worker without role detected: {}", worker_tag);
                 }
                 self.set_worker_role(worker_tag, WorkerRole::Idle);
             } else if self.worker_roles.get(&worker_tag).unwrap() == &WorkerRole::Busy {
@@ -294,7 +294,7 @@ impl WorkerAllocator {
                 }
                 if worker.is_idle() || worker.is_gathering() || worker.is_repairing() {
                     if self.debugger.printing_workers_assignments {
-                        println!("Worker {} finished task. Set to Idle", worker_tag);
+                        println!("[Allocator] Worker {} finished task. Set to Idle", worker_tag);
                     }
                     self.set_worker_role(worker_tag, WorkerRole::Idle);
                 }
@@ -391,7 +391,9 @@ impl WorkerAllocator {
             let worker_tag = worker.tag();
             if !self.worker_roles.contains_key(&worker_tag) {
                 self.set_worker_role(worker_tag, WorkerRole::Idle);
-                println!("New worker without role detected: {}", worker_tag);
+                if self.debugger.printing_workers_assignments {
+                    println!("[Allocator] New worker without role detected: {}", worker_tag);
+                }
             }
             let worker_role = self.worker_roles.get(&worker_tag).unwrap_or(&WorkerRole::Idle).clone();
             let gas_priority = self.get_resource_priority_gas();
@@ -405,22 +407,43 @@ impl WorkerAllocator {
                     self.assign_worker_to_minerals(worker_tag, units);
                 }
             } else if worker_role == WorkerRole::Mineral {
-                if !gas_priority {
-                    continue;
-                }
-                if self.saturation.refinery_tags_undersaturated.is_empty() {
-                    continue;
-                }
-                let resource_tag_of_worker = self.resources.iter()
-                    .find(|(_, alloc)| alloc.worker_role == WorkerRole::Mineral && alloc.workers.contains(&worker_tag))
-                    .map(|(tag, _)| *tag);
-                if let Some(resource_tag) = resource_tag_of_worker {
-                    if self.saturation.mineral_tags_oversaturated.contains(&resource_tag) {
-                        if let Some(allocation) = self.resources.get_mut(&resource_tag) {
-                            allocation.workers.retain(|&w| w != worker_tag);
+                if gas_priority {
+                    if self.saturation.refinery_tags_undersaturated.is_empty() {
+                        continue;
+                    }
+                    let resource_tag_of_worker = self.resources.iter()
+                        .find(|(_, alloc)| alloc.worker_role == WorkerRole::Mineral && alloc.workers.contains(&worker_tag))
+                        .map(|(tag, _)| *tag);
+                    if let Some(resource_tag) = resource_tag_of_worker {
+                        if self.saturation.mineral_tags_oversaturated.contains(&resource_tag) {
+                            if let Some(allocation) = self.resources.get_mut(&resource_tag) {
+                                allocation.workers.retain(|&w| w != worker_tag);
+                            }
+                            self.set_worker_role(worker_tag, WorkerRole::Idle);
+                            self.assign_worker_to_gas(worker_tag, units);
+                            if self.debugger.printing_workers_assignments {
+                                println!("[Allocator] Worker {} switched from Mineral to Gas", worker_tag);
+                            }
                         }
-                        self.set_worker_role(worker_tag, WorkerRole::Idle);
-                        self.assign_worker_to_gas(worker_tag, units);
+                    }
+                } else {
+                    if self.saturation.mineral_tags_undersaturated.is_empty() {
+                        continue;
+                    }
+                    let resource_tag_of_worker = self.resources.iter()
+                        .find(|(_, alloc)| alloc.worker_role == WorkerRole::Mineral && alloc.workers.contains(&worker_tag))
+                        .map(|(tag, _)| *tag);
+                    if let Some(resource_tag) = resource_tag_of_worker {
+                        if self.saturation.mineral_tags_oversaturated.contains(&resource_tag) {
+                            if let Some(allocation) = self.resources.get_mut(&resource_tag) {
+                                allocation.workers.retain(|&w| w != worker_tag);
+                            }
+                            self.set_worker_role(worker_tag, WorkerRole::Idle);
+                            self.assign_worker_to_minerals(worker_tag, units);
+                            if self.debugger.printing_workers_assignments {
+                                println!("[Allocator] Worker {} reassigned to different Mineral", worker_tag);
+                            }
+                        }
                     }
                 }
             } else if worker_role == WorkerRole::Gas {
@@ -527,7 +550,9 @@ impl WorkerAllocator {
             let worker_tag = worker.tag();
             if let Some(role) = self.worker_roles.get(&worker_tag) {
                 if role == &WorkerRole::Idle {
-                    println!("Idle worker: {}", worker_tag);
+                    if self.debugger.printing_workers_assignments {
+                        println!("[Allocator] Idle worker: {}", worker_tag);
+                    }
                     continue;
                 } else if role == &WorkerRole::Busy {
                     continue;

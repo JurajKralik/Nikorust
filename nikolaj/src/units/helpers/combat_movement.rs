@@ -38,7 +38,7 @@ fn flee_to_medivac(units: AllUnits, unit: &Unit) -> bool {
         .of_type(UnitTypeId::Medivac);
     let nearby_medivacs = medivacs.closer(12.0, unit.position());
     if let Some(medivac) = nearby_medivacs.first() {
-        if medivac.cargo_left().unwrap_or(0) >= unit.cargo_size() - 3 && medivac.health_percentage().unwrap_or(1.0) > 0.5 {
+        if medivac.cargo_left().unwrap_or(0) >= unit.cargo_size() && medivac.health_percentage().unwrap_or(1.0) > 0.5 {
             unit.smart(Target::Tag(medivac.tag()), false);
             return true;
         }
@@ -56,7 +56,7 @@ fn flee_to_tank(units: AllUnits, unit: &Unit) -> bool {
             unit.move_to(Target::Pos(tank.position()), false);
             return true;
         } else {
-            unit.attack(Target::Pos(unit.position()), false);
+            attack_no_spam(unit, Target::Pos(tank.position()));
             return true;
         }
     }
@@ -127,4 +127,26 @@ pub fn use_stimpack(unit: &Unit, surroundings: &SurroundingsInfo) {
         unit.use_ability(AbilityId::EffectStimMarine, false);
         unit.use_ability(AbilityId::EffectStimMarauder, false);
     }
+}
+
+pub fn attack_no_spam(unit: &Unit, target: Target) {
+    if let Some(order) = &unit.order() {
+        if order.0 == AbilityId::Attack {
+            if order.1 == target {
+                return;
+            } else if let Target::Pos(position) = order.1 {
+                if let Target::Pos(new_position) = target {
+                    if position.distance(new_position) < 1.0 {
+                        return;
+                    }
+                }
+            }
+        }
+    }
+    if let Target::Pos(position) = target {
+        if unit.distance(position) < 1.0 {
+            return;
+        }
+    }
+    unit.attack(target, false);
 }

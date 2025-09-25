@@ -1,5 +1,6 @@
 use crate::Nikolaj;
 use crate::units::helpers::surroundings::*;
+use crate::units::helpers::combat_movement::*;
 use rust_sc2::prelude::*;
 
 
@@ -14,5 +15,5 @@ pub fn tank_control(bot: &mut Nikolaj, unit: &Unit) {
         unit.use_ability(AbilityId::UnsiegeUnsiege, false);
         return;
     }
-    unit.attack(Target::Pos(bot.strategy_data.army_center), false);
+    attack_no_spam(unit, Target::Pos(bot.strategy_data.army_center));
 }
