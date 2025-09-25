@@ -118,7 +118,7 @@ fn handle_grounded_barracks(bot: &mut Nikolaj) {
 
 	for barracks in bot.units.my.structures.of_type(UnitTypeId::Barracks).idle().clone() {
         if barracks.rally_targets().is_empty(){
-            if let Some(base) = bot.units.my.townhalls.closest(bot.start_location) {
+            if let Some(base) = bot.units.my.townhalls.closest(barracks.position()) {
                 barracks.smart(Target::Pos(base.position()), false);
             }
         }

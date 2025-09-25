@@ -12,6 +12,7 @@ pub struct NikolajDebugger{
     pub printing_resources_assignments: bool,
     pub printing_repair_targets_assignments: bool,
     pub printing_construction: bool,
+    pub printing_combat_info: bool,
     pub displaying_worker_mining_steps: bool,
     pub workers_current_mining_steps: Vec<WorkersCurrentMiningStep>,
 }
@@ -24,6 +25,7 @@ impl Default for NikolajDebugger {
             printing_resources_assignments: true,
             printing_repair_targets_assignments: true,
             printing_construction: true,
+            printing_combat_info: false,
             displaying_worker_mining_steps: true,
             workers_current_mining_steps: vec![],
         }
@@ -50,12 +52,9 @@ pub fn debug_step(
     debug_show_repair(bot);
     debug_show_worker_roles(bot);
     debug_show_strategy_points(bot);
-    if bot.debugger.printing_full_resource_assignments {
-        debug_print_resource_assignments(bot);
-    }
-    if bot.debugger.displaying_worker_mining_steps {
-        debug_show_worker_mining_steps(bot);
-    }
+    debug_print_resource_assignments(bot);
+    debug_show_worker_mining_steps(bot);
+    debug_print_combat_info(bot);
 }
 // Debugging
 pub fn debug_show_bases(
@@ -141,6 +140,9 @@ pub fn debug_show_mining(
 fn debug_show_worker_mining_steps(
     bot: &mut Nikolaj
 ) {
+    if !bot.debugger.displaying_worker_mining_steps {
+        return;
+    }
     let mut worker_infos = Vec::new();
     for worker_step in &bot.worker_allocator.debugger.workers_current_mining_steps {
         if let Some(role) = bot.worker_allocator.worker_roles.get(&worker_step.tag) {
@@ -300,6 +302,10 @@ pub fn debug_show_strategy_points(
 pub fn debug_print_resource_assignments(
     bot: &mut Nikolaj
 ) {
+    if !bot.debugger.printing_full_resource_assignments {
+        return;
+    }
+
     println!("--- Resource Assignments ---");
     for (tag, alloc) in &bot.worker_allocator.resources {
         let workers: Vec<String> = alloc.workers.iter().map(|w| w.to_string()).collect();
@@ -324,6 +330,26 @@ pub fn print_new_bases_assignments(old_bases: &Vec<u64>, new_bases: &Vec<u64>) {
             println!("[DEBUGGER] Base removed with tag {}", base);
         }
     }
+}
+
+fn debug_print_combat_info(
+    bot: &mut Nikolaj
+) {
+    if !bot.debugger.printing_combat_info {
+        return;
+    }
+    if bot.combat_info.unsiege_timer.is_empty() {
+        return;
+    }
+    println!("--- Combat Info ---");
+    for timer in &bot.combat_info.unsiege_timer {
+        println!(
+            "Unit Tag: {}, Unsiege in: {:.2} seconds", 
+            timer.tag, 
+            timer.unsiege_in
+        );
+    }
+    println!("-------------------");
 }
 
 #[derive(Debug, Clone, PartialEq)]

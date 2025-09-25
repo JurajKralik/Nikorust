@@ -102,7 +102,7 @@ fn handle_grounded_factory(bot: &mut Nikolaj) {
 
 	for factory in bot.units.my.structures.of_type(UnitTypeId::Factory).idle().clone() {
         if factory.rally_targets().is_empty(){
-            if let Some(base) = bot.units.my.townhalls.closest(bot.start_location)  {
+            if let Some(base) = bot.units.my.townhalls.closest(factory.position()) {
                 factory.smart(Target::Pos(base.position()), false);
             }
         }
