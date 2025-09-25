@@ -8,12 +8,12 @@ pub fn banshee_control(bot: &mut Nikolaj, unit: &Unit) {
     let surroundings = get_surroundings_info(bot, unit);
     let low_health = unit.health_percentage().unwrap_or(1.0) < 0.6;
     let weapon_ready = unit.weapon_cooldown().unwrap_or(0.0) < 0.2;
-
+    let in_repair_list = bot.worker_allocator.repair.contains_key(&unit.tag());
     if banshee_cloak(unit, &surroundings) {
         return;
     }
 
-    if low_health {
+    if low_health || in_repair_list {
         if surroundings.clone().closest_threat.is_some() || surroundings.clone().in_danger {
             flee_flying_unit(bot, unit, surroundings.clone());
         } else {

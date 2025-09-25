@@ -32,7 +32,7 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo
     for enemy in sorted_enemies {
         // Check threat
         if can_attack(enemy, unit) {
-            let harmless_worker = enemy.type_id().is_worker() && enemy.distance(unit.position()) > 2.0;
+            let harmless_worker = enemy.type_id().is_worker() && enemy.distance(unit.position()) > 3.5;
             if !harmless_worker {
                 if surroundings.closest_threat.is_none() {
                     surroundings.closest_threat = Some(enemy.clone());

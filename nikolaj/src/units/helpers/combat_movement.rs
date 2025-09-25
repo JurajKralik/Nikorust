@@ -151,7 +151,7 @@ pub fn attack_no_spam(unit: &Unit, target: Target) {
                 return;
             } else if let Target::Pos(position) = order.1 {
                 if let Target::Pos(new_position) = target {
-                    if position.distance(new_position) < 1.0 {
+                    if position.distance(new_position) < 2.0 {
                         return;
                     }
                 }
@@ -159,7 +159,7 @@ pub fn attack_no_spam(unit: &Unit, target: Target) {
         }
     }
     if let Target::Pos(position) = target {
-        if unit.distance(position) < 1.0 {
+        if unit.distance(position) < 2.0 {
             return;
         }
     }
@@ -173,7 +173,7 @@ pub fn move_no_spam(unit: &Unit, target: Target) {
                 return;
             } else if let Target::Pos(position) = order.1 {
                 if let Target::Pos(new_position) = target {
-                    if position.distance(new_position) < 1.0 {
+                    if position.distance(new_position) < 2.0 {
                         return;
                     }
                 }
@@ -181,7 +181,7 @@ pub fn move_no_spam(unit: &Unit, target: Target) {
         }
     }
     if let Target::Pos(position) = target {
-        if unit.distance(position) < 1.0 {
+        if unit.distance(position) < 2.0 {
             return;
         }
     }

@@ -157,12 +157,30 @@ fn refresh_attack_point(bot: &mut Nikolaj) {
 fn refresh_army_center(bot: &mut Nikolaj) {
     let attack_point = bot.strategy_data.attack_point;
     let my_units = bot.units.my.units.clone();
+    // Prefer bio units for center
+    if bot.unit_count(UnitTypeId::Marine) + bot.unit_count(UnitTypeId::Marauder) > 6 {
+        let mut bio_units = Units::new();
+        for unit in my_units.iter().sort_by_distance(attack_point) {
+            if unit.type_id() != UnitTypeId::Marine && unit.type_id() != UnitTypeId::Marauder {
+                continue;
+            }
+            if bio_units.len() >= 6 {
+                break;
+            }
+            bio_units.push(unit.clone());
+        }
+        if let Some(center) = bio_units.center() {
+            bot.strategy_data.army_center = center;
+            return;
+        }
+    }
+    // Any combat units
     let mut frontal_units = Units::new();
     for unit in my_units.iter().sort_by_distance(attack_point) {
         if frontal_units.len() >= 6 {
             break;
         }
-        if unit.can_attack() && !unit.type_id().is_worker() {
+        if unit.can_attack() && !unit.type_id().is_worker() && unit.type_id() != UnitTypeId::Banshee && unit.type_id() != UnitTypeId::Reaper {
             frontal_units.push(unit.clone());
         }
     }
