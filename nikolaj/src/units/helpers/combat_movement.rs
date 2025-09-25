@@ -151,6 +151,28 @@ pub fn attack_no_spam(unit: &Unit, target: Target) {
     unit.attack(target, false);
 }
 
+pub fn move_no_spam(unit: &Unit, target: Target) {
+    if let Some(order) = &unit.order() {
+        if order.0 == AbilityId::Move {
+            if order.1 == target {
+                return;
+            } else if let Target::Pos(position) = order.1 {
+                if let Target::Pos(new_position) = target {
+                    if position.distance(new_position) < 1.0 {
+                        return;
+                    }
+                }
+            }
+        }
+    }
+    if let Target::Pos(position) = target {
+        if unit.distance(position) < 1.0 {
+            return;
+        }
+    }
+    unit.move_to(target, false);
+}
+
 pub fn unsiege(bot: &mut Nikolaj, unit: &Unit) {
     let unsiege_timer = bot.combat_info.get_unsiege_timer(unit.tag());
     if let Some(timer) = unsiege_timer {
@@ -185,4 +207,34 @@ pub fn force_unsiege(bot: &mut Nikolaj, unit: &Unit) {
     } else if unit.type_id() == UnitTypeId::WidowMineBurrowed {
         unit.use_ability(AbilityId::BurrowUpWidowMine, false);
     }
+}
+
+pub fn get_closest_harass_point(bot: &Nikolaj, unit: &Unit) -> Point2 {
+    let harass_points = &bot.strategy_data.harass_points;
+    if harass_points.is_empty() {
+        return bot.strategy_data.attack_point;
+    }
+    let closest_point = harass_points
+        .iter()
+        .min_by(|a, b| {
+            let dist_a = unit.distance(**a);
+            let dist_b = unit.distance(**b);
+            dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
+        })
+        .unwrap();
+    *closest_point
+}
+
+pub fn kd8_charge( unit: &Unit, surroundings: &SurroundingsInfo) -> bool {
+    if let Some(threat) = surroundings.clone().closest_threat {
+        if let Some(abilities) = unit.abilities() {
+            if !abilities.contains(&AbilityId::KD8ChargeKD8Charge) {
+                return false;
+            }
+            let target_position = threat.position().towards(unit.position(), 4.0);
+            unit.command(AbilityId::KD8ChargeKD8Charge, Target::Pos(target_position), false);
+            return true;
+        }
+    }
+    false
 }
