@@ -221,7 +221,6 @@ impl WorkerAllocator {
         let mut repair_orders: Vec<(u64, u64)> = Vec::new(); 
 
         for (tag, alloc) in self.repair.iter_mut() {
-            let mut current_workers = alloc.workers.clone();
             let max_workers = alloc.max_workers;
             let target: Unit = if alloc.is_structure {
                 units.my.structures.iter().find_tag(*tag).unwrap().clone()
@@ -229,17 +228,13 @@ impl WorkerAllocator {
                 units.my.units.iter().find_tag(*tag).unwrap().clone()
             };
 
-            for worker in current_workers.clone() {
-                if !worker_tags.contains(&worker) {
-                    current_workers.retain(|w| *w != worker);
-                }
-            }
+            alloc.workers.retain(|w| worker_tags.contains(w));
 
-            if current_workers.len() < max_workers {
+            if alloc.workers.len() < max_workers {
                 let workers_sorted = workers.iter().sort_by_distance(target.clone());
                 for worker in workers_sorted {
                     let worker_tag = worker.tag();
-                    if current_workers.len() >= max_workers {
+                    if alloc.workers.len() >= max_workers {
                         break;
                     }
                     if worker.distance(target.clone()) > 25.0 {
@@ -250,13 +245,11 @@ impl WorkerAllocator {
                             continue;
                         }
                     }
-                    current_workers.push(worker_tag);
+                    alloc.workers.push(worker_tag);
                 }
             }
 
-            alloc.workers = current_workers.clone();
-
-            for worker_tag in current_workers {
+            for &worker_tag in &alloc.workers {
                 let worker = units.my.workers.iter().find_tag(worker_tag).unwrap().clone();
                 if worker.is_repairing() {
                     continue;

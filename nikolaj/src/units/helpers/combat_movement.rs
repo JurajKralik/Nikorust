@@ -150,3 +150,30 @@ pub fn attack_no_spam(unit: &Unit, target: Target) {
     }
     unit.attack(target, false);
 }
+
+pub fn unsiege(bot: &mut Nikolaj, unit: &Unit) {
+    let unsiege_timer = bot.combat_info.get_unsiege_timer(unit.tag());
+    if let Some(timer) = unsiege_timer {
+        if timer.unsiege_in <= 0.0 {
+            bot.combat_info.remove_unsiege_timer(unit.tag());
+            if unit.type_id() == UnitTypeId::SiegeTankSieged {
+                unit.use_ability(AbilityId::UnsiegeUnsiege, false);
+            } else if unit.type_id() == UnitTypeId::WidowMineBurrowed {
+                unit.use_ability(AbilityId::BurrowUpWidowMine, false);
+            }
+        }
+    } else {
+        if unit.type_id() == UnitTypeId::SiegeTankSieged || unit.type_id() == UnitTypeId::WidowMineBurrowed {
+            bot.combat_info.add_unsiege_timer(unit.tag());
+        }
+    }
+}
+
+pub fn siege_up(bot: &mut Nikolaj, unit: &Unit) {
+    bot.combat_info.remove_unsiege_timer(unit.tag());
+    if unit.type_id() == UnitTypeId::SiegeTank {
+        unit.use_ability(AbilityId::SiegeModeSiegeMode, false);
+    } else if unit.type_id() == UnitTypeId::WidowMine {
+        unit.use_ability(AbilityId::BurrowDownWidowMine, false);
+    }
+}

@@ -18,6 +18,7 @@ use crate::structures::refinery::*;
 use crate::structures::starport::*;
 use crate::units::scv::*;
 use crate::units::helpers::combat_units::*;
+use crate::units::helpers::combat_info::*;
 
 
 #[bot]
@@ -28,6 +29,7 @@ struct Nikolaj {
     debugger: NikolajDebugger,
     strategy_data: StrategyData,
     construction_info: ConstructionInfo,
+    combat_info: CombatInfo,
     scanner_sweep_time: f32,
     barracks_priority: Option<UnitTypeId>,
     factory_priority: Option<UnitTypeId>,
@@ -57,6 +59,7 @@ impl Player for Nikolaj {
     fn on_step(&mut self, _iteration: usize) -> SC2Result<()> {
         self.iteration = _iteration;
         scv_step(self);
+        combat_info_step(self);
         refresh_construction_info(self);
         decide_build_strategy(self);
         construct_command_centers(self);

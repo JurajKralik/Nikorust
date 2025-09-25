@@ -71,7 +71,7 @@ pub fn debug_show_bases(
             let color = "yellow";
             bot.debug_cube(position, size, color);
         } else {
-            println!("[Debugger] Base with tag {} not found", base_tag);
+            println!("[DEBUGGER] Base with tag {} not found", base_tag);
         }
     }
 }
@@ -102,7 +102,7 @@ pub fn debug_show_mining(
                 bot.debug_cube(position, size, resource_color);
                 resource_position = Some(position.clone());
             } else {
-                println!("[Debugger] Mineral with tag {} not found", tag);
+                println!("[DEBUGGER] Mineral with tag {} not found", tag);
             }
         } else {
             if let Some(refinery) = bot.units.my.structures.iter().find_tag(tag.clone()){
@@ -112,7 +112,7 @@ pub fn debug_show_mining(
                 bot.debug_cube(position, size, resource_color);
                 resource_position = Some(position.clone());
             } else {
-                println!("[Debugger] Refinery with tag {} not found", tag);
+                println!("[DEBUGGER] Refinery with tag {} not found", tag);
             }
         }
         // Show workers
@@ -129,9 +129,9 @@ pub fn debug_show_mining(
                             continue;
                         }
 
-                        println!("[Debugger] (1) Worker with tag {}, role {:?} not found", worker_tag, role);
+                        println!("[DEBUGGER] (1) Worker with tag {}, role {:?} not found", worker_tag, role);
                     }
-                    println!("[Debugger] (1) Worker with tag {}, without role not found", worker_tag);
+                    println!("[DEBUGGER] (1) Worker with tag {}, without role not found", worker_tag);
                 }
             }
         }
@@ -162,7 +162,7 @@ fn debug_show_worker_mining_steps(
             let text = format!("{:?}", worker_step.step);
             worker_infos.push((text, position, color));
         } else {
-            println!("[Debugger] (2) Worker with tag {} not found", worker_step.tag);
+            println!("[DEBUGGER] (2) Worker with tag {} not found", worker_step.tag);
         }
     }
     for (text, pos, color) in worker_infos {
@@ -199,7 +199,7 @@ pub fn debug_show_worker_roles(
             };
             worker_infos.push((text, position, color));
         } else {
-            println!("[Debugger] Worker role for tag {} not found", tag);
+            println!("[DEBUGGER] Worker role for tag {} not found", tag);
         }
     }
     for (_text, pos, color) in worker_infos {
@@ -235,7 +235,7 @@ pub fn debug_show_repair(
                 bot.debug_cube(position, size, target_color);
                 target_position = Some(position.clone());
             } else {
-                println!("[Debugger] Structure with tag {} not found", tag);
+                println!("[DEBUGGER] Structure with tag {} not found", tag);
             }
         } else {
             if let Some(unit) = bot.units.my.units.iter().find_tag(tag.clone()){
@@ -245,7 +245,7 @@ pub fn debug_show_repair(
                 bot.debug_cube(position, size, target_color);
                 target_position = Some(position.clone());
             } else {
-                println!("[Debugger] Unit with tag {} not found", tag);
+                println!("[DEBUGGER] Unit with tag {} not found", tag);
             }
         }
         // Show workers
@@ -257,7 +257,7 @@ pub fn debug_show_repair(
                     bot.debug_sphere(worker_pos, 0.5, target_color);
                     bot.debug_line(worker_pos, target_pos, color);
                 } else {
-                    println!("[Debugger] (3) Worker with tag {} not found", worker_tag);
+                    println!("[DEBUGGER] (3) Worker with tag {} not found", worker_tag);
                 }
             }
         }
@@ -316,12 +316,12 @@ pub fn debug_print_resource_assignments(
 pub fn print_new_bases_assignments(old_bases: &Vec<u64>, new_bases: &Vec<u64>) {
     for base in new_bases {
         if !old_bases.contains(base) {
-            println!("[Debugger] New base added with tag {}", base);
+            println!("[DEBUGGER] New base added with tag {}", base);
         }
     }
     for base in old_bases {
         if !new_bases.contains(base) {
-            println!("[Debugger] Base removed with tag {}", base);
+            println!("[DEBUGGER] Base removed with tag {}", base);
         }
     }
 }
