@@ -14,6 +14,10 @@ pub struct NikolajDebugger{
     pub printing_construction: bool,
     pub printing_combat_info: bool,
     pub displaying_worker_mining_steps: bool,
+    pub displaying_bases: bool,
+    pub displaying_repair: bool,
+    pub displaying_mining: bool,
+    pub displaying_strategy_points: bool,
     pub workers_current_mining_steps: Vec<WorkersCurrentMiningStep>,
 }
 impl Default for NikolajDebugger {
@@ -27,6 +31,10 @@ impl Default for NikolajDebugger {
             printing_construction: false,
             printing_combat_info: false,
             displaying_worker_mining_steps: false,
+            displaying_bases: false,
+            displaying_repair: false,
+            displaying_mining: false,
+            displaying_strategy_points: false,
             workers_current_mining_steps: vec![],
         }
     }
@@ -60,7 +68,9 @@ pub fn debug_step(
 pub fn debug_show_bases(
     bot: &mut Nikolaj
 ) {
-
+    if !bot.debugger.displaying_bases {
+        return;
+    }
     // Bases
     let bases = bot.worker_allocator.bases.clone();
     for base_tag in bases {
@@ -78,6 +88,9 @@ pub fn debug_show_bases(
 pub fn debug_show_mining(
     bot: &mut Nikolaj
 ) {
+    if !bot.debugger.displaying_mining {
+        return;
+    }
     // Clone list
     let mut mining_list:HashMap<u64, ResourceAllocation> = HashMap::new();
     for (tag, alloc) in &bot.worker_allocator.resources {
@@ -127,7 +140,6 @@ pub fn debug_show_mining(
                         if role == &WorkerRole::Gas {
                             continue;
                         }
-
                         println!("[DEBUGGER] (1) Worker with tag {}, role {:?} not found", worker_tag, role);
                     }
                     println!("[DEBUGGER] (1) Worker with tag {}, without role not found", worker_tag);
@@ -213,6 +225,9 @@ pub fn debug_show_worker_roles(
 pub fn debug_show_repair(
     bot: &mut Nikolaj
 ) {
+    if !bot.debugger.displaying_repair {
+        return;
+    }
     // Clone list
     let mut repair_list:HashMap<u64, RepairAllocation> = HashMap::new();
     for (tag, alloc) in &bot.worker_allocator.repair {
@@ -269,6 +284,9 @@ pub fn debug_show_repair(
 pub fn debug_show_strategy_points(
     bot: &mut Nikolaj
 ) {
+    if !bot.debugger.displaying_strategy_points {
+        return;
+    }
     // Idle point
     let idle_point = bot.strategy_data.idle_point;
     bot.debug_sphere(idle_point, 0.5, "white");
