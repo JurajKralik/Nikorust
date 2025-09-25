@@ -405,7 +405,43 @@ impl WorkerAllocator {
                     self.assign_worker_to_minerals(worker_tag, units);
                 }
             } else if worker_role == WorkerRole::Mineral {
+                if !gas_priority {
+                    continue;
+                }
+                if self.saturation.refinery_tags_undersaturated.is_empty() {
+                    continue;
+                }
+                let resource_tag_of_worker = self.resources.iter()
+                    .find(|(_, alloc)| alloc.worker_role == WorkerRole::Mineral && alloc.workers.contains(&worker_tag))
+                    .map(|(tag, _)| *tag);
+                if let Some(resource_tag) = resource_tag_of_worker {
+                    if self.saturation.mineral_tags_oversaturated.contains(&resource_tag) {
+                        if let Some(allocation) = self.resources.get_mut(&resource_tag) {
+                            allocation.workers.retain(|&w| w != worker_tag);
+                        }
+                        self.set_worker_role(worker_tag, WorkerRole::Idle);
+                        self.assign_worker_to_gas(worker_tag, units);
+                    }
+                }
             } else if worker_role == WorkerRole::Gas {
+                if gas_priority {
+                    continue;
+                }
+                if self.saturation.mineral_tags_undersaturated.is_empty() {
+                    continue;
+                }
+                let resource_tag_of_worker = self.resources.iter()
+                    .find(|(_, alloc)| alloc.worker_role == WorkerRole::Gas && alloc.workers.contains(&worker_tag))
+                    .map(|(tag, _)| *tag);
+                if let Some(resource_tag) = resource_tag_of_worker {
+                    if self.saturation.refinery_tags_oversaturated.contains(&resource_tag) {
+                        if let Some(allocation) = self.resources.get_mut(&resource_tag) {
+                            allocation.workers.retain(|&w| w != worker_tag);
+                        }
+                        self.set_worker_role(worker_tag, WorkerRole::Idle);
+                        self.assign_worker_to_minerals(worker_tag, units);
+                    }
+                }
             }
             self.update_saturation();
         }
@@ -422,7 +458,7 @@ impl WorkerAllocator {
     }
 
     fn get_resource_priority_gas(&self) -> bool {
-        const GAS_PRIORITY_THRESHOLD: f32 = 3.0;
+        const GAS_PRIORITY_THRESHOLD: f32 = 2.2;
         let mineral_workers = self.worker_roles.values().filter(|&&role| role == WorkerRole::Mineral).count() as f32;
         let gas_workers = self.worker_roles.values().filter(|&&role| role == WorkerRole::Gas).count() as f32;
         if gas_workers < 5.0 && mineral_workers > 10.0 {
