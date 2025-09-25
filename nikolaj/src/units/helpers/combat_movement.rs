@@ -177,3 +177,12 @@ pub fn siege_up(bot: &mut Nikolaj, unit: &Unit) {
         unit.use_ability(AbilityId::BurrowDownWidowMine, false);
     }
 }
+
+pub fn force_unsiege(bot: &mut Nikolaj, unit: &Unit) {
+    bot.combat_info.remove_unsiege_timer(unit.tag());
+    if unit.type_id() == UnitTypeId::SiegeTankSieged {
+        unit.use_ability(AbilityId::UnsiegeUnsiege, false);
+    } else if unit.type_id() == UnitTypeId::WidowMineBurrowed {
+        unit.use_ability(AbilityId::BurrowUpWidowMine, false);
+    }
+}

@@ -7,6 +7,7 @@ pub struct SurroundingsInfo {
     pub better_target_off_range: Option<Unit>,
     pub closest_threat: Option<Unit>,
     pub closest_counter: Option<Unit>,
+    pub closest_structure: Option<Unit>,
     pub in_danger: bool,
 }
 impl Default for SurroundingsInfo {
@@ -16,6 +17,7 @@ impl Default for SurroundingsInfo {
             better_target_off_range: None,
             closest_threat: None,
             closest_counter: None,
+            closest_structure: None,
             in_danger: false,
         }
     }
@@ -66,6 +68,11 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo
         surroundings.closest_counter = None; // TODO
     }
     for structure in sorted_structures {
+        if surroundings.closest_structure.is_none() {
+            if in_range(unit, structure) {
+                surroundings.closest_structure = Some(structure.clone());
+            }
+        }
         // Check threat
         if can_attack(structure, unit) {
             if surroundings.closest_threat.is_none() {
