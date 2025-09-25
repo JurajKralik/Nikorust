@@ -20,13 +20,13 @@ impl Default for NikolajDebugger {
     fn default() -> Self {
         Self {
             printing_full_resource_assignments: false,
-            printing_bases_assignments: true,
-            printing_workers_assignments: true,
-            printing_resources_assignments: true,
-            printing_repair_targets_assignments: true,
-            printing_construction: true,
+            printing_bases_assignments: false,
+            printing_workers_assignments: false,
+            printing_resources_assignments: false,
+            printing_repair_targets_assignments: false,
+            printing_construction: false,
             printing_combat_info: false,
-            displaying_worker_mining_steps: true,
+            displaying_worker_mining_steps: false,
             workers_current_mining_steps: vec![],
         }
     }
