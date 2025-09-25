@@ -10,6 +10,7 @@ pub struct NikolajDebugger{
     pub printing_bases_assignments: bool,
     pub printing_workers_assignments: bool,
     pub printing_resources_assignments: bool,
+    pub printing_full_repair_assignments: bool,
     pub printing_repair_targets_assignments: bool,
     pub printing_construction: bool,
     pub printing_combat_info: bool,
@@ -27,6 +28,7 @@ impl Default for NikolajDebugger {
             printing_bases_assignments: false,
             printing_workers_assignments: false,
             printing_resources_assignments: false,
+            printing_full_repair_assignments: true,
             printing_repair_targets_assignments: false,
             printing_construction: false,
             printing_combat_info: false,
@@ -58,6 +60,7 @@ pub fn debug_step(
     debug_show_bases(bot);
     debug_show_mining(bot);
     debug_show_repair(bot);
+    debug_print_repair(bot);
     debug_show_worker_roles(bot);
     debug_show_strategy_points(bot);
     debug_print_resource_assignments(bot);
@@ -279,6 +282,30 @@ pub fn debug_show_repair(
             }
         }
     }
+}
+
+fn debug_print_repair(
+    bot: &mut Nikolaj
+) {
+    if !bot.debugger.printing_full_repair_assignments {
+        return;
+    }
+    if bot.worker_allocator.repair.is_empty() {
+        return;
+    }
+
+    println!("--- Repair Assignments ---");
+    for (tag, alloc) in &bot.worker_allocator.repair {
+        let workers: Vec<String> = alloc.workers.iter().map(|w| w.to_string()).collect();
+        println!(
+            "Repair Target Tag: {}, Is Structure: {}, Max Workers: {}, Workers: [{}]", 
+            tag, 
+            alloc.is_structure, 
+            alloc.max_workers, 
+            workers.join(", ")
+        );
+    }
+    println!("--------------------------");
 }
 
 pub fn debug_show_strategy_points(

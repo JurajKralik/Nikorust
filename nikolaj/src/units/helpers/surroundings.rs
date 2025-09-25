@@ -32,11 +32,14 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo
     for enemy in sorted_enemies {
         // Check threat
         if can_attack(enemy, unit) {
-            if surroundings.closest_threat.is_none() {
-                surroundings.closest_threat = Some(enemy.clone());
-            }
-            if in_range(enemy, unit) {
-                surroundings.in_danger = true;
+            let harmless_worker = enemy.type_id().is_worker() && enemy.distance(unit.position()) > 2.0;
+            if !harmless_worker {
+                if surroundings.closest_threat.is_none() {
+                    surroundings.closest_threat = Some(enemy.clone());
+                }
+                if in_range(enemy, unit) {
+                    surroundings.in_danger = true;
+                }
             }
         }
         // Targeting

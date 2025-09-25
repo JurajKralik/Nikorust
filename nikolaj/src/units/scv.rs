@@ -27,7 +27,8 @@ pub fn scv_step(bot: &mut Nikolaj) {
     // Repair
     let bases_tags = bot.worker_allocator.bases.iter().clone();
     let damaged_targets = collect_damaged_targets(&bot.units, bases_tags);
-    bot.worker_allocator.update_repair_targets(&bot.units.clone(), damaged_targets);
+    bot.worker_allocator.update_repair_targets(&bot.units.clone(), damaged_targets.clone());
+    bot.worker_allocator.assign_max_workers_to_targets(&bot.units.clone());
     bot.worker_allocator.assign_repairmen(&bot.units.clone());
 
     // Ramp blocking
@@ -134,9 +135,6 @@ impl WorkerAllocator {
         damaged_targets: HashMap<u64, RepairAllocation>,
     ) {
         let valid_tags: HashSet<u64> = damaged_targets.keys().cloned().collect();
-        let bases_tags = self.bases.iter().clone();
-        let bases = units.my.structures.find_tags(bases_tags);
-
         let mut invalid_tags: Vec<u64> = Vec::new();
         let mut workers_to_idle: Vec<u64> = Vec::new();
 
@@ -145,13 +143,7 @@ impl WorkerAllocator {
                 continue;
             }
             if let Some(target) = units.my.all.iter().find_tag(*tag).clone() {
-                if !alloc.is_structure {
-                    let closest_base_distance = bases.closest_distance(target.position()).unwrap_or(0.0);
-                    if closest_base_distance > 20.0 {
-                        invalid_tags.push(*tag);
-                        continue;
-                    }
-                }
+                
                 let health_percentage = target.health_percentage().unwrap_or(1.0);
                 if health_percentage < 1.0 {
                     continue;
@@ -209,6 +201,37 @@ impl WorkerAllocator {
 
         for (tag, alloc) in damaged_targets {
             self.add_repair_target(tag, alloc);
+        }
+    }
+
+    fn assign_max_workers_to_targets(&mut self, units: &AllUnits) {
+        // Check each repair target. If it is not a structure and too far away from closest base, give it 0 max workers, otherwise set it to 1
+        let bases_tags = self.bases.iter().clone();
+        let bases = units.my.structures.find_tags(bases_tags);
+        let mut invalid_workers: Vec<u64> = Vec::new();
+
+        for (tag, alloc) in self.repair.iter_mut() {
+            if let Some(target) = units.my.all.iter().find_tag(*tag).clone() {
+                if !alloc.is_structure {
+                    if let Some(closest_base) = bases.closest(target.position()) {
+                        if target.distance(closest_base.position()) > 15.0 {
+                            alloc.max_workers = 0;
+                            for worker_tag in alloc.workers.clone() {
+                                invalid_workers.push(worker_tag);
+                            }
+                            alloc.workers.clear();
+                            continue;
+                        }
+                    } else {
+                        alloc.max_workers = 1;
+                        continue;
+                    }
+                }
+                alloc.max_workers = 1;
+            }
+        }
+        for worker_tag in invalid_workers {
+            self.set_worker_role(worker_tag, WorkerRole::Idle);
         }
     }
 
@@ -856,7 +879,7 @@ fn collect_damaged_targets(units: &AllUnits, bases_tags: std::slice::Iter<u64>) 
                     tag: unit.tag(),
                     is_structure: false,
                     workers: Vec::new(),
-                    max_workers: 1,
+                    max_workers: 0,
                 },
             );
         }
