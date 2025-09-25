@@ -82,6 +82,21 @@ fn flee_from_threat(bot: &mut Nikolaj, unit: &Unit, threat: Option<Unit>) -> boo
     }
     false
 }
+pub fn flee_flying_unit(bot: &mut Nikolaj, unit: &Unit, surroundings: SurroundingsInfo) {
+    if surroundings.clone().closest_threat.is_some() || (surroundings.clone().in_danger && surroundings.clone().closest_structure.is_some()) {
+        if let Some(threat) = surroundings.clone().closest_threat {
+            let retreat_position = unit.position().towards(threat.position(), -5.0);
+            move_no_spam(unit, Target::Pos(retreat_position));
+            return;
+        } else if let Some(structure) = surroundings.clone().closest_structure {
+            let retreat_position = unit.position().towards(structure.position(), -5.0);
+            move_no_spam(unit, Target::Pos(retreat_position));
+            return;
+        }
+    }
+    let idle_point = bot.strategy_data.idle_point;
+    move_no_spam(unit, Target::Pos(idle_point));
+}
 fn combat_grid4(position: Point2, distance: f32) -> Vec<Point2> {
     let x = position.x;
     let y = position.y;
@@ -224,7 +239,21 @@ pub fn get_closest_harass_point(bot: &Nikolaj, unit: &Unit) -> Point2 {
         .unwrap();
     *closest_point
 }
-
+pub fn get_closest_repair_point(bot: &Nikolaj, unit: &Unit) -> Point2 {
+    let repair_points = &bot.strategy_data.repair_points;
+    if repair_points.is_empty() {
+        return bot.strategy_data.idle_point;
+    }
+    let closest_point = repair_points
+        .iter()
+        .min_by(|a, b| {
+            let dist_a = unit.distance(**a);
+            let dist_b = unit.distance(**b);
+            dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
+        })
+        .unwrap();
+    *closest_point
+}
 pub fn kd8_charge( unit: &Unit, surroundings: &SurroundingsInfo) -> bool {
     if let Some(threat) = surroundings.clone().closest_threat {
         if let Some(abilities) = unit.abilities() {
@@ -234,6 +263,18 @@ pub fn kd8_charge( unit: &Unit, surroundings: &SurroundingsInfo) -> bool {
             let target_position = threat.position().towards(unit.position(), 4.0);
             unit.command(AbilityId::KD8ChargeKD8Charge, Target::Pos(target_position), false);
             return true;
+        }
+    }
+    false
+}
+
+pub fn banshee_cloak(unit: &Unit, surroundings: &SurroundingsInfo) -> bool {
+    if let Some(abilities) = unit.abilities() {
+        if abilities.contains(&AbilityId::BehaviorCloakOnBanshee) && !unit.is_cloaked() {
+            if surroundings.clone().closest_threat.is_some() || surroundings.clone().in_danger {
+                unit.use_ability(AbilityId::BehaviorCloakOnBanshee, false);
+                return true;
+            }
         }
     }
     false

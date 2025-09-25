@@ -144,31 +144,30 @@ impl WorkerAllocator {
             if valid_tags.contains(tag) {
                 continue;
             }
-            let target: Unit;
-            if alloc.is_structure {
-                target = units.my.structures.iter().find_tag(*tag).unwrap().clone();
-            } else {
-                target = units.my.units.iter().find_tag(*tag).unwrap().clone();
-                let closest_base_distance = bases.closest_distance(target.position()).unwrap_or(0.0);
-                if closest_base_distance > 20.0 {
-                    invalid_tags.push(*tag);
+            if let Some(target) = units.my.all.iter().find_tag(*tag).clone() {
+                if !alloc.is_structure {
+                    let closest_base_distance = bases.closest_distance(target.position()).unwrap_or(0.0);
+                    if closest_base_distance > 20.0 {
+                        invalid_tags.push(*tag);
+                        continue;
+                    }
+                }
+                let health_percentage = target.health_percentage().unwrap_or(1.0);
+                if health_percentage < 1.0 {
+                    continue;
+                }
+                let mut safe = true;
+                for enemy in units.enemy.units.closer(target.sight_range(), target.position()) {
+                    if enemy.can_attack_ground() {
+                        safe = false;
+                        break;
+                    }
+                }
+                if !safe {
                     continue;
                 }
             }
-            let health_percentage = target.health_percentage().unwrap_or(1.0);
-            if health_percentage < 1.0 {
-                continue;
-            }
-            let mut safe = true;
-            for enemy in units.enemy.units.closer(target.sight_range(), target.position()) {
-                if enemy.can_attack_ground() {
-                    safe = false;
-                    break;
-                }
-            }
-            if !safe {
-                continue;
-            }
+
             invalid_tags.push(*tag);
             for worker_tag in alloc.workers.clone() {
                 workers_to_idle.push(worker_tag);

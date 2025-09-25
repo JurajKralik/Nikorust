@@ -28,7 +28,7 @@ pub fn reaper_control(bot: &mut Nikolaj, unit: &Unit) {
                 if let Some(target) = surroundings.best_target_in_range {
                     attack_no_spam(unit, Target::Tag(target.tag()));
                 } else if let Some(target) = surroundings.better_target_off_range {
-                    attack_no_spam(unit, Target::Pos(target.position()));
+                    attack_no_spam(unit, Target::Tag(target.tag()));
                 } else {
                     let closest_harass_point = get_closest_harass_point(bot, unit);
                     move_no_spam(unit, Target::Pos(closest_harass_point));
