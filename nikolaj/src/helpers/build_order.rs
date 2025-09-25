@@ -43,6 +43,10 @@ fn decide_barracks(bot: &mut Nikolaj) {
     } else if bot.enemy_race == Race::Terran {
         if marines <= 6 {
             bot.barracks_priority = Some(UnitTypeId::Marine);
+        } else if bot.minerals > 300 && marines <= 20 {
+            bot.barracks_priority = Some(UnitTypeId::Marine);
+        } else if bot.minerals > 300 && bot.supply_left > 4 && bot.supply_used > 70 && marines <= 40 {
+            bot.barracks_priority = Some(UnitTypeId::Marine);
         } else {
             bot.barracks_priority = None;
         }
@@ -120,7 +124,7 @@ fn decide_starport(bot: &mut Nikolaj) {
         bot.starport_priority = Some(UnitTypeId::Medivac);
     // Air control
     } else if tanks + 1 > vikings {
-        bot.starport_priority = Some(UnitTypeId::VikingAssault);
+        bot.starport_priority = Some(UnitTypeId::VikingFighter);
     // Banshee harass
     } else if banshees < 4 {
         bot.starport_priority = Some(UnitTypeId::Banshee);

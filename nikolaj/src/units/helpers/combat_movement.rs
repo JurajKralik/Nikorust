@@ -159,7 +159,7 @@ pub fn attack_no_spam(unit: &Unit, target: Target) {
         }
     }
     if let Target::Pos(position) = target {
-        if unit.distance(position) < 2.0 {
+        if unit.distance(position) < 4.0 {
             return;
         }
     }
@@ -181,7 +181,7 @@ pub fn move_no_spam(unit: &Unit, target: Target) {
         }
     }
     if let Target::Pos(position) = target {
-        if unit.distance(position) < 2.0 {
+        if unit.distance(position) < 4.0 {
             return;
         }
     }

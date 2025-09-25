@@ -6,12 +6,18 @@ pub fn get_placement_on_grid(
     bot: &Nikolaj
 ) -> Option<Point2> {
     let start = bot.start_location;
+    let start_x = start.x as i32;
+    let start_y = start.y as i32;
     let spacing_x = 7;
     let spacing_y = 3;
     let search_range = 25;
 
     for x_offset in (-search_range..search_range).step_by(spacing_x) {
         for y_offset in (-search_range..search_range).step_by(spacing_y) {
+            // Make a corridor in the middle
+            if (x_offset - start_x).abs() < 3 || (y_offset - start_y).abs() < 3 {
+                continue;
+            }
             let position = start + Point2::new(x_offset as f32, y_offset as f32);
             for under_construction in bot.construction_info.under_construction.iter() {
                 if position.distance(under_construction.position) < 2.0 {
@@ -96,7 +102,7 @@ pub fn build(bot: &mut Nikolaj, position: Point2, structure: UnitTypeId) {
 pub fn refresh_construction_info(bot: &mut Nikolaj) {
     let time_now = bot.time;
     for under_construction in bot.construction_info.under_construction.clone().iter() {
-        if time_now - under_construction.time_started > 15.0 {
+        if time_now - under_construction.time_started > 20.0 {
             bot.construction_info.under_construction.retain(|x| x.worker_tag != under_construction.worker_tag);
         }
     }

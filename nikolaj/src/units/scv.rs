@@ -25,8 +25,7 @@ pub fn scv_step(bot: &mut Nikolaj) {
     }
     
     // Repair
-    let bases_tags = bot.worker_allocator.bases.iter().clone();
-    let damaged_targets = collect_damaged_targets(&bot.units, bases_tags);
+    let damaged_targets = collect_damaged_targets(&bot.units);
     bot.worker_allocator.update_repair_targets(&bot.units.clone(), damaged_targets.clone());
     bot.worker_allocator.assign_max_workers_to_targets(&bot.units.clone());
     bot.worker_allocator.assign_repairmen(&bot.units.clone());
@@ -143,7 +142,9 @@ impl WorkerAllocator {
                 continue;
             }
             if let Some(target) = units.my.all.iter().find_tag(*tag).clone() {
-                
+                if target.is_ready() {
+                    continue;
+                }
                 let health_percentage = target.health_percentage().unwrap_or(1.0);
                 if health_percentage < 1.0 {
                     continue;
@@ -239,18 +240,20 @@ impl WorkerAllocator {
         let workers = units.my.workers.ready().clone();
         let worker_tags = workers.iter().map(|w| w.tag()).collect::<HashSet<u64>>();
 
+        let mut dead_workers: Vec<u64> = Vec::new();
         let mut workers_to_assign: Vec<u64> = Vec::new();
         let mut repair_orders: Vec<(u64, u64)> = Vec::new(); 
 
         for (tag, alloc) in self.repair.iter_mut() {
             let max_workers = alloc.max_workers;
-            let target: Unit = if alloc.is_structure {
-                units.my.structures.iter().find_tag(*tag).unwrap().clone()
-            } else {
-                units.my.units.iter().find_tag(*tag).unwrap().clone()
-            };
+            let target: Unit = units.my.all.iter().find_tag(*tag).unwrap().clone();
+            for worker_tag in alloc.workers.clone() {
+                if !worker_tags.contains(&worker_tag) {
+                    dead_workers.push(worker_tag);
+                }
+            }
 
-            alloc.workers.retain(|w| worker_tags.contains(w));
+            alloc.workers.retain(|w| dead_workers.contains(w));
 
             if alloc.workers.len() < max_workers {
                 let workers_sorted = workers.iter().sort_by_distance(target.clone());
@@ -832,14 +835,18 @@ fn collect_valid_resource_tags(units: &AllUnits) -> (HashSet<u64>, HashSet<u64>)
     (minerals, refineries)
 }
 
-fn collect_damaged_targets(units: &AllUnits, bases_tags: std::slice::Iter<u64>) -> HashMap<u64, RepairAllocation> {
+fn collect_damaged_targets(units: &AllUnits) -> HashMap<u64, RepairAllocation> {
     let mut damaged_targets = HashMap::new();
-    let bases = units.my.structures.find_tags(bases_tags);
 
     for structure in units.my.structures.ready().clone() {
+        let structure_type = structure.type_id();
         let health_percentage = structure.health_percentage().unwrap_or(1.0);
+        if structure_type == UnitTypeId::KD8Charge {
+            // WTF BLIZZARD
+            continue;
+        }
         if health_percentage < 0.8 {
-            let max_workers = match structure.type_id() {
+            let max_workers = match structure_type {
                 UnitTypeId::SupplyDepot
                 | UnitTypeId::SupplyDepotLowered => 2,
                 UnitTypeId::Bunker
@@ -871,8 +878,7 @@ fn collect_damaged_targets(units: &AllUnits, bases_tags: std::slice::Iter<u64>) 
             continue;
         }
         let health_percentage = unit.health_percentage().unwrap_or(1.0);
-        let closest_base_distance = bases.closest_distance(unit.position()).unwrap_or(0.0);
-        if health_percentage < 0.5 && closest_base_distance < 20.0 {
+        if health_percentage < 0.5 {
             damaged_targets.insert(
                 unit.tag(),
                 RepairAllocation {

@@ -14,6 +14,8 @@ pub struct NikolajDebugger{
     pub printing_repair_targets_assignments: bool,
     pub printing_construction: bool,
     pub printing_combat_info: bool,
+    pub printing_build_order: bool,
+    pub displaying_worker_roles: bool,
     pub displaying_worker_mining_steps: bool,
     pub displaying_bases: bool,
     pub displaying_repair: bool,
@@ -28,10 +30,12 @@ impl Default for NikolajDebugger {
             printing_bases_assignments: false,
             printing_workers_assignments: false,
             printing_resources_assignments: false,
-            printing_full_repair_assignments: true,
+            printing_full_repair_assignments: false,
             printing_repair_targets_assignments: false,
             printing_construction: false,
             printing_combat_info: false,
+            printing_build_order: false,
+            displaying_worker_roles: false,
             displaying_worker_mining_steps: false,
             displaying_bases: false,
             displaying_repair: false,
@@ -66,9 +70,10 @@ pub fn debug_step(
     debug_print_resource_assignments(bot);
     debug_show_worker_mining_steps(bot);
     debug_print_combat_info(bot);
+    debug_print_build_order(bot);
 }
 // Debugging
-pub fn debug_show_bases(
+fn debug_show_bases(
     bot: &mut Nikolaj
 ) {
     if !bot.debugger.displaying_bases {
@@ -88,7 +93,7 @@ pub fn debug_show_bases(
     }
 }
 
-pub fn debug_show_mining(
+fn debug_show_mining(
     bot: &mut Nikolaj
 ) {
     if !bot.debugger.displaying_mining {
@@ -187,9 +192,12 @@ fn debug_show_worker_mining_steps(
     }
 }
 
-pub fn debug_show_worker_roles(
+fn debug_show_worker_roles(
     bot: &mut Nikolaj
 ) {
+    if !bot.debugger.displaying_worker_roles {
+        return;
+    }
     let mut worker_infos = Vec::new();
     for worker in bot.units.my.workers.iter() {
         if let Some(role) = bot.worker_allocator.worker_roles.get(&worker.tag()) {
@@ -225,7 +233,7 @@ pub fn debug_show_worker_roles(
     }
 }
 
-pub fn debug_show_repair(
+fn debug_show_repair(
     bot: &mut Nikolaj
 ) {
     if !bot.debugger.displaying_repair {
@@ -308,7 +316,7 @@ fn debug_print_repair(
     println!("--------------------------");
 }
 
-pub fn debug_show_strategy_points(
+fn debug_show_strategy_points(
     bot: &mut Nikolaj
 ) {
     if !bot.debugger.displaying_strategy_points {
@@ -344,7 +352,7 @@ pub fn debug_show_strategy_points(
     
 }
 
-pub fn debug_print_resource_assignments(
+fn debug_print_resource_assignments(
     bot: &mut Nikolaj
 ) {
     if !bot.debugger.printing_full_resource_assignments {
@@ -393,6 +401,31 @@ fn debug_print_combat_info(
             timer.tag, 
             timer.unsiege_in
         );
+    }
+    println!("-------------------");
+}
+
+fn debug_print_build_order(
+    bot: &mut Nikolaj
+) {
+    if !bot.debugger.printing_build_order {
+        return;
+    }
+    println!("--- Build Order ---");
+    if let Some(ref priority) = bot.barracks_priority {
+        println!("Barracks Priority: {:?}", priority);
+    } else {
+        println!("Barracks Priority: None");
+    }
+    if let Some(ref priority) = bot.factory_priority {
+        println!("Factory Priority: {:?}", priority);
+    } else {
+        println!("Factory Priority: None");
+    }
+    if let Some(ref priority) = bot.starport_priority {
+        println!("Starport Priority: {:?}", priority);
+    } else {
+        println!("Starport Priority: None");
     }
     println!("-------------------");
 }

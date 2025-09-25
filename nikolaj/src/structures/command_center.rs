@@ -34,12 +34,7 @@ pub fn construct_command_centers(bot: &mut Nikolaj) {
     }
 
     // Saturation check
-    let command_centers = bot.units.my.townhalls.clone();
-    let mut ideal_workers: usize = 0;
-    for command_center in command_centers {
-        ideal_workers += command_center.ideal_harvesters().unwrap_or(0) as usize;
-    }
-    if ideal_workers > bot.supply_workers as usize {
+    if bot.worker_allocator.saturation.mineral_tags_undersaturated.is_empty() {
         return;
     }
 
