@@ -133,12 +133,51 @@ impl WorkerAllocator {
         units: &AllUnits,
         damaged_targets: HashMap<u64, RepairAllocation>,
     ) {
-        let valid_tags: HashSet<u64> = damaged_targets.keys().cloned().collect();
-        let mut invalid_tags: Vec<u64> = Vec::new();
-        let mut workers_to_idle: Vec<u64> = Vec::new();
+        let valid_target_tags: HashSet<u64> = damaged_targets.keys().cloned().collect();
+        let invalid_target_tags = self.get_invalid_repair_targets(units, &valid_target_tags);
+        self.reassign_workers_from_invalid_repair_targets(units, invalid_target_tags.clone());
+        let mut invalid_workers: Vec<u64> = Vec::new();
 
-        for (tag, alloc) in self.repair.iter_mut() {
-            if valid_tags.contains(tag) {
+
+
+        let workers_tags = units.my.workers.iter().map(|w| w.tag()).collect::<HashSet<u64>>();
+        for tag in invalid_target_tags {
+            if let Some(alloc) = self.repair.get(&tag) {
+                for worker_tag in alloc.workers.clone() {
+                    if !workers_tags.contains(&worker_tag) {
+                        if self.debugger.printing_workers_assignments {
+                            println!(
+                                "[ALLOCATOR] Worker {} dead. Removed from repair target {}",
+                                worker_tag, tag
+                            );
+                        }
+                        self.worker_roles.remove(&worker_tag);
+                    } else {
+                        if self.debugger.printing_workers_assignments {
+                            println!(
+                                "[ALLOCATOR] Worker {} set to Idle. Removed from repair target {}",
+                                worker_tag, tag
+                            );
+                        }
+                        invalid_workers.push(worker_tag);
+                    }
+                }
+            }
+            if self.debugger.printing_repair_targets_assignments {
+                println!("[ALLOCATOR] Removed repair target {}", tag);
+            }
+            self.remove_repair_target(tag);
+        }
+
+        for (tag, alloc) in damaged_targets {
+            self.add_repair_target(tag, alloc);
+        }
+    }
+
+    fn get_invalid_repair_targets(&mut self, units: &AllUnits, valid_target_tags: &HashSet<u64>) -> Vec<u64> {
+        let mut invalid_target_tags: Vec<u64> = Vec::new();
+        for (tag, _) in self.repair.iter() {    
+            if valid_target_tags.contains(tag) {
                 continue;
             }
             if let Some(target) = units.my.all.iter().find_tag(*tag).clone() {
@@ -159,50 +198,39 @@ impl WorkerAllocator {
                 if !safe {
                     continue;
                 }
-            }
-
-            invalid_tags.push(*tag);
-            for worker_tag in alloc.workers.clone() {
-                workers_to_idle.push(worker_tag);
-            }
+            } 
+            invalid_target_tags.push(*tag);
         }
+        invalid_target_tags
+    }
 
-        for worker_tag in workers_to_idle {
-            self.set_worker_role(worker_tag, WorkerRole::Idle);
-        }
-
+    fn reassign_workers_from_invalid_repair_targets(&mut self, units: &AllUnits, invalid_target_tags: Vec<u64>) {
+        let mut workers_to_reassign: Vec<u64> = Vec::new();
         let workers_tags = units.my.workers.iter().map(|w| w.tag()).collect::<HashSet<u64>>();
-        for tag in invalid_tags {
-            if let Some(alloc) = self.repair.get(&tag) {
+        
+        for (tag, alloc) in self.repair.iter() {
+            if invalid_target_tags.contains(tag) {
                 for worker_tag in alloc.workers.clone() {
-                    if !workers_tags.contains(&worker_tag) {
-                        if self.debugger.printing_workers_assignments {
-                            println!(
-                                "[ALLOCATOR] Worker {} dead. Removed from repair target {}",
-                                worker_tag, tag
-                            );
-                        }
-                        self.worker_roles.remove(&worker_tag);
-                    } else {
-                        if self.debugger.printing_workers_assignments {
-                            println!(
-                                "[ALLOCATOR] Worker {} set to Idle. Removed from repair target {}",
-                                worker_tag, tag
-                            );
-                        }
-                        self.set_worker_role(worker_tag, WorkerRole::Idle);
+                    if workers_tags.contains(&worker_tag) {
+                        workers_to_reassign.push(worker_tag);
                     }
                 }
             }
-            if self.debugger.printing_repair_targets_assignments {
-                println!("[ALLOCATOR] Removed repair target {}", tag);
-            }
-            self.remove_repair_target(tag);
         }
+        for worker_tag in workers_to_reassign {
+            self.reassign_worker_role(worker_tag);
+        }
+    }
 
-        for (tag, alloc) in damaged_targets {
-            self.add_repair_target(tag, alloc);
+    fn reassign_worker_role(&mut self, worker_tag: u64) {
+        let mut role = WorkerRole::Idle;
+        for (_, alloc) in self.resources.iter() {
+            if alloc.workers.contains(&worker_tag) {
+                role = alloc.worker_role;
+                break;
+            }
         }
+        self.set_worker_role(worker_tag, role);
     }
 
     fn assign_max_workers_to_targets(&mut self, units: &AllUnits) {
