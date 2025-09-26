@@ -136,36 +136,8 @@ impl WorkerAllocator {
         let valid_target_tags: HashSet<u64> = damaged_targets.keys().cloned().collect();
         let invalid_target_tags = self.get_invalid_repair_targets(units, &valid_target_tags);
         self.reassign_workers_from_invalid_repair_targets(units, invalid_target_tags.clone());
-        let mut invalid_workers: Vec<u64> = Vec::new();
 
-
-
-        let workers_tags = units.my.workers.iter().map(|w| w.tag()).collect::<HashSet<u64>>();
         for tag in invalid_target_tags {
-            if let Some(alloc) = self.repair.get(&tag) {
-                for worker_tag in alloc.workers.clone() {
-                    if !workers_tags.contains(&worker_tag) {
-                        if self.debugger.printing_workers_assignments {
-                            println!(
-                                "[ALLOCATOR] Worker {} dead. Removed from repair target {}",
-                                worker_tag, tag
-                            );
-                        }
-                        self.worker_roles.remove(&worker_tag);
-                    } else {
-                        if self.debugger.printing_workers_assignments {
-                            println!(
-                                "[ALLOCATOR] Worker {} set to Idle. Removed from repair target {}",
-                                worker_tag, tag
-                            );
-                        }
-                        invalid_workers.push(worker_tag);
-                    }
-                }
-            }
-            if self.debugger.printing_repair_targets_assignments {
-                println!("[ALLOCATOR] Removed repair target {}", tag);
-            }
             self.remove_repair_target(tag);
         }
 
@@ -234,7 +206,6 @@ impl WorkerAllocator {
     }
 
     fn assign_max_workers_to_targets(&mut self, units: &AllUnits) {
-        // Check each repair target. If it is not a structure and too far away from closest base, give it 0 max workers, otherwise set it to 1
         let bases_tags = self.bases.iter().clone();
         let bases = units.my.structures.find_tags(bases_tags);
         let mut invalid_workers: Vec<u64> = Vec::new();

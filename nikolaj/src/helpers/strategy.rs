@@ -404,7 +404,7 @@ fn detect_enemy_ramp_blocking(bot: &mut Nikolaj) {
     }
 }
 fn detect_enemy_flooding(bot: &mut Nikolaj) {
-    if bot.time > 60.0 * 5.0 || bot.strategy_data.enemy_flooding {
+    if bot.time > 60.0 * 5.0 {
         bot.strategy_data.enemy_flooding = false;
         return;
     }
