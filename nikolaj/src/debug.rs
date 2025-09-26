@@ -35,7 +35,7 @@ impl Default for NikolajDebugger {
             printing_construction: false,
             printing_combat_info: false,
             printing_build_order: false,
-            displaying_worker_roles: false,
+            displaying_worker_roles: true,
             displaying_worker_mining_steps: false,
             displaying_bases: false,
             displaying_repair: true,
@@ -200,11 +200,6 @@ fn debug_show_worker_roles(
     }
     let mut worker_infos = Vec::new();
     for worker in bot.units.my.workers.iter() {
-        if let Some(role) = bot.worker_allocator.worker_roles.get(&worker.tag()) {
-            if role != &WorkerRole::Mineral {
-                continue;
-            }
-        }
         let position = worker.position();
         let tag = worker.tag();
         if let Some(role) = bot.worker_allocator.worker_roles.get(&tag) {

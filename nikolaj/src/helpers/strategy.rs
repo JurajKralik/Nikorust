@@ -395,7 +395,7 @@ fn detect_enemy_ramp_blocking(bot: &mut Nikolaj) {
     if bot.time - bot.strategy_data.enemy_ramp_blocking_time > 3.0 {
         bot.strategy_data.enemy_ramp_blocking_steps = 0;
     }
-    if bot.strategy_data.enemy_ramp_blocking_steps > 8 {
+    if bot.strategy_data.enemy_ramp_blocking_steps > 8 && !bot.strategy_data.enemy_ramp_blocking {
         bot.strategy_data.enemy_ramp_blocking = true;
         println!(
             "Strategy: Detected enemy ramp blocking at time {:.1}",
@@ -421,7 +421,7 @@ fn detect_enemy_flooding(bot: &mut Nikolaj) {
             offensive_units += 1;
         }
     }
-    if offensive_units >= 5 {
+    if offensive_units >= 5 && !bot.strategy_data.enemy_flooding {
         println!("Strategy: Detected enemy flooding at time {:.1}", bot.time);
         bot.strategy_data.enemy_flooding = true;
     }
