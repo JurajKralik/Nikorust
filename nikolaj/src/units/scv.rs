@@ -610,7 +610,7 @@ impl WorkerAllocator {
 
     fn command_gather_mineral(&self, worker: Unit, worker_tag: u64, units: &AllUnits) -> WorkersMiningSteps{
         const CHECK_OFFSET: f32 = 0.3;
-        const COMMAND_OFFSET: f32 = 0.2;
+        const COMMAND_OFFSET: f32 = 0.0;
         const MINIMUM_RANGE: f32 = 1.5;
 
         for alloc in self.resources.values() {
@@ -635,7 +635,7 @@ impl WorkerAllocator {
                             // Get to position
                             } else if target_distance > CHECK_OFFSET {
                                 let offset = target.radius() + COMMAND_OFFSET;
-                                let mineral_offset_position = target.position().towards(worker.clone().position(), offset);
+                                let mineral_offset_position = target.position().towards(closest_base.clone().position(), offset);
                                 let mining_step = WorkersMiningSteps::MineralOffsetWalk;
                                 // Antispam - already moving close
                                 if let Some(order) = worker.order() {
@@ -646,6 +646,7 @@ impl WorkerAllocator {
                                     }
                                 }
                                 worker.move_to(Target::Pos(mineral_offset_position), false);
+                                worker.gather(target_tag, true);
                                 return mining_step;
                             // Gather
                             } else {
@@ -687,6 +688,8 @@ impl WorkerAllocator {
                                     }
                                 }
                                 worker.move_to(Target::Pos(base_offset_position), false);
+                                worker.smart(Target::Tag(closest_base.tag()), true);
+                                worker.gather(target_tag, true);
                                 return mining_step;
                             // Return
                             } else {
@@ -698,6 +701,7 @@ impl WorkerAllocator {
                                     }
                                 }
                                 worker.smart(Target::Tag(closest_base.tag()), false);
+                                worker.gather(target_tag, true);
                                 return mining_step;
                             }
                         }
