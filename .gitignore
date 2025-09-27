@@ -67,4 +67,4 @@ docs/_build/
 # Pyenv
 .python-version
 
-.zip
+*.zip
