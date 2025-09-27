@@ -311,9 +311,9 @@ impl WorkerAllocator {
                 }
                 if worker.is_idle() || worker.is_gathering() || worker.is_repairing() {
                     if self.debugger.printing_workers_assignments {
-                        println!("[Allocator] Worker {} finished task. Set to Idle", worker_tag);
+                        println!("[Allocator] Worker {} finished task. Set back to work", worker_tag);
                     }
-                    self.set_worker_role(worker_tag, WorkerRole::Idle);
+                    self.reassign_worker_role(worker_tag);
                 }
             }
         }

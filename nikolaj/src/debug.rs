@@ -21,6 +21,7 @@ pub struct NikolajDebugger{
     pub displaying_repair: bool,
     pub displaying_mining: bool,
     pub displaying_strategy_points: bool,
+    pub run_resource_assignments_checks: bool,
     pub workers_current_mining_steps: Vec<WorkersCurrentMiningStep>,
 }
 impl Default for NikolajDebugger {
@@ -41,6 +42,7 @@ impl Default for NikolajDebugger {
             displaying_repair: false,
             displaying_mining: false,
             displaying_strategy_points: false,
+            run_resource_assignments_checks: true,
             workers_current_mining_steps: vec![],
         }
     }
@@ -71,6 +73,7 @@ pub fn debug_step(
     debug_show_worker_mining_steps(bot);
     debug_print_combat_info(bot);
     debug_print_build_order(bot);
+    debug_resource_assignments_checks(bot);
 }
 // Debugging
 fn debug_show_bases(
@@ -423,6 +426,22 @@ fn debug_print_build_order(
         println!("Starport Priority: None");
     }
     println!("-------------------");
+}
+
+fn debug_resource_assignments_checks(bot: &mut Nikolaj) {
+    if !bot.debugger.run_resource_assignments_checks {
+        return;
+    }
+    let mut used_workers: HashMap<u64, WorkerRole> = HashMap::new();
+    for (_, alloc) in &bot.worker_allocator.resources {
+        for worker_tag in &alloc.workers {
+            if let Some(existing_role) = used_workers.get(worker_tag) {
+                println!("[DEBUGGER][ERROR] Worker with tag {} assigned to multiple resources: {:?} and {:?}", worker_tag, existing_role, alloc.worker_role);
+            } else {
+                used_workers.insert(*worker_tag, alloc.worker_role.clone());
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

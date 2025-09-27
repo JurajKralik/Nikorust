@@ -22,3 +22,4 @@ zip -r "$ZIP_NAME" "RustyNikolaj"
 
 # Move zip to /
 mv "$ZIP_NAME" /home/dax/Bob/Repositories/Nikorust
+echo "Build complete!"

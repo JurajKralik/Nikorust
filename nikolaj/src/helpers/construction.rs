@@ -6,6 +6,7 @@ pub fn get_placement_on_grid(
     bot: &Nikolaj
 ) -> Option<Point2> {
     let start = bot.start_location;
+    let start_height = bot.get_z_height(start);
     let start_x = start.x as i32;
     let start_y = start.y as i32;
     let spacing_x = 7;
@@ -26,7 +27,7 @@ pub fn get_placement_on_grid(
             }
             let check_addon = true;
             let grid_building_size = UnitTypeId::Barracks;
-            if is_valid_building_position(bot, position, grid_building_size, check_addon) {
+            if is_valid_building_position(bot, position, grid_building_size, check_addon, start_height) {
                 return Some(position);
             }
         }
@@ -35,8 +36,11 @@ pub fn get_placement_on_grid(
 }
 
 fn is_valid_building_position(
-    bot: &Nikolaj, position: Point2, grid_building_size: UnitTypeId, check_addon: bool) -> bool {
-    let start_height = bot.get_z_height(position);
+    bot: &Nikolaj, position: Point2, grid_building_size: UnitTypeId, check_addon: bool, start_height: f32) -> bool {
+    let local_height = bot.get_z_height(position);
+    if start_height != local_height {
+        return false;
+    }
     // Placement check
     if !bot.can_place(grid_building_size, position) {
         return false;
@@ -52,7 +56,7 @@ fn is_valid_building_position(
 
     // Height check
     let height = bot.get_z_height(position);
-    if height != start_height {
+    if height != local_height {
         return false;
     }
     true
@@ -63,19 +67,15 @@ pub fn get_builder(bot: &mut Nikolaj, target: Target) -> Option<&Unit> {
         Target::None => None,
 
         Target::Tag(tag) => {
-            // clone position first (immutable borrow ends here)
             let position = bot.units.vespene_geysers.get(tag)?.position();
 
-            // now safe to borrow worker_allocator mutably
             let worker_tag = bot.worker_allocator.get_closest_worker(&bot.units.clone(), position)?;
             bot.units.my.workers.iter().find_tag(worker_tag)
         }
 
         Target::Pos(pos) => {
-            // position is already given
             let position = pos;
 
-            // do the mut borrow after we’re done with bot.units
             let worker_tag = bot.worker_allocator.get_closest_worker(&bot.units.clone(), position)?;
             bot.units.my.workers.iter().find_tag(worker_tag)
         }
