@@ -252,7 +252,7 @@ impl WorkerAllocator {
                 }
             }
 
-            alloc.workers.retain(|w| dead_workers.contains(w));
+            alloc.workers.retain(|w| !dead_workers.contains(w));
 
             if alloc.workers.len() < max_workers {
                 let workers_sorted = workers.iter().sort_by_distance(target.clone());
