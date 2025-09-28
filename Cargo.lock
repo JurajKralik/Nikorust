@@ -543,7 +543,7 @@ checksum = "adad44e29e4c806119491a7f06f03de4d1af22c3a680dd47f1e6e179439d1f56"
 [[package]]
 name = "rust-sc2"
 version = "1.2.0"
-source = "git+https://github.com/JurajKralik/rust-sc2#03a78f3d53688884eea4e0f6ac54b6b7e9a3a8e8"
+source = "git+https://github.com/JurajKralik/rust-sc2#35fdb265afba0f16c58707fbae2be957deaca35f"
 dependencies = [
  "dirs",
  "indexmap",
@@ -574,7 +574,7 @@ checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 [[package]]
 name = "sc2-macro"
 version = "1.0.0"
-source = "git+https://github.com/JurajKralik/rust-sc2#03a78f3d53688884eea4e0f6ac54b6b7e9a3a8e8"
+source = "git+https://github.com/JurajKralik/rust-sc2#35fdb265afba0f16c58707fbae2be957deaca35f"
 dependencies = [
  "sc2-proc-macro",
 ]
@@ -582,7 +582,7 @@ dependencies = [
 [[package]]
 name = "sc2-proc-macro"
 version = "1.0.0"
-source = "git+https://github.com/JurajKralik/rust-sc2#03a78f3d53688884eea4e0f6ac54b6b7e9a3a8e8"
+source = "git+https://github.com/JurajKralik/rust-sc2#35fdb265afba0f16c58707fbae2be957deaca35f"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -593,8 +593,7 @@ dependencies = [
 [[package]]
 name = "sc2-proto"
 version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "713e85c4d21bc7dc7fdabf7caace7bfe21adfd4a3960446a09d8a8c03ef655a5"
+source = "git+https://github.com/JurajKralik/sc2-proto-rs#a0fbacec051a663ae006b3fa873f791ded5ce59a"
 dependencies = [
  "protobuf",
 ]
