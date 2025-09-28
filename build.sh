@@ -5,6 +5,7 @@ set -e  # exit on error
 cd /home/dax/Bob/Repositories/Nikorust
 
 # Build with musl target
+rustup target add x86_64-unknown-linux-musl
 cargo build --release --target=x86_64-unknown-linux-musl
 
 # Paths
@@ -22,4 +23,4 @@ zip -r "$ZIP_NAME" "RustyNikolaj"
 
 # Move zip to /
 mv "$ZIP_NAME" /home/dax/Bob/Repositories/Nikorust
-echo "Build complete!"
+echo "Build complete! 🦾"
