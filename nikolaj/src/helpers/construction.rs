@@ -99,7 +99,7 @@ pub fn build(bot: &mut Nikolaj, position: Point2, structure: UnitTypeId) {
     }
 }
 
-pub fn refresh_construction_info(bot: &mut Nikolaj) {
+pub fn construction_info_step(bot: &mut Nikolaj) {
     let time_now = bot.time;
     for under_construction in bot.construction_info.under_construction.clone().iter() {
         if time_now - under_construction.time_started > 20.0 {

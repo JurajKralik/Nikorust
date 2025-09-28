@@ -59,8 +59,7 @@ impl Player for Nikolaj {
     fn on_step(&mut self, _iteration: usize) -> SC2Result<()> {
         self.iteration = _iteration;
         scv_step(self);
-        combat_info_step(self);
-        refresh_construction_info(self);
+        construction_info_step(self);
         decide_build_strategy(self);
         construct_command_centers(self);
         townhall_control(self);
@@ -74,6 +73,7 @@ impl Player for Nikolaj {
         factory_control(self);
         starport_control(self);
         strategy_step(self);
+        combat_info_step(self);
         army_step(self);
         debug_step(self);
         Ok(())
