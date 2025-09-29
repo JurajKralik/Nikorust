@@ -41,11 +41,11 @@ fn decide_barracks(bot: &mut Nikolaj) {
         }
     // Terran (few marines)
     } else if bot.enemy_race == Race::Terran {
-        if marines <= 6 {
-            bot.barracks_priority = Some(UnitTypeId::Marine);
-        } else if bot.minerals > 300 && marines <= 20 {
-            bot.barracks_priority = Some(UnitTypeId::Marine);
-        } else if bot.minerals > 300 && bot.supply_left > 4 && bot.supply_used > 70 && marines <= 40 {
+        let start_marines_needed = marines <= 6;
+        let mid_marines_needed = bot.minerals > 300 && marines <= 20;
+        let late_marines_needed = bot.minerals > 300 && bot.supply_left > 4 && bot.supply_used > 70 && marines <= 40;
+
+        if start_marines_needed || mid_marines_needed || late_marines_needed {
             bot.barracks_priority = Some(UnitTypeId::Marine);
         } else {
             bot.barracks_priority = None;
@@ -60,34 +60,29 @@ fn decide_factory(bot: &mut Nikolaj) {
     let tanks = bot.unit_count(UnitTypeId::SiegeTank)
         + bot.unit_count(UnitTypeId::SiegeTankSieged)
         + bot.already_pending(UnitTypeId::SiegeTank);
-    let vikings = bot.unit_count(UnitTypeId::VikingAssault)
-        + bot.already_pending(UnitTypeId::VikingAssault)
-        + bot.unit_count(UnitTypeId::VikingFighter)
-        + bot.already_pending(UnitTypeId::VikingFighter);
-    let cyclones = bot.unit_count(UnitTypeId::Cyclone)
-        + bot.already_pending(UnitTypeId::Cyclone);
     let widow_mines = bot.unit_count(UnitTypeId::WidowMine)
         + bot.already_pending(UnitTypeId::WidowMine)
         + bot.unit_count(UnitTypeId::WidowMineBurrowed);
+    let tank_cost = bot.get_unit_cost(UnitTypeId::SiegeTank);
+    let start_tanks_needed = tanks < 4;
+    let too_many_tanks = (tanks as f32 * tank_cost.supply as f32 * 2.5) > (bot.supply_army as f32);
+    let under_tank_cap = tanks < 16;
 
     // First Tanks
-    if tanks < 4 {
+    if start_tanks_needed {
         bot.factory_priority = Some(UnitTypeId::SiegeTank);
     // Some Cyclones
-    } else if cyclones < 2 {
+    } else if too_many_tanks {
         bot.factory_priority = Some(UnitTypeId::Cyclone);
-    // Viking/Tank army
-    } else if vikings + 2 > tanks {
-        bot.factory_priority = Some(UnitTypeId::SiegeTank);
-    // Support Mines
-    } else if widow_mines < 2 {
+    // Support Mine
+    } else if widow_mines < 1 {
         bot.factory_priority = Some(UnitTypeId::WidowMine);
-    // Fill up Cyclones
-    } else if cyclones < 6 {
-        bot.factory_priority = Some(UnitTypeId::Cyclone);
-    // Wait for Vikings
+    // Fill up Tanks
+    } else if under_tank_cap {
+        bot.factory_priority = Some(UnitTypeId::SiegeTank);
+    // Late Game
     } else {
-        bot.factory_priority = None;
+        bot.factory_priority = Some(UnitTypeId::ThorAALance);
     }
 }
 
@@ -100,13 +95,8 @@ fn decide_starport(bot: &mut Nikolaj) {
 
     let medivacs = bot.unit_count(UnitTypeId::Medivac)
         + bot.already_pending(UnitTypeId::Medivac);
-    let banshees = bot.unit_count(UnitTypeId::Banshee)
-        + bot.already_pending(UnitTypeId::Banshee);
     let ravens = bot.unit_count(UnitTypeId::Raven)
         + bot.already_pending(UnitTypeId::Raven);
-    let tanks = bot.unit_count(UnitTypeId::SiegeTank)
-        + bot.unit_count(UnitTypeId::SiegeTankSieged)
-        + bot.already_pending(UnitTypeId::SiegeTank);
     let vikings = bot.unit_count(UnitTypeId::VikingAssault)
         + bot.already_pending(UnitTypeId::VikingAssault)
         + bot.unit_count(UnitTypeId::VikingFighter)
@@ -115,21 +105,27 @@ fn decide_starport(bot: &mut Nikolaj) {
         + bot.unit_count(UnitTypeId::Marauder)
         + bot.already_pending(UnitTypeId::Marine)
         + bot.already_pending(UnitTypeId::Marauder);
+    let viking_cost = bot.get_unit_cost(UnitTypeId::VikingFighter);
+    let raven_needed = bot.strategy_data.enemy_cloaking && ravens == 0;
+    let first_vikings_needed = vikings < 2;
+    let bio_support_needed = bio > 4 && ((bio + 1) / 4) as usize > medivacs;
+    let too_many_vikings = (vikings as f32 * viking_cost.supply as f32 * 2.5) > (bot.supply_army as f32);
     
     // Detection
-    if bot.strategy_data.enemy_cloaking && ravens == 0 {
+    if raven_needed {
         bot.starport_priority = Some(UnitTypeId::Raven);
-    // Bio squads
-    } else if bio > 4 && ((bio + 1) / 4) as usize > medivacs {
-        bot.starport_priority = Some(UnitTypeId::Medivac);
-    // Air control
-    } else if tanks + 1 > vikings {
+    // First Vikings
+    } else if first_vikings_needed {
         bot.starport_priority = Some(UnitTypeId::VikingFighter);
+    // Bio squads
+    } else if bio_support_needed {
+        bot.starport_priority = Some(UnitTypeId::Medivac);
     // Banshee harass
-    } else if banshees < 4 {
+    } else if too_many_vikings {
         bot.starport_priority = Some(UnitTypeId::Banshee);
+    // Air control
     } else {
-        bot.starport_priority = None;
+        bot.starport_priority = Some(UnitTypeId::VikingFighter);
     }
 }
     
