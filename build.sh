@@ -6,7 +6,7 @@ cd /home/dax/Bob/Repositories/Nikorust
 
 # Build with musl target
 rustup target add x86_64-unknown-linux-musl
-cargo build --release --target=x86_64-unknown-linux-musl
+cargo build --release --target=x86_64-unknown-linux-musl --features ladder
 
 # Paths
 BUILD_DIR="target/x86_64-unknown-linux-musl/release"

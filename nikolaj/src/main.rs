@@ -155,14 +155,12 @@ impl Nikolaj {
 }
 
 
-/* LADDER */
-/* 
+#[cfg(feature = "ladder")]
 fn main() -> SC2Result<()> {
     ex_main::main(Nikolaj::default())
 }
-*/
 
-/* VS AI*/
+#[cfg(feature = "wine_sc2")]
 fn main() -> SC2Result<()> {
     let mut bot = Nikolaj::default();
     run_vs_computer(
