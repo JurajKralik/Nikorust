@@ -7,7 +7,7 @@ use rust_sc2::prelude::*;
 
 pub fn reaper_control(bot: &mut Nikolaj, unit: &Unit) {
     let surroundings = get_surroundings_info(bot, unit);
-    let low_health = unit.health_percentage().unwrap_or(1.0) < 0.6;
+    let low_health = unit.health_percentage() < 0.6;
     let weapon_ready = unit.weapon_cooldown().unwrap_or(0.0) < 0.2;
 
     if kd8_charge(unit, &surroundings) {

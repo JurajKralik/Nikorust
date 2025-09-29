@@ -251,7 +251,7 @@ fn get_visible_enemies(bot: &Nikolaj) -> Vec<UnitSnapshot> {
         if !enemy.can_attack() || enemy.type_id().is_worker() {
             continue;
         }
-        let health = (enemy.health().unwrap_or(0) + enemy.shield().unwrap_or(0)) as f32;
+        let health = (enemy.health() + enemy.shield()) as f32;
         let supply = enemy.supply_cost() as usize;
         let snapshot = UnitSnapshot {
             id: enemy.tag(),

@@ -35,7 +35,7 @@ fn flee_to_medivac(units: AllUnits, unit: &Unit) -> bool {
     let nearby_medivacs = medivacs.closer(12.0, unit.position());
     if let Some(medivac) = nearby_medivacs.first() {
         if medivac.cargo_left().unwrap_or(0) >= unit.cargo_size()
-            && medivac.health_percentage().unwrap_or(1.0) > 0.5
+            && medivac.health_percentage() > 0.5
         {
             unit.smart(Target::Tag(medivac.tag()), false);
             return true;
@@ -134,7 +134,7 @@ pub fn use_stimpack(unit: &Unit, surroundings: &SurroundingsInfo) {
         || surroundings.better_target_off_range.is_some())
         && !unit.has_buff(BuffId::Stimpack)
         && !unit.has_buff(BuffId::StimpackMarauder)
-        && unit.health_percentage().unwrap_or(1.0) > 0.5
+        && unit.health_percentage() > 0.5
     {
         unit.use_ability(AbilityId::EffectStimMarine, false);
         unit.use_ability(AbilityId::EffectStimMarauder, false);

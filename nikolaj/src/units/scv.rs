@@ -156,7 +156,7 @@ impl WorkerAllocator {
                 if target.is_ready() {
                     continue;
                 }
-                let health_percentage = target.health_percentage().unwrap_or(1.0);
+                let health_percentage = target.health_percentage();
                 if health_percentage < 1.0 {
                     continue;
                 }
@@ -609,7 +609,7 @@ impl WorkerAllocator {
                 }
                 // Repair
                 if let Some(target) = units.my.all.iter().find_tag(target_tag).clone() {
-                    if target.health_percentage().unwrap_or(1.0) < 1.0 {
+                    if target.health_percentage() < 1.0 {
                         worker.repair(target.tag(), false);
                     }
                 } else {
@@ -844,7 +844,7 @@ fn collect_valid_resource_tags(units: &AllUnits) -> (HashSet<u64>, HashSet<u64>)
             .closer(GATHER_RADIUS, pos)
             .ready()
         {
-            if rf.vespene_contents().unwrap_or(0) > 0 {
+            if rf.vespene_contents() > 0 {
                 refineries.insert(rf.tag());
             }
         }
@@ -857,7 +857,7 @@ fn collect_damaged_targets(units: &AllUnits) -> HashMap<u64, RepairAllocation> {
 
     for structure in units.my.structures.ready().clone() {
         let structure_type = structure.type_id();
-        let health_percentage = structure.health_percentage().unwrap_or(1.0);
+        let health_percentage = structure.health_percentage();
         if structure_type == UnitTypeId::KD8Charge {
             // WTF BLIZZARD
             continue;
@@ -894,7 +894,7 @@ fn collect_damaged_targets(units: &AllUnits) -> HashMap<u64, RepairAllocation> {
         {
             continue;
         }
-        let health_percentage = unit.health_percentage().unwrap_or(1.0);
+        let health_percentage = unit.health_percentage();
         if health_percentage < 0.5 {
             damaged_targets.insert(
                 unit.tag(),

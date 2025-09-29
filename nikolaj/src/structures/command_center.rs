@@ -98,7 +98,7 @@ pub fn townhall_control(bot: &mut Nikolaj) {
                     .units
                     .closer(15.0, base.position())
                     .is_empty()
-                && base.health_percentage().unwrap_or(0.0) < 0.35
+                && base.health_percentage() < 0.35
                 && base.type_id() != UnitTypeId::PlanetaryFortress
             {
                 base.lift(false);
@@ -106,7 +106,7 @@ pub fn townhall_control(bot: &mut Nikolaj) {
             }
             if base.type_id() == UnitTypeId::OrbitalCommand {
                 //Scan
-                if bot.time > bot.scanner_sweep_time && base.energy().unwrap_or(0) > 50 {
+                if bot.time > bot.scanner_sweep_time && base.energy() > 50 {
                     let mut scanned = false;
                     //Scan for cloaked units
                     let mut enemy_units = bot.units.enemy.units.clone();
@@ -150,46 +150,46 @@ pub fn townhall_control(bot: &mut Nikolaj) {
                 }
                 //Drop MULE
                 let mut mule_drop = false;
-                if let Some(energy) = base.energy() {
-                    let mut energy_needed = 50;
-                    if bot.strategy_data.enemy_cloaking {
-                        energy_needed = 100;
-                    }
-                    if energy >= energy_needed {
-                        let close_minerals = bot.units.mineral_fields.closer(10.0, base);
-                        if let Some(max_contents_minerals) =
-                            close_minerals.max(|u| u.mineral_contents().unwrap_or(0))
+                let energy = base.energy();
+                let mut energy_needed = 50;
+                if bot.strategy_data.enemy_cloaking {
+                    energy_needed = 100;
+                }
+                if energy >= energy_needed {
+                    let close_minerals = bot.units.mineral_fields.closer(10.0, base);
+                    if let Some(max_contents_minerals) =
+                        close_minerals.max(|u| u.mineral_contents())
+                    {
+                        base.command(
+                            AbilityId::CalldownMULECalldownMULE,
+                            Target::Tag(max_contents_minerals.tag()),
+                            false,
+                        );
+                        continue;
+                    } else {
+                        for other_base in bot.units.my.townhalls.clone()
                         {
-                            base.command(
-                                AbilityId::CalldownMULECalldownMULE,
-                                Target::Tag(max_contents_minerals.tag()),
-                                false,
-                            );
-                            continue;
-                        } else {
-                            for other_base in bot.units.my.townhalls.clone()
-                            {
-                                let close_minerals =
-                                    bot.units.mineral_fields.closer(10.0, &other_base);
+                            let close_minerals =
+                                bot.units.mineral_fields.closer(10.0, &other_base);
 
-                                if let Some(max_contents_minerals) =
-                                    close_minerals.max(|u| u.mineral_contents().unwrap_or(0))
-                                {
-                                    base.command(
-                                        AbilityId::CalldownMULECalldownMULE,
-                                        Target::Tag(max_contents_minerals.tag()),
-                                        false,
-                                    );
-                                    mule_drop = true;
-                                    break;
-                                }
+                            if let Some(max_contents_minerals) =
+                                close_minerals.max(|u| u.mineral_contents())
+                            {
+                                base.command(
+                                    AbilityId::CalldownMULECalldownMULE,
+                                    Target::Tag(max_contents_minerals.tag()),
+                                    false,
+                                );
+                                mule_drop = true;
+                                break;
                             }
                         }
-                        if mule_drop {
-                            continue;
-                        }
+                    }
+                    if mule_drop {
+                        continue;
                     }
                 }
+                
             }
             if base.is_idle() {
                 //Morph to Planetary

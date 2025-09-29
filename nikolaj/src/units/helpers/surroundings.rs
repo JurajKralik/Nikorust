@@ -139,11 +139,11 @@ fn in_range(attacker: &Unit, target: &Unit) -> bool {
 fn better_of_targets(attacker: &Unit, current_target: &Unit, new_target: &Unit) -> Unit {
     let current_target_damage = attacker.real_range_vs(current_target);
     let current_target_health =
-        (current_target.health().unwrap_or(0) + current_target.shield().unwrap_or(0)) as f32;
+        (current_target.health() + current_target.shield()) as f32;
     let current_target_dies = current_target_health - current_target_damage <= 0.0;
     let new_target_damage = attacker.real_range_vs(new_target);
     let new_target_health =
-        (new_target.health().unwrap_or(0) + new_target.shield().unwrap_or(0)) as f32;
+        (new_target.health() + new_target.shield()) as f32;
     let new_target_dies = new_target_health - new_target_damage <= 0.0;
     let higher_damage_target = if current_target_damage >= new_target_damage {
         current_target

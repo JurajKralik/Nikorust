@@ -137,16 +137,15 @@ fn get_structures_to_finish(bot: &Nikolaj) -> Units {
     }
 
     for structure in unfinished_structures.iter() {
-        if let Some(worker_tag) = bot.construction_info.structures_being_finished.get(&structure.tag()) {
-            if let Some(worker) = bot.units.my.workers.iter().find_tag(*worker_tag) {
-                if let Some(order) = worker.order() {
-                    if let Target::Tag(tag) = order.1 {
-                        if tag == structure.tag() {
-                            continue;
-                        }
-                    }
-                }
-            }
+        if bot
+            .construction_info
+            .structures_being_finished
+            .get(&structure.tag())
+            .and_then(|&worker_tag| bot.units.my.workers.iter().find_tag(worker_tag))
+            .and_then(|worker| worker.order())
+            .is_some_and(|(_, target, _)| target == Target::Tag(structure.tag()))
+        {
+            continue;
         }
         if structure.build_progress() >= 1.0 {
             continue;
@@ -182,7 +181,7 @@ pub fn cancel_constructions_in_danger(bot: &mut Nikolaj) {
         if structure.build_progress() >= 1.0 || structure.build_progress() <= 0.1 {
             continue;
         }
-        if structure.health_percentage().unwrap_or(0.0) > 0.1 {
+        if structure.health_percentage() > 0.1 {
             continue;
         }
         let enemies_close = bot.units.enemy.units.closer(12.0, structure.position());
