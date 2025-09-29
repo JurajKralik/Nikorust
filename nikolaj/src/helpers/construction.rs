@@ -92,7 +92,7 @@ pub fn build(bot: &mut Nikolaj, position: Point2, structure: UnitTypeId) {
         under_construction.time_started = bot.time as f32 / 22.4;
         bot.construction_info.under_construction.push(under_construction);
         if bot.debugger.printing_construction {
-            println!("Construction: Started building {:?} at {:?}", structure, bot.time);
+            println!("[DEBUGGER] Started building {:?} at {:?}", structure, bot.time);
         }
     }
 }
@@ -106,15 +106,76 @@ pub fn construction_info_step(bot: &mut Nikolaj) {
     }
 }
 
+pub fn finish_constructions_without_worker(bot: &mut Nikolaj) {
+    let structures_to_finish = get_structures_to_finish(bot);
+    for structure in structures_to_finish.iter() {
+        let worker = get_builder(bot, Target::Tag(structure.tag()));
+        if let Some(worker) = worker {
+            worker.smart(Target::Tag(structure.tag()), false);
+            bot.construction_info.structures_being_finished.push(structure.tag());
+            if bot.debugger.printing_construction {
+                println!("[DEBUGGER] Finishing construction of {:?} at {:?}", structure.type_id(), bot.time);
+            }
+        }
+    }
+}
+
+fn get_structures_to_finish(bot: &Nikolaj) -> Units {
+    let mut structures_to_finish = Units::new();
+    let unfinished_structures = bot.units.my.structures.not_ready().clone();
+    let mut orders_targets: Vec<Target> = vec![];
+    let workers = bot.units.my.workers.clone();
+
+    for worker in workers.iter() {
+        if let Some(order) = worker.order() {
+            orders_targets.push(order.1);
+        }
+    }
+
+    for structure in unfinished_structures.iter() {
+        if bot.construction_info.structures_being_finished.contains(&structure.tag()) {
+            continue;
+        }
+        if structure.build_progress() >= 1.0 {
+            continue;
+        }
+        let mut being_built = false;
+        for target in orders_targets.iter() {
+            match target {
+                Target::Tag(tag) => {
+                    if *tag == structure.tag() {
+                        being_built = true;
+                        break;
+                    }
+                }
+                Target::Pos(pos) => {
+                    if pos.distance(structure.position()) < 1.0 {
+                        being_built = true;
+                        break;
+                    }
+                }
+                Target::None => {}
+            }
+        }
+        if !being_built {
+            structures_to_finish.push(structure.clone());
+        }
+    }
+
+    structures_to_finish
+}
+
 #[derive(Debug, Clone)]
 pub struct ConstructionInfo {
     pub under_construction: Vec<UnderConstruction>,
+    pub structures_being_finished: Vec<u64>,
 }
 
 impl Default for ConstructionInfo {
     fn default() -> Self {
         ConstructionInfo {
             under_construction: vec![UnderConstruction::default()],
+            structures_being_finished: Vec::new(),
         }
     }
 }

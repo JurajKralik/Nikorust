@@ -62,7 +62,7 @@ impl WorkerAllocator {
             Some(old_role) if old_role != new_role => {
                 if printing {
                     println!(
-                        "[ALLOCATOR] Worker {} changed role {:?} -> {:?}",
+                        "[DEBUGGER] Worker {} changed role {:?} -> {:?}",
                         worker_tag, old_role, new_role
                     );
                 }
@@ -70,7 +70,7 @@ impl WorkerAllocator {
             None => {
                 if printing {
                     println!(
-                        "[ALLOCATOR] Worker {} assigned initial role {:?}",
+                        "[DEBUGGER] Worker {} assigned initial role {:?}",
                         worker_tag, new_role
                     );
                 }
@@ -84,7 +84,7 @@ impl WorkerAllocator {
         if !self.resources.contains_key(&tag) {
             if printing {
                 println!(
-                    "[ALLOCATOR] Added {:?} resource {}",
+                    "[DEBUGGER] Added {:?} resource {}",
                     role, tag
                 );
             }
@@ -103,7 +103,7 @@ impl WorkerAllocator {
         let printing = self.debugger.printing_resources_assignments;
         if self.resources.remove(&tag).is_some() {
             if printing {
-                println!("[ALLOCATOR] Removed resource {}", tag);
+                println!("[DEBUGGER] Removed resource {}", tag);
             }
         }
     }
@@ -112,7 +112,7 @@ impl WorkerAllocator {
         if !self.repair.contains_key(&tag) {
             if self.debugger.printing_repair_targets_assignments {
                 println!(
-                    "[ALLOCATOR] Added repair target {} (max_workers = {})",
+                    "[DEBUGGER] Added repair target {} (max_workers = {})",
                     tag, alloc.max_workers
                 );
             }
@@ -123,7 +123,7 @@ impl WorkerAllocator {
     fn remove_repair_target(&mut self, tag: u64) {
         if self.repair.remove(&tag).is_some() {
             if self.debugger.printing_repair_targets_assignments {
-                println!("[ALLOCATOR] Removed repair target {}", tag);
+                println!("[DEBUGGER] Removed repair target {}", tag);
             }
         }
     }
@@ -289,7 +289,7 @@ impl WorkerAllocator {
 
         for worker_tag in workers_to_assign {
             if self.debugger.printing_workers_assignments {
-                println!("[ALLOCATOR] Worker {} assigned to Repair", worker_tag);
+                println!("[DEBUGGER] Worker {} assigned to Repair", worker_tag);
             }
             self.set_worker_role(worker_tag, WorkerRole::Repair);
         }
@@ -305,7 +305,7 @@ impl WorkerAllocator {
             let worker_tag = worker.tag();
             if !self.worker_roles.contains_key(&worker_tag) {
                 if self.debugger.printing_workers_assignments {
-                    println!("[Allocator] New worker without role detected: {}", worker_tag);
+                    println!("[DEBUGGER] New worker without role detected: {}", worker_tag);
                 }
                 self.set_worker_role(worker_tag, WorkerRole::Idle);
             } else if let Some(role) = self.worker_roles.get(&worker_tag) {
@@ -315,7 +315,7 @@ impl WorkerAllocator {
                     }
                     if worker.is_idle() || worker.is_gathering() || worker.is_repairing() {
                         if self.debugger.printing_workers_assignments {
-                            println!("[Allocator] Worker {} finished task. Set back to work", worker_tag);
+                            println!("[DEBUGGER] Worker {} finished task. Set back to work", worker_tag);
                         }
                         self.reassign_worker_role(worker_tag);
                     }
@@ -362,7 +362,7 @@ impl WorkerAllocator {
         for worker_tag in workers_to_idle {
             if self.debugger.printing_workers_assignments {
                 println!(
-                    "[ALLOCATOR] Worker {} set to Idle. Removed from resource",
+                    "[DEBUGGER] Worker {} set to Idle. Removed from resource",
                     worker_tag
                 );
             }
@@ -371,7 +371,7 @@ impl WorkerAllocator {
 
         for tag in invalid_resources_tags {
             if self.debugger.printing_full_resource_assignments {
-                println!("[ALLOCATOR] Removed resource {}", tag);
+                println!("[DEBUGGER] Removed resource {}", tag);
             }
             self.remove_resource(tag);
         }
@@ -414,7 +414,7 @@ impl WorkerAllocator {
             if !self.worker_roles.contains_key(&worker_tag) {
                 self.set_worker_role(worker_tag, WorkerRole::Idle);
                 if self.debugger.printing_workers_assignments {
-                    println!("[Allocator] New worker without role detected: {}", worker_tag);
+                    println!("[DEBUGGER] New worker without role detected: {}", worker_tag);
                 }
             }
             let worker_role = self.worker_roles.get(&worker_tag).unwrap_or(&WorkerRole::Idle).clone();
@@ -446,7 +446,7 @@ impl WorkerAllocator {
                             self.set_worker_role(worker_tag, WorkerRole::Idle);
                             self.assign_worker_to_gas(worker_tag, units);
                             if self.debugger.printing_workers_assignments {
-                                println!("[Allocator] Worker {} switched from Mineral to Gas", worker_tag);
+                                println!("[DEBUGGER] Worker {} switched from Mineral to Gas", worker_tag);
                             }
                         }
                     }
@@ -465,7 +465,7 @@ impl WorkerAllocator {
                             self.set_worker_role(worker_tag, WorkerRole::Idle);
                             self.assign_worker_to_minerals(worker_tag, units);
                             if self.debugger.printing_workers_assignments {
-                                println!("[Allocator] Worker {} reassigned to different Mineral", worker_tag);
+                                println!("[DEBUGGER] Worker {} reassigned to different Mineral", worker_tag);
                             }
                         }
                     }
@@ -581,7 +581,7 @@ impl WorkerAllocator {
             if let Some(role) = self.worker_roles.get(&worker_tag) {
                 if role == &WorkerRole::Idle {
                     if self.debugger.printing_workers_assignments {
-                        println!("[Allocator] Idle worker: {}", worker_tag);
+                        println!("[DEBUGGER] Idle worker: {}", worker_tag);
                     }
                     continue;
                 } else if role == &WorkerRole::Busy {
