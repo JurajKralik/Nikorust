@@ -21,6 +21,7 @@ pub struct NikolajDebugger{
     pub displaying_repair: bool,
     pub displaying_mining: bool,
     pub displaying_strategy_points: bool,
+    pub displaying_selected_tags: bool,
     pub run_resource_assignments_checks: bool,
     pub workers_current_mining_steps: Vec<WorkersCurrentMiningStep>,
 }
@@ -31,7 +32,7 @@ impl Default for NikolajDebugger {
             printing_bases_assignments: false,
             printing_workers_assignments: false,
             printing_resources_assignments: false,
-            printing_full_repair_assignments: false,
+            printing_full_repair_assignments: true,
             printing_repair_targets_assignments: false,
             printing_construction: false,
             printing_combat_info: false,
@@ -42,6 +43,7 @@ impl Default for NikolajDebugger {
             displaying_repair: false,
             displaying_mining: false,
             displaying_strategy_points: false,
+            displaying_selected_tags: true,
             run_resource_assignments_checks: false,
             workers_current_mining_steps: vec![],
         }
@@ -74,6 +76,7 @@ pub fn debug_step(
     debug_print_combat_info(bot);
     debug_print_build_order(bot);
     debug_resource_assignments_checks(bot);
+    debug_display_selected_tags(bot);
 }
 // Debugging
 fn debug_show_bases(
@@ -441,6 +444,21 @@ fn debug_resource_assignments_checks(bot: &mut Nikolaj) {
                 used_workers.insert(*worker_tag, alloc.worker_role.clone());
             }
         }
+    }
+}
+
+fn debug_display_selected_tags(bot: &mut Nikolaj) {
+    if !bot.debugger.displaying_selected_tags {
+        return;
+    }
+    let mut selected_units: Vec<Unit> = vec![];
+    for unit in bot.units.my.all.iter().filter(|u| u.is_selected()) {
+        selected_units.push(unit.clone());
+    }
+    for unit in selected_units {
+        let position = unit.position();
+        let text = format!("Tag: {}\nType: {:?}", unit.tag(), unit.type_id());
+        bot.debug_text(&text, position, "white", Some(14));
     }
 }
 
