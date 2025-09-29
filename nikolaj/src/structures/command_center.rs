@@ -20,11 +20,21 @@ pub fn construct_command_centers(bot: &mut Nikolaj) {
         return;
     }
 
+    // Don't expand if enemy is flooding
+    if bot.strategy_data.enemy_flooding || bot.strategy_data.enemy_worker_rush{
+        return;
+    }
+
     // Under construction
     for under_construction in bot.construction_info.under_construction.iter() {
         if under_construction.structure == UnitTypeId::CommandCenter {
             return;
         }
+    }
+
+    // Prerequisites
+    if bot.units.my.structures.of_type_including_alias(UnitTypeId::Starport).is_empty() {
+        return;
     }
 
     // Resources
