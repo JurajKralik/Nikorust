@@ -62,6 +62,7 @@ impl Player for Nikolaj {
         construction_info_step(self);
         decide_build_strategy(self);
         finish_constructions_without_worker(self);
+        cancel_constructions_in_danger(self);
         construct_command_centers(self);
         townhall_control(self);
         construct_refinery(self);

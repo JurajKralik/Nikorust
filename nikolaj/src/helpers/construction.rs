@@ -165,6 +165,27 @@ fn get_structures_to_finish(bot: &Nikolaj) -> Units {
     structures_to_finish
 }
 
+pub fn cancel_constructions_in_danger(bot: &mut Nikolaj) {
+    for structure in bot.units.my.structures.clone() {
+        if structure.build_progress() >= 1.0 || structure.build_progress() <= 0.1 {
+            continue;
+        }
+        if structure.health_percentage().unwrap_or(0.0) > 0.1 {
+            continue;
+        }
+        let enemies_close = bot.units.enemy.units.closer(12.0, structure.position());
+        for enemy in enemies_close.iter() {
+            if enemy.can_attack_ground() {
+                structure.cancel_building(false);
+                if bot.debugger.printing_construction {
+                    println!("[DEBUGGER] Cancelled construction of {:?} at {:?}", structure.type_id(), bot.time);
+                }
+                break;
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct ConstructionInfo {
     pub under_construction: Vec<UnderConstruction>,
