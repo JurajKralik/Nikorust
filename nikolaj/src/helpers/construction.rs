@@ -83,19 +83,17 @@ pub fn get_builder(bot: &mut Nikolaj, target: Target) -> Option<&Unit> {
 }
 
 pub fn build(bot: &mut Nikolaj, position: Point2, structure: UnitTypeId) {
-    let builder = get_builder(bot, Target::Pos(position));
-    if builder.is_none() {
-        return;
-    }
-    builder.unwrap().build(structure, position, false);
-    let mut under_construction = UnderConstruction::default();
-    under_construction.worker_tag = builder.unwrap().tag();
-    under_construction.position = position;
-    under_construction.structure = structure;
-    under_construction.time_started = bot.time as f32 / 22.4;
-    bot.construction_info.under_construction.push(under_construction);
-    if bot.debugger.printing_construction {
-        println!("Construction: Started building {:?} at {:?}", structure, bot.time);
+    if let Some(builder) = get_builder(bot, Target::Pos(position)){
+        builder.build(structure, position, false);
+        let mut under_construction = UnderConstruction::default();
+        under_construction.worker_tag = builder.tag();
+        under_construction.position = position;
+        under_construction.structure = structure;
+        under_construction.time_started = bot.time as f32 / 22.4;
+        bot.construction_info.under_construction.push(under_construction);
+        if bot.debugger.printing_construction {
+            println!("Construction: Started building {:?} at {:?}", structure, bot.time);
+        }
     }
 }
 

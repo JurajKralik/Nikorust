@@ -26,13 +26,20 @@ impl Default for SurroundingsInfo {
 pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo {
     let mut surroundings = SurroundingsInfo::default();
     let enemies = bot.units.enemy.units.clone();
-    let sorted_enemies = enemies.iter().sort_by_distance(unit.position()).closer(unit.sight_range() + 2.0, unit.position());
+    let sorted_enemies = enemies
+        .iter()
+        .sort_by_distance(unit.position())
+        .closer(unit.sight_range() + 2.0, unit.position());
     let enemy_structures = bot.units.enemy.structures.clone();
-    let sorted_structures = enemy_structures.iter().sort_by_distance(unit.position()).closer(unit.sight_range() + 2.0, unit.position());
+    let sorted_structures = enemy_structures
+        .iter()
+        .sort_by_distance(unit.position())
+        .closer(unit.sight_range() + 2.0, unit.position());
     for enemy in sorted_enemies {
         // Check threat
         if can_attack(enemy, unit) {
-            let harmless_worker = enemy.type_id().is_worker() && enemy.distance(unit.position()) > 3.5;
+            let harmless_worker =
+                enemy.type_id().is_worker() && enemy.distance(unit.position()) > 3.5;
             if !harmless_worker {
                 if surroundings.closest_threat.is_none() {
                     surroundings.closest_threat = Some(enemy.clone());
@@ -45,31 +52,50 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo
         // Targeting
         if can_attack(unit, enemy) {
             if in_range(unit, enemy) {
+                // Better target
+                if let Some(best_target) = &surroundings.best_target_in_range {
+                    surroundings.best_target_in_range =
+                        Some(better_of_targets(unit, &best_target, enemy));
                 // First
-                if surroundings.best_target_in_range.is_none() {
-                    surroundings.best_target_in_range = Some(enemy.clone());
-                // Better
                 } else {
-                    surroundings.best_target_in_range = Some(better_of_targets(unit, &surroundings.best_target_in_range.clone().unwrap(), enemy));
+                    surroundings.best_target_in_range = Some(enemy.clone());
                 }
             } else {
                 // First
-                if surroundings.best_target_in_range.is_none() && surroundings.better_target_off_range.is_none() {
+                if surroundings.best_target_in_range.is_none()
+                    && surroundings.better_target_off_range.is_none()
+                {
                     surroundings.better_target_off_range = Some(enemy.clone());
                 // Better from off range
-                } else if surroundings.better_target_off_range.is_some() {
-                    surroundings.better_target_off_range = Some(better_of_targets(unit, &surroundings.better_target_off_range.clone().unwrap(), enemy));
+                } else if let Some(better_target_off_range) = &surroundings.better_target_off_range
+                {
+                    surroundings.better_target_off_range =
+                        Some(better_of_targets(unit, &better_target_off_range, enemy));
                 // Better than in range
-                } else {
-                    let better_target = Some(better_of_targets(unit, &surroundings.best_target_in_range.clone().unwrap(), enemy));
-                    if better_target.clone().unwrap().tag() != surroundings.best_target_in_range.clone().unwrap().tag() {
-                        surroundings.better_target_off_range = better_target;
+                } else if let Some(best_target_in_range) = &surroundings.best_target_in_range {
+                    let better_target = better_of_targets(unit, &best_target_in_range, enemy);
+                    if better_target.tag() != best_target_in_range.tag() {
+                        surroundings.better_target_off_range = Some(better_target);
                     }
                 }
             }
         }
         surroundings.closest_counter = None; // TODO
     }
+
+    // Avoid fake better target
+    match (
+        &surroundings.better_target_off_range,
+        &surroundings.best_target_in_range,
+    ) {
+        (Some(better), Some(best)) => {
+            if best.tag() == better_of_targets(unit, better, best).tag() {
+                surroundings.better_target_off_range = None;
+            }
+        }
+        _ => {}
+    }
+
     for structure in sorted_structures {
         if surroundings.closest_structure.is_none() {
             if in_range(unit, structure) {
@@ -112,13 +138,23 @@ fn in_range(attacker: &Unit, target: &Unit) -> bool {
 }
 fn better_of_targets(attacker: &Unit, current_target: &Unit, new_target: &Unit) -> Unit {
     let current_target_damage = attacker.real_range_vs(current_target);
-    let current_target_health = (current_target.health().unwrap_or(0) + current_target.shield().unwrap_or(0)) as f32;
+    let current_target_health =
+        (current_target.health().unwrap_or(0) + current_target.shield().unwrap_or(0)) as f32;
     let current_target_dies = current_target_health - current_target_damage <= 0.0;
     let new_target_damage = attacker.real_range_vs(new_target);
-    let new_target_health = (new_target.health().unwrap_or(0) + new_target.shield().unwrap_or(0)) as f32;
+    let new_target_health =
+        (new_target.health().unwrap_or(0) + new_target.shield().unwrap_or(0)) as f32;
     let new_target_dies = new_target_health - new_target_damage <= 0.0;
-    let higher_damage_target = if current_target_damage >= new_target_damage { current_target } else { new_target };
-    let lower_health_target = if current_target_health <= new_target_health { current_target } else { new_target };
+    let higher_damage_target = if current_target_damage >= new_target_damage {
+        current_target
+    } else {
+        new_target
+    };
+    let lower_health_target = if current_target_health <= new_target_health {
+        current_target
+    } else {
+        new_target
+    };
 
     if current_target_dies {
         if new_target_dies {

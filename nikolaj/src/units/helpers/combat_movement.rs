@@ -1,7 +1,6 @@
+use crate::units::helpers::surroundings::*;
 use crate::Nikolaj;
 use rust_sc2::{prelude::*, units::AllUnits};
-use crate::units::helpers::surroundings::*;
-
 
 pub fn flee_bio(bot: &mut Nikolaj, unit: &Unit, surroundings: SurroundingsInfo) {
     let units = bot.units.clone();
@@ -32,13 +31,12 @@ fn flee_to_bunker(units: AllUnits, unit: &Unit) -> bool {
     false
 }
 fn flee_to_medivac(units: AllUnits, unit: &Unit) -> bool {
-    let medivacs = units
-        .my
-        .units
-        .of_type(UnitTypeId::Medivac);
+    let medivacs = units.my.units.of_type(UnitTypeId::Medivac);
     let nearby_medivacs = medivacs.closer(12.0, unit.position());
     if let Some(medivac) = nearby_medivacs.first() {
-        if medivac.cargo_left().unwrap_or(0) >= unit.cargo_size() && medivac.health_percentage().unwrap_or(1.0) > 0.5 {
+        if medivac.cargo_left().unwrap_or(0) >= unit.cargo_size()
+            && medivac.health_percentage().unwrap_or(1.0) > 0.5
+        {
             unit.smart(Target::Tag(medivac.tag()), false);
             return true;
         }
@@ -46,10 +44,7 @@ fn flee_to_medivac(units: AllUnits, unit: &Unit) -> bool {
     false
 }
 fn flee_to_tank(units: AllUnits, unit: &Unit) -> bool {
-    let tanks = units
-        .my
-        .units
-        .of_type(UnitTypeId::SiegeTankSieged);
+    let tanks = units.my.units.of_type(UnitTypeId::SiegeTankSieged);
     let nearby_tanks = tanks.closer(12.0, unit.position());
     if let Some(tank) = nearby_tanks.first() {
         if unit.distance(tank.position()) > 3.0 {
@@ -69,7 +64,9 @@ fn flee_from_threat(bot: &mut Nikolaj, unit: &Unit, threat: Option<Unit>) -> boo
         let furthest_point = combat_grid.into_iter().max_by(|a, b| {
             let dist_a = a.distance(threat_unit.position());
             let dist_b = b.distance(threat_unit.position());
-            dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
+            dist_a
+                .partial_cmp(&dist_b)
+                .unwrap_or(std::cmp::Ordering::Equal)
         });
         if let Some(point) = furthest_point {
             unit.move_to(Target::Pos(point), false);
@@ -83,7 +80,9 @@ fn flee_from_threat(bot: &mut Nikolaj, unit: &Unit, threat: Option<Unit>) -> boo
     false
 }
 pub fn flee_flying_unit(bot: &mut Nikolaj, unit: &Unit, surroundings: SurroundingsInfo) {
-    if surroundings.clone().closest_threat.is_some() || (surroundings.clone().in_danger && surroundings.clone().closest_structure.is_some()) {
+    if surroundings.clone().closest_threat.is_some()
+        || (surroundings.clone().in_danger && surroundings.clone().closest_structure.is_some())
+    {
         if let Some(threat) = surroundings.clone().closest_threat {
             let retreat_position = unit.position().towards(threat.position(), -5.0);
             move_no_spam(unit, Target::Pos(retreat_position));
@@ -127,9 +126,7 @@ fn combat_grid8(position: Point2, distance: f32) -> Vec<Point2> {
 
 fn combat_grid8_pathable(bot: &mut Nikolaj, position: Point2, distance: f32) -> Vec<Point2> {
     let grid = combat_grid8(position, distance);
-    grid.into_iter()
-        .filter(|p| bot.is_pathable(*p))
-        .collect()
+    grid.into_iter().filter(|p| bot.is_pathable(*p)).collect()
 }
 
 pub fn use_stimpack(unit: &Unit, surroundings: &SurroundingsInfo) {
@@ -200,7 +197,9 @@ pub fn unsiege(bot: &mut Nikolaj, unit: &Unit) {
             }
         }
     } else {
-        if unit.type_id() == UnitTypeId::SiegeTankSieged || unit.type_id() == UnitTypeId::WidowMineBurrowed {
+        if unit.type_id() == UnitTypeId::SiegeTankSieged
+            || unit.type_id() == UnitTypeId::WidowMineBurrowed
+        {
             bot.combat_info.add_unsiege_timer(unit.tag());
         }
     }
@@ -226,42 +225,47 @@ pub fn force_unsiege(bot: &mut Nikolaj, unit: &Unit) {
 
 pub fn get_closest_harass_point(bot: &Nikolaj, unit: &Unit) -> Point2 {
     let harass_points = &bot.strategy_data.harass_points;
-    if harass_points.is_empty() {
-        return bot.strategy_data.attack_point;
+    let attack_point = bot.strategy_data.attack_point;
+
+    if let Some(closest_point) = harass_points.iter().min_by(|a, b| {
+        let dist_a = unit.distance(**a);
+        let dist_b = unit.distance(**b);
+        dist_a
+            .partial_cmp(&dist_b)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    }) {
+        return *closest_point;
+    } else {
+        return attack_point;
     }
-    let closest_point = harass_points
-        .iter()
-        .min_by(|a, b| {
-            let dist_a = unit.distance(**a);
-            let dist_b = unit.distance(**b);
-            dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
-        })
-        .unwrap();
-    *closest_point
 }
 pub fn get_closest_repair_point(bot: &Nikolaj, unit: &Unit) -> Point2 {
     let repair_points = &bot.strategy_data.repair_points;
-    if repair_points.is_empty() {
-        return bot.strategy_data.idle_point;
+    let idle_point = bot.strategy_data.idle_point;
+    if let Some(closest_point) = repair_points.iter().min_by(|a, b| {
+        let dist_a = unit.distance(**a);
+        let dist_b = unit.distance(**b);
+        dist_a
+            .partial_cmp(&dist_b)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    }) {
+        return *closest_point;
+    } else {
+        return idle_point;
     }
-    let closest_point = repair_points
-        .iter()
-        .min_by(|a, b| {
-            let dist_a = unit.distance(**a);
-            let dist_b = unit.distance(**b);
-            dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
-        })
-        .unwrap();
-    *closest_point
 }
-pub fn kd8_charge( unit: &Unit, surroundings: &SurroundingsInfo) -> bool {
+pub fn kd8_charge(unit: &Unit, surroundings: &SurroundingsInfo) -> bool {
     if let Some(threat) = surroundings.clone().closest_threat {
         if let Some(abilities) = unit.abilities() {
             if !abilities.contains(&AbilityId::KD8ChargeKD8Charge) {
                 return false;
             }
             let target_position = threat.position().towards(unit.position(), 4.0);
-            unit.command(AbilityId::KD8ChargeKD8Charge, Target::Pos(target_position), false);
+            unit.command(
+                AbilityId::KD8ChargeKD8Charge,
+                Target::Pos(target_position),
+                false,
+            );
             return true;
         }
     }

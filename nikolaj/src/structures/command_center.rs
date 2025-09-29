@@ -98,7 +98,7 @@ pub fn townhall_control(bot: &mut Nikolaj) {
                     .units
                     .closer(15.0, base.position())
                     .is_empty()
-                && base.health_percentage().unwrap() < 0.35
+                && base.health_percentage().unwrap_or(0.0) < 0.35
                 && base.type_id() != UnitTypeId::PlanetaryFortress
             {
                 base.lift(false);
@@ -106,7 +106,7 @@ pub fn townhall_control(bot: &mut Nikolaj) {
             }
             if base.type_id() == UnitTypeId::OrbitalCommand {
                 //Scan
-                if bot.time > bot.scanner_sweep_time && base.energy().unwrap() > 50 {
+                if bot.time > bot.scanner_sweep_time && base.energy().unwrap_or(0) > 50 {
                     let mut scanned = false;
                     //Scan for cloaked units
                     let mut enemy_units = bot.units.enemy.units.clone();
@@ -158,7 +158,7 @@ pub fn townhall_control(bot: &mut Nikolaj) {
                     if energy >= energy_needed {
                         let close_minerals = bot.units.mineral_fields.closer(10.0, base);
                         if let Some(max_contents_minerals) =
-                            close_minerals.max(|u| u.mineral_contents().unwrap())
+                            close_minerals.max(|u| u.mineral_contents().unwrap_or(0))
                         {
                             base.command(
                                 AbilityId::CalldownMULECalldownMULE,
@@ -173,7 +173,7 @@ pub fn townhall_control(bot: &mut Nikolaj) {
                                     bot.units.mineral_fields.closer(10.0, &other_base);
 
                                 if let Some(max_contents_minerals) =
-                                    close_minerals.max(|u| u.mineral_contents().unwrap())
+                                    close_minerals.max(|u| u.mineral_contents().unwrap_or(0))
                                 {
                                     base.command(
                                         AbilityId::CalldownMULECalldownMULE,

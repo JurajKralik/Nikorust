@@ -245,41 +245,45 @@ impl WorkerAllocator {
 
         for (tag, alloc) in self.repair.iter_mut() {
             let max_workers = alloc.max_workers;
-            let target: Unit = units.my.all.iter().find_tag(*tag).unwrap().clone();
-            for worker_tag in alloc.workers.clone() {
-                if !worker_tags.contains(&worker_tag) {
-                    dead_workers.push(worker_tag);
+            if let Some(target) = units.my.all.iter().find_tag(*tag).clone() {
+                for worker_tag in alloc.workers.clone() {
+                    if !worker_tags.contains(&worker_tag) {
+                        dead_workers.push(worker_tag);
+                    }
                 }
-            }
 
-            alloc.workers.retain(|w| !dead_workers.contains(w));
+                alloc.workers.retain(|w| !dead_workers.contains(w));
 
-            if alloc.workers.len() < max_workers {
-                let workers_sorted = workers.iter().sort_by_distance(target.clone());
-                for worker in workers_sorted {
-                    let worker_tag = worker.tag();
-                    if alloc.workers.len() >= max_workers {
-                        break;
-                    }
-                    if worker.distance(target.clone()) > 25.0 {
-                        break;
-                    }
-                    if let Some(role) = self.worker_roles.get(&worker_tag) {
-                        if *role == WorkerRole::Busy || *role == WorkerRole::Repair {
-                            continue;
+                if alloc.workers.len() < max_workers {
+                    let workers_sorted = workers.iter().sort_by_distance(target.clone());
+                    for worker in workers_sorted {
+                        let worker_tag = worker.tag();
+                        if alloc.workers.len() >= max_workers {
+                            break;
                         }
+                        if worker.distance(target.clone()) > 25.0 {
+                            break;
+                        }
+                        if let Some(role) = self.worker_roles.get(&worker_tag) {
+                            if *role == WorkerRole::Busy || *role == WorkerRole::Repair {
+                                continue;
+                            }
+                        }
+                        alloc.workers.push(worker_tag);
                     }
-                    alloc.workers.push(worker_tag);
                 }
             }
 
             for &worker_tag in &alloc.workers {
-                let worker = units.my.workers.iter().find_tag(worker_tag).unwrap().clone();
-                if worker.is_repairing() {
-                    continue;
+                if let Some(worker) = units.my.workers.iter().find_tag(worker_tag).clone() {
+                    if worker.is_repairing() {
+                        continue;
+                    }
+                    workers_to_assign.push(worker_tag);
+                    repair_orders.push((worker_tag, *tag));
+                } else {
+                    println!("Worker with tag {} not found for repair", worker_tag);
                 }
-                workers_to_assign.push(worker_tag);
-                repair_orders.push((worker_tag, *tag));
             }
         }
 
@@ -296,7 +300,6 @@ impl WorkerAllocator {
         }
     }
 
-
     fn update_idle_workers(&mut self, units: &AllUnits) {
         for worker in units.my.workers.ready().clone() {
             let worker_tag = worker.tag();
@@ -305,15 +308,17 @@ impl WorkerAllocator {
                     println!("[Allocator] New worker without role detected: {}", worker_tag);
                 }
                 self.set_worker_role(worker_tag, WorkerRole::Idle);
-            } else if self.worker_roles.get(&worker_tag).unwrap() == &WorkerRole::Busy {
-                if self.construction_workers.contains(&worker_tag) {
-                    continue;
-                }
-                if worker.is_idle() || worker.is_gathering() || worker.is_repairing() {
-                    if self.debugger.printing_workers_assignments {
-                        println!("[Allocator] Worker {} finished task. Set back to work", worker_tag);
+            } else if let Some(role) = self.worker_roles.get(&worker_tag) {
+                if *role == WorkerRole::Busy {
+                    if self.construction_workers.contains(&worker_tag) {
+                        continue;
                     }
-                    self.reassign_worker_role(worker_tag);
+                    if worker.is_idle() || worker.is_gathering() || worker.is_repairing() {
+                        if self.debugger.printing_workers_assignments {
+                            println!("[Allocator] Worker {} finished task. Set back to work", worker_tag);
+                        }
+                        self.reassign_worker_role(worker_tag);
+                    }
                 }
             }
         }
@@ -512,38 +517,41 @@ impl WorkerAllocator {
     fn assign_worker_to_minerals(&mut self, worker_tag: u64, units: &AllUnits) {
         let undersaturated_mineral_tags = &self.saturation.mineral_tags_undersaturated;
         let mut minerals: Units = units.mineral_fields.clone();
-        let worker = units.my.workers.iter().find_tag(worker_tag).unwrap().clone();
 
-        if !undersaturated_mineral_tags.is_empty() {
-            minerals = minerals.find_tags(undersaturated_mineral_tags.iter());
-            if let Some(closest_mineral) = minerals.closest(worker.position()) {
-                if let Some(allocation) = self.resources.get_mut(&closest_mineral.tag()) {
-                    allocation.workers.push(worker_tag);
-                    self.set_worker_role(worker_tag, WorkerRole::Mineral);
-                    worker.gather(closest_mineral.tag(), false);
+        if let Some(worker) = units.my.workers.iter().find_tag(worker_tag).clone() {
+            if !undersaturated_mineral_tags.is_empty() {
+                minerals = minerals.find_tags(undersaturated_mineral_tags.iter());
+                if let Some(closest_mineral) = minerals.closest(worker.position()) {
+                    if let Some(allocation) = self.resources.get_mut(&closest_mineral.tag()) {
+                        allocation.workers.push(worker_tag);
+                        self.set_worker_role(worker_tag, WorkerRole::Mineral);
+                        worker.gather(closest_mineral.tag(), false);
+                    }
+                }
+            } else {
+                minerals.iter().sort_by_distance(worker.position());
+                let mut lowest_saturated_count = usize::MAX;
+                let mut lowest_saturated_tag: Option<u64> = None;
+                for (resource_tag, allocation) in self.resources.iter() {
+                    if allocation.worker_role != WorkerRole::Mineral {
+                        continue;
+                    }
+                    let workers_count = allocation.workers.len();
+                    if workers_count < lowest_saturated_count {
+                        lowest_saturated_count = workers_count;
+                        lowest_saturated_tag = Some(*resource_tag);
+                    }
+                }
+                if let Some(mineral_tag) = lowest_saturated_tag {
+                    if let Some(allocation) = self.resources.get_mut(&mineral_tag) {
+                        allocation.workers.push(worker_tag);
+                        self.set_worker_role(worker_tag, WorkerRole::Mineral);
+                        worker.gather(mineral_tag, false);
+                    }
                 }
             }
         } else {
-            minerals.iter().sort_by_distance(worker.position());
-            let mut lowest_saturated_count = usize::MAX;
-            let mut lowest_saturated_tag: Option<u64> = None;
-            for (resource_tag, allocation) in self.resources.iter() {
-                if allocation.worker_role != WorkerRole::Mineral {
-                    continue;
-                }
-                let workers_count = allocation.workers.len();
-                if workers_count < lowest_saturated_count {
-                    lowest_saturated_count = workers_count;
-                    lowest_saturated_tag = Some(*resource_tag);
-                }
-            }
-            if let Some(mineral_tag) = lowest_saturated_tag {
-                if let Some(allocation) = self.resources.get_mut(&mineral_tag) {
-                    allocation.workers.push(worker_tag);
-                    self.set_worker_role(worker_tag, WorkerRole::Mineral);
-                    worker.gather(mineral_tag, false);
-                }
-            }
+            println!("Worker with tag {} not found for mineral assignment", worker_tag);
         }
     }
 
@@ -553,13 +561,16 @@ impl WorkerAllocator {
             return;
         }
         let refineries: Units = units.my.structures.find_tags(refinery_tags.iter());
-        let worker = units.my.workers.iter().find_tag(worker_tag).unwrap().clone();
-        if let Some(closest_refinery) = refineries.closest(worker.position()) {
-            if let Some(allocation) = self.resources.get_mut(&closest_refinery.tag()) {
-                allocation.workers.push(worker_tag);
-                self.set_worker_role(worker_tag, WorkerRole::Gas);
-                worker.gather(closest_refinery.tag(), false);
+        if let Some(worker) = units.my.workers.iter().find_tag(worker_tag).clone() {
+            if let Some(closest_refinery) = refineries.closest(worker.position()) {
+                if let Some(allocation) = self.resources.get_mut(&closest_refinery.tag()) {
+                    allocation.workers.push(worker_tag);
+                    self.set_worker_role(worker_tag, WorkerRole::Gas);
+                    worker.gather(closest_refinery.tag(), false);
+                }
             }
+        } else {
+            println!("Worker with tag {} not found for gas assignment", worker_tag);
         }
     }
 
@@ -722,30 +733,33 @@ impl WorkerAllocator {
         for alloc in self.resources.values() {
             if alloc.workers.contains(&worker_tag) {
                 let target_tag = alloc.resource_tag;
-                let target = units.my.structures.iter().find_tag(target_tag).unwrap().clone();
-                let closest_base = units.my.townhalls.closest(worker.clone().position());
-                if let Some(closest_base) = closest_base {
-                    if worker.clone().is_carrying_resource() {
-                        // Antispam - already returning
-                        if let Some(order) = worker.order() {
-                            if order.1 == Target::Tag(closest_base.tag()) {
-                                return;
+                if let Some(target) = units.my.structures.iter().find_tag(target_tag) {
+                    let closest_base = units.my.townhalls.closest(worker.clone().position());
+                    if let Some(closest_base) = closest_base {
+                        if worker.clone().is_carrying_resource() {
+                            // Antispam - already returning
+                            if let Some(order) = worker.order() {
+                                if order.1 == Target::Tag(closest_base.tag()) {
+                                    return;
+                                }
                             }
+                            worker.smart(Target::Tag(closest_base.tag()), false);
+                        } else {
+                            // Antispam - already gathering
+                            if let Some(order) = worker.order() {
+                                if order.1 == Target::Tag(target_tag) {
+                                    return;
+                                }
+                            }
+                            worker.gather(target.tag(), false);
                         }
-                        worker.smart(Target::Tag(closest_base.tag()), false);
                     } else {
-                        // Antispam - already gathering
-                        if let Some(order) = worker.order() {
-                            if order.1 == Target::Tag(target_tag) {
-                                return;
-                            }
-                        }
-                        worker.gather(target.tag(), false);
+                        println!("No base found for worker {}", worker_tag);
                     }
+                    return;
                 } else {
-                    println!("No base found for worker {}", worker_tag);
+                    println!("Refinery with tag {} not found", target_tag);
                 }
-                return;
             }
         }
         println!("Worker {} not assigned to any refinery", worker_tag);
