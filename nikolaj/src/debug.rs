@@ -29,11 +29,11 @@ impl Default for NikolajDebugger {
         Self {
             printing_full_resource_assignments: false,
             printing_bases_assignments: false,
-            printing_workers_assignments: false,
+            printing_workers_assignments: true,
             printing_resources_assignments: false,
             printing_full_repair_assignments: false,
             printing_repair_targets_assignments: false,
-            printing_construction: false,
+            printing_construction: true,
             printing_combat_info: false,
             printing_build_order: false,
             displaying_worker_roles: false,
@@ -42,7 +42,7 @@ impl Default for NikolajDebugger {
             displaying_repair: false,
             displaying_mining: false,
             displaying_strategy_points: false,
-            run_resource_assignments_checks: true,
+            run_resource_assignments_checks: false,
             workers_current_mining_steps: vec![],
         }
     }

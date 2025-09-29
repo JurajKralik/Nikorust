@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
 
@@ -109,10 +111,12 @@ pub fn construction_info_step(bot: &mut Nikolaj) {
 pub fn finish_constructions_without_worker(bot: &mut Nikolaj) {
     let structures_to_finish = get_structures_to_finish(bot);
     for structure in structures_to_finish.iter() {
-        let worker = get_builder(bot, Target::Tag(structure.tag()));
+        let worker = get_builder(bot, Target::Pos(structure.position().clone()));
         if let Some(worker) = worker {
             worker.smart(Target::Tag(structure.tag()), false);
-            bot.construction_info.structures_being_finished.push(structure.tag());
+            let worker_tag = worker.tag().clone();
+            let structure_tag = structure.tag().clone();
+            bot.construction_info.structures_being_finished.insert(structure_tag, worker_tag);
             if bot.debugger.printing_construction {
                 println!("[DEBUGGER] Finishing construction of {:?} at {:?}", structure.type_id(), bot.time);
             }
@@ -133,8 +137,16 @@ fn get_structures_to_finish(bot: &Nikolaj) -> Units {
     }
 
     for structure in unfinished_structures.iter() {
-        if bot.construction_info.structures_being_finished.contains(&structure.tag()) {
-            continue;
+        if let Some(worker_tag) = bot.construction_info.structures_being_finished.get(&structure.tag()) {
+            if let Some(worker) = bot.units.my.workers.iter().find_tag(*worker_tag) {
+                if let Some(order) = worker.order() {
+                    if let Target::Tag(tag) = order.1 {
+                        if tag == structure.tag() {
+                            continue;
+                        }
+                    }
+                }
+            }
         }
         if structure.build_progress() >= 1.0 {
             continue;
@@ -189,14 +201,14 @@ pub fn cancel_constructions_in_danger(bot: &mut Nikolaj) {
 #[derive(Debug, Clone)]
 pub struct ConstructionInfo {
     pub under_construction: Vec<UnderConstruction>,
-    pub structures_being_finished: Vec<u64>,
+    pub structures_being_finished: HashMap<u64, u64>,
 }
 
 impl Default for ConstructionInfo {
     fn default() -> Self {
         ConstructionInfo {
             under_construction: vec![UnderConstruction::default()],
-            structures_being_finished: Vec::new(),
+            structures_being_finished: HashMap::new(),
         }
     }
 }
