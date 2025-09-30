@@ -22,7 +22,7 @@ fn barracks_tech_lab_control(bot: &mut Nikolaj) {
             }
 
             let stimpack_researched = !abilities.contains(&AbilityId::BarracksTechLabResearchStimpack);
-            let can_afford_stimpack_research = true; //bot.can_afford(AbilityId::BarracksTechLabResearchStimpack, false);
+            let can_afford_stimpack_research = bot.can_afford_upgrade(UpgradeId::Stimpack);
 
             if !stimpack_researched && can_afford_stimpack_research {
                 structure.use_ability(AbilityId::BarracksTechLabResearchStimpack, false);
@@ -39,7 +39,7 @@ fn factory_tech_lab_control(bot: &mut Nikolaj) {
     for structure in bot.units.my.structures.of_type(UnitTypeId::FactoryTechLab).ready() {
         if let Some(abilities) = structure.abilities() {
             let drilling_claws_researched = !abilities.contains(&AbilityId::ResearchDrillingClaws);
-            let can_afford_drilling_claws_research = true; //bot.can_afford(AbilityId::ResearchDrillingClaws, false);
+            let can_afford_drilling_claws_research = bot.can_afford_upgrade(UpgradeId::DrillClaws);
 
             if !drilling_claws_researched && can_afford_drilling_claws_research {
                 structure.use_ability(AbilityId::ResearchDrillingClaws, false);
@@ -56,7 +56,7 @@ fn starport_tech_lab_control(bot: &mut Nikolaj) {
     for structure in bot.units.my.structures.of_type(UnitTypeId::StarportTechLab).ready().idle() {
         if let Some(abilities) = structure.abilities() {
             let banshee_cloak_researched = !abilities.contains(&AbilityId::ResearchBansheeCloakingField);
-            let can_afford_banshee_cloak_research = true; //bot.can_afford(AbilityId::ResearchBansheeCloakingField, false);
+            let can_afford_banshee_cloak_research = bot.can_afford_upgrade(UpgradeId::BansheeCloak);
 
             if !banshee_cloak_researched && can_afford_banshee_cloak_research {
                 structure.use_ability(AbilityId::ResearchBansheeCloakingField, false);
