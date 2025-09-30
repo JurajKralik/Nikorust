@@ -16,6 +16,7 @@ use crate::structures::barracks::*;
 use crate::structures::factory::*;
 use crate::structures::refinery::*;
 use crate::structures::starport::*;
+use crate::structures::addons::*;
 use crate::units::scv::*;
 use crate::units::helpers::combat_units::*;
 use crate::units::helpers::combat_info::*;
@@ -74,6 +75,7 @@ impl Player for Nikolaj {
         barracks_control(self);
         factory_control(self);
         starport_control(self);
+        addons_control(self);
         strategy_step(self);
         combat_info_step(self);
         army_step(self);
