@@ -157,7 +157,7 @@ impl WorkerAllocator {
             }
             if let Some(target) = units.my.all.iter().find_tag(*tag).clone() {
                 let health_percentage = target.health_percentage();
-                if health_percentage < 1.0 && units.my.structures.contains_tag(*tag) {
+                if health_percentage < 1.0 {
                     continue;
                 }
                 let mut safe = true;
@@ -167,7 +167,7 @@ impl WorkerAllocator {
                         break;
                     }
                 }
-                if !safe {
+                if !safe && units.my.structures.contains_tag(*tag) {
                     continue;
                 }
             } 

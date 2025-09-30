@@ -19,7 +19,8 @@ pub fn combat_info_step(bot: &mut Nikolaj) {
 #[derive(Default, Debug, Clone)]
 pub struct CombatInfo {
     pub last_time: f32,
-    pub unsiege_timer: Vec<UnsiegeTimer>
+    pub unsiege_timer: Vec<UnsiegeTimer>,
+    pub scanner_sweep_time: f32,
 }
 
 impl CombatInfo {

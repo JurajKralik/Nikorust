@@ -137,6 +137,9 @@ fn get_structures_to_finish(bot: &Nikolaj) -> Units {
     }
 
     for structure in unfinished_structures.iter() {
+        if structure.type_id().is_addon() || structure.type_id() == UnitTypeId::Refinery || structure.type_id() == UnitTypeId::RefineryRich {
+            continue;
+        }
         if bot
             .construction_info
             .structures_being_finished

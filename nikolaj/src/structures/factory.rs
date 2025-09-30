@@ -96,10 +96,14 @@ fn find_factory_placement(bot: &Nikolaj) -> Option<Point2> {
 }
 
 fn handle_grounded_factory(bot: &mut Nikolaj) {
-	let Some(unit_type) = bot.factory_priority else {
+	let Some(unit_type) = bot.macro_manager.factory_priority else {
 		return;
 	};
 
+	if bot.macro_manager.expand_priority && bot.get_unit_cost(unit_type).minerals > bot.minerals - 400 {
+		return;
+	}
+	
 	for factory in bot.units.my.structures.of_type(UnitTypeId::Factory).idle().clone() {
         if factory.rally_targets().is_empty(){
             if let Some(base) = bot.units.my.townhalls.closest(factory.position()) {

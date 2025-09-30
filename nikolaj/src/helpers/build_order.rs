@@ -2,16 +2,25 @@ use crate::Nikolaj;
 use rust_sc2::prelude::*;
 
 pub fn decide_build_strategy(bot: &mut Nikolaj) {
+    decide_expansion_priority(bot);
     check_starters(bot);
     decide_barracks(bot);
     decide_factory(bot);
     decide_starport(bot);
 }
 
+fn decide_expansion_priority(bot: &mut Nikolaj) {
+    if bot.worker_allocator.resources.len() < 8 {
+        bot.macro_manager.expand_priority = true;
+    } else {
+        bot.macro_manager.expand_priority = false;
+    }
+}
+
 fn decide_barracks(bot: &mut Nikolaj) {
     // Starter Reaper
-    if bot.starter_reaper {
-        bot.barracks_priority = Some(UnitTypeId::Reaper);
+    if bot.macro_manager.starter_reaper {
+        bot.macro_manager.barracks_priority = Some(UnitTypeId::Reaper);
         return;
     }
 
@@ -22,22 +31,22 @@ fn decide_barracks(bot: &mut Nikolaj) {
     // Zerg (Marine priority) TODO: add marauders against roaches
     if bot.enemy_race == Race::Zerg {
         if marines <= 4 {
-            bot.barracks_priority = Some(UnitTypeId::Marine);
+            bot.macro_manager.barracks_priority = Some(UnitTypeId::Marine);
         } else if marauders <= 2 {
-            bot.barracks_priority = Some(UnitTypeId::Marauder);
+            bot.macro_manager.barracks_priority = Some(UnitTypeId::Marauder);
         } else if marines <= 8 {
-            bot.barracks_priority = Some(UnitTypeId::Marine);
+            bot.macro_manager.barracks_priority = Some(UnitTypeId::Marine);
         } else {
-            bot.barracks_priority = None;
+            bot.macro_manager.barracks_priority = None;
         }
     // Protoss (50/50)
     } else if bot.enemy_race == Race::Protoss {
         if marines >= 8 && marauders >= 8 {
-            bot.barracks_priority = None;
+            bot.macro_manager.barracks_priority = None;
         } else if marines <= marauders {
-            bot.barracks_priority = Some(UnitTypeId::Marine);
+            bot.macro_manager.barracks_priority = Some(UnitTypeId::Marine);
         } else {
-            bot.barracks_priority = Some(UnitTypeId::Marauder);
+            bot.macro_manager.barracks_priority = Some(UnitTypeId::Marauder);
         }
     // Terran (few marines)
     } else if bot.enemy_race == Race::Terran {
@@ -46,13 +55,13 @@ fn decide_barracks(bot: &mut Nikolaj) {
         let late_marines_needed = bot.minerals > 300 && bot.supply_left > 4 && bot.supply_used > 70 && marines <= 40;
 
         if start_marines_needed || mid_marines_needed || late_marines_needed {
-            bot.barracks_priority = Some(UnitTypeId::Marine);
+            bot.macro_manager.barracks_priority = Some(UnitTypeId::Marine);
         } else {
-            bot.barracks_priority = None;
+            bot.macro_manager.barracks_priority = None;
         }
     // Random
     } else {
-        bot.barracks_priority = Some(UnitTypeId::Marine);
+        bot.macro_manager.barracks_priority = Some(UnitTypeId::Marine);
     }
 }
 
@@ -70,26 +79,26 @@ fn decide_factory(bot: &mut Nikolaj) {
 
     // First Tanks
     if start_tanks_needed {
-        bot.factory_priority = Some(UnitTypeId::SiegeTank);
+        bot.macro_manager.factory_priority = Some(UnitTypeId::SiegeTank);
     // Some Cyclones
     } else if too_many_tanks {
-        bot.factory_priority = Some(UnitTypeId::Cyclone);
+        bot.macro_manager.factory_priority = Some(UnitTypeId::Cyclone);
     // Support Mine
     } else if widow_mines < 1 {
-        bot.factory_priority = Some(UnitTypeId::WidowMine);
+        bot.macro_manager.factory_priority = Some(UnitTypeId::WidowMine);
     // Fill up Tanks
     } else if under_tank_cap {
-        bot.factory_priority = Some(UnitTypeId::SiegeTank);
+        bot.macro_manager.factory_priority = Some(UnitTypeId::SiegeTank);
     // Late Game
     } else {
-        bot.factory_priority = Some(UnitTypeId::ThorAALance);
+        bot.macro_manager.factory_priority = Some(UnitTypeId::ThorAALance);
     }
 }
 
 fn decide_starport(bot: &mut Nikolaj) {
     // Starter Banshee
-    if bot.starter_banshee {
-        bot.starport_priority = Some(UnitTypeId::Banshee);
+    if bot.macro_manager.starter_banshee {
+        bot.macro_manager.starport_priority = Some(UnitTypeId::Banshee);
         return;
     }
 
@@ -113,33 +122,33 @@ fn decide_starport(bot: &mut Nikolaj) {
     
     // Detection
     if raven_needed {
-        bot.starport_priority = Some(UnitTypeId::Raven);
+        bot.macro_manager.starport_priority = Some(UnitTypeId::Raven);
     // First Vikings
     } else if first_vikings_needed {
-        bot.starport_priority = Some(UnitTypeId::VikingFighter);
+        bot.macro_manager.starport_priority = Some(UnitTypeId::VikingFighter);
     // Bio squads
     } else if bio_support_needed {
-        bot.starport_priority = Some(UnitTypeId::Medivac);
+        bot.macro_manager.starport_priority = Some(UnitTypeId::Medivac);
     // Banshee harass
     } else if too_many_vikings {
-        bot.starport_priority = Some(UnitTypeId::Banshee);
+        bot.macro_manager.starport_priority = Some(UnitTypeId::Banshee);
     // Air control
     } else {
-        bot.starport_priority = Some(UnitTypeId::VikingFighter);
+        bot.macro_manager.starport_priority = Some(UnitTypeId::VikingFighter);
     }
 }
     
 
 fn check_starters(bot: &mut Nikolaj) {
-    if bot.starter_reaper {
+    if bot.macro_manager.starter_reaper {
         if bot.unit_count(UnitTypeId::Reaper) > 0 || bot.already_pending(UnitTypeId::Reaper) > 0 {
-            bot.starter_reaper = false;
+            bot.macro_manager.starter_reaper = false;
         }
     }
 
-    if bot.starter_banshee {
+    if bot.macro_manager.starter_banshee {
         if bot.unit_count(UnitTypeId::Banshee) > 0 || bot.already_pending(UnitTypeId::Banshee) > 0 {
-            bot.starter_banshee = false;
+            bot.macro_manager.starter_banshee = false;
         }
     }
 }

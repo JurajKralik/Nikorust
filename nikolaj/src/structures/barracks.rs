@@ -70,15 +70,10 @@ fn should_try_build_barracks(bot: &Nikolaj) -> bool {
 	{
 		return false;
 	}
-	// Prioritize Factory and Starport before 2nd+ Barracks
+	// More barracks
 	if bot.structure_count(UnitTypeId::Barracks) > 0 {
-		let has_factory = bot.structure_count(UnitTypeId::Factory)
-			+ bot.structure_count(UnitTypeId::FactoryFlying)
-			> 0;
-		let has_starport = bot.structure_count(UnitTypeId::Starport)
-			+ bot.structure_count(UnitTypeId::StarportFlying)
-			> 0;
-		if !has_factory || !has_starport || bot.minerals < 300 {
+		let factories = bot.units.my.structures.of_type_including_alias(UnitTypeId::Factory);
+		if factories.is_empty() || bot.minerals < 300 {
 			return false;
 		}
 	}
@@ -112,9 +107,13 @@ fn find_barracks_placement(bot: &Nikolaj) -> Option<Point2> {
 }
 
 fn handle_grounded_barracks(bot: &mut Nikolaj) {
-	let Some(unit_type) = bot.barracks_priority else {
+	let Some(unit_type) = bot.macro_manager.barracks_priority else {
 		return;
 	};
+
+	if bot.macro_manager.expand_priority && bot.get_unit_cost(unit_type).minerals > bot.minerals - 400 {
+		return;
+	}
 
 	for barracks in bot.units.my.structures.of_type(UnitTypeId::Barracks).idle().clone() {
         if barracks.rally_targets().is_empty(){

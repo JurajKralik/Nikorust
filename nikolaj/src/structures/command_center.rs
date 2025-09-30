@@ -33,7 +33,7 @@ pub fn construct_command_centers(bot: &mut Nikolaj) {
     }
 
     // Prerequisites
-    if bot.units.my.structures.of_type_including_alias(UnitTypeId::Starport).is_empty() {
+    if bot.units.my.structures.of_type_including_alias(UnitTypeId::Factory).is_empty() {
         return;
     }
 
@@ -116,7 +116,7 @@ pub fn townhall_control(bot: &mut Nikolaj) {
             }
             if base.type_id() == UnitTypeId::OrbitalCommand {
                 //Scan
-                if bot.time > bot.scanner_sweep_time && base.energy() > 50 {
+                if bot.time > bot.combat_info.scanner_sweep_time && base.energy() > 50 {
                     let mut scanned = false;
                     //Scan for cloaked units
                     let mut enemy_units = bot.units.enemy.units.clone();
@@ -128,7 +128,7 @@ pub fn townhall_control(bot: &mut Nikolaj) {
                                 Target::Pos(enemy.clone().position()),
                                 false,
                             );
-                            bot.scanner_sweep_time = bot.time + 10.0;
+                            bot.combat_info.scanner_sweep_time = bot.time + 10.0;
                             scanned = true;
                             break;
                         }

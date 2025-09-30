@@ -33,9 +33,9 @@ impl Default for NikolajDebugger {
             printing_bases_assignments: false,
             printing_workers_assignments: false,
             printing_resources_assignments: false,
-            printing_full_repair_assignments: true,
+            printing_full_repair_assignments: false,
             printing_repair_targets_assignments: false,
-            printing_construction: false,
+            printing_construction: true,
             printing_combat_info: false,
             printing_build_order: false,
             printing_research: false,
@@ -415,17 +415,17 @@ fn debug_print_build_order(
         return;
     }
     println!("--- Build Order ---");
-    if let Some(ref priority) = bot.barracks_priority {
+    if let Some(ref priority) = bot.macro_manager.barracks_priority {
         println!("Barracks Priority: {:?}", priority);
     } else {
         println!("Barracks Priority: None");
     }
-    if let Some(ref priority) = bot.factory_priority {
+    if let Some(ref priority) = bot.macro_manager.factory_priority {
         println!("Factory Priority: {:?}", priority);
     } else {
         println!("Factory Priority: None");
     }
-    if let Some(ref priority) = bot.starport_priority {
+    if let Some(ref priority) = bot.macro_manager.starport_priority {
         println!("Starport Priority: {:?}", priority);
     } else {
         println!("Starport Priority: None");
@@ -460,6 +460,12 @@ fn debug_display_selected_tags(bot: &mut Nikolaj) {
     for unit in selected_units {
         let position = unit.position();
         let text = format!("Tag: {}\nType: {:?}", unit.tag(), unit.type_id());
+        if let Some(worker_role) = bot.worker_allocator.worker_roles.get(&unit.tag()) {
+            let role_text = format!("\nRole: {:?}", worker_role);
+            let full_text = format!("{}{}", text, role_text);
+            bot.debug_text(&full_text, position, "white", Some(14));
+            continue;
+        }
         bot.debug_text(&text, position, "white", Some(14));
     }
 }

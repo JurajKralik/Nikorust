@@ -8,8 +8,9 @@ mod units;
 
 use crate::debug::*;
 use crate::helpers::construction::*;
-use crate::helpers::strategy::*;
 use crate::helpers::build_order::*;
+use crate::helpers::strategy::*;
+use crate::helpers::macro_manager::*;
 use crate::structures::command_center::*;
 use crate::structures::supply_depots::*;
 use crate::structures::barracks::*;
@@ -26,17 +27,12 @@ use crate::units::helpers::combat_info::*;
 #[derive(Default)]
 struct Nikolaj {
     iteration: usize,
-    worker_allocator: WorkerAllocator,
     debugger: NikolajDebugger,
+    worker_allocator: WorkerAllocator,
+    macro_manager: MacroManager,
     strategy_data: StrategyData,
     construction_info: ConstructionInfo,
     combat_info: CombatInfo,
-    scanner_sweep_time: f32,
-    barracks_priority: Option<UnitTypeId>,
-    factory_priority: Option<UnitTypeId>,
-    starport_priority: Option<UnitTypeId>,
-    starter_reaper: bool,
-    starter_banshee: bool,
 }
 
 impl Player for Nikolaj {
@@ -49,11 +45,6 @@ impl Player for Nikolaj {
         println!("Map name: {}", self.game_info.map_name);
         println!("---------------------");
         println!("On loop:");
-        self.barracks_priority = None;
-        self.factory_priority = None;
-        self.starport_priority = None;
-        self.starter_reaper = true;
-        self.starter_banshee = true;
         self.worker_allocator.debugger = self.debugger.clone();
         Ok(())
     }
@@ -170,7 +161,7 @@ fn main() -> SC2Result<()> {
         Computer::new(Race::Terran, Difficulty::VeryHard, Some(AIBuild::Rush)),
         "BerlingradAIE",
         LaunchOptions {
-            realtime: false,
+            realtime: true,
             ..Default::default()
         },
     )

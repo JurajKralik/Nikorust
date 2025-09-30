@@ -92,9 +92,13 @@ fn find_starport_placement(bot: &Nikolaj) -> Option<Point2> {
 }
 
 fn handle_grounded_starport(bot: &mut Nikolaj) {
-	let Some(unit_type) = bot.starport_priority else {
+	let Some(unit_type) = bot.macro_manager.starport_priority else {
 		return;
 	};
+
+	if bot.macro_manager.expand_priority && bot.get_unit_cost(unit_type).minerals > bot.minerals - 400 {
+		return;
+	}
 
 	for starport in bot.units.my.structures.of_type(UnitTypeId::Starport).idle().clone() {
 		if starport.rally_targets().is_empty() {
