@@ -8,6 +8,10 @@ use crate::helpers::construction::*;
 
 
 pub fn scv_step(bot: &mut Nikolaj) {
+    // Early game skip
+    if bot.time > 0.5 && bot.time < 2.0 {
+        return;
+    }
     // Worker rush
     if bot.strategy_data.enemy_worker_rush {
         counter_worker_rush(bot); // TODO: implement
