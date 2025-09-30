@@ -121,7 +121,10 @@ impl WorkerAllocator {
     }
 
     fn remove_repair_target(&mut self, tag: u64) {
-        if self.repair.remove(&tag).is_some() {
+        if let Some(alloc) = self.repair.remove(&tag) {
+            for worker_tag in alloc.workers {
+                self.set_worker_role(worker_tag, WorkerRole::Idle);
+            }
             if self.debugger.printing_repair_targets_assignments {
                 println!("[DEBUGGER] Removed repair target {}", tag);
             }
@@ -153,9 +156,6 @@ impl WorkerAllocator {
                 continue;
             }
             if let Some(target) = units.my.all.iter().find_tag(*tag).clone() {
-                if target.is_ready() {
-                    continue;
-                }
                 let health_percentage = target.health_percentage();
                 if health_percentage < 1.0 {
                     continue;
