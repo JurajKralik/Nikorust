@@ -20,7 +20,7 @@ pub struct TargetPriorityInfo {
     pub priority_level: PriorityLevel,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum PriorityLevel {
     Ignore = 0,
     Low = 1,
@@ -60,6 +60,16 @@ impl TargetingPriorities {
         }
 
         PriorityLevel::Medium
+    }
+    pub fn compare_priority(&self, unit_a: Unit, unit_b: Unit) -> Option<u64> {
+        let priority_a = self.get_priority_level(&unit_a.type_id());
+        let priority_b = self.get_priority_level(&unit_b.type_id());
+        if priority_a == priority_b {
+            return None;
+        } else if priority_a > priority_b {
+            return Some(unit_a.tag());
+        }
+        Some(unit_b.tag())
     }
 }
 
