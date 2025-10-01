@@ -22,9 +22,9 @@ pub struct ThreatLevelInfo {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ThreatLevel {
-    None,
-    Danger,
-    Flee
+    None = 0,
+    Danger = 1,
+    Flee = 2
 }
 
 impl ThreatLevelsList {

@@ -45,7 +45,7 @@ pub fn army_step(bot: &mut Nikolaj) {
             UnitTypeId::Cyclone => {
                 cyclone_control(bot, unit);
             }
-            UnitTypeId::ThorAALance | UnitTypeId::ThorAAWeapon => {
+            UnitTypeId::Thor | UnitTypeId::ThorAP => {
                 thor_control(bot, unit);
             }
             UnitTypeId::VikingFighter | UnitTypeId::VikingAssault => {

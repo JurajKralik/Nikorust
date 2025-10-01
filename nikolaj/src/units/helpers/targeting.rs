@@ -22,11 +22,12 @@ pub struct TargetPriorityInfo {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PriorityLevel {
-    Ignore,
-    Low,
-    Medium,
-    High,
-    VeryHigh,
+    Ignore = 0,
+    Low = 1,
+    Medium = 2,
+    High = 3,
+    VeryHigh = 4,
+    Max = 5,
 }
 
 impl TargetingPrioritiesList {

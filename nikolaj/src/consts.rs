@@ -4,12 +4,71 @@ use lazy_static::lazy_static;
 use rust_sc2::prelude::*;
 use std::collections::HashMap;
 
-
-pub const WORKERS: &[UnitTypeId] = &[
+const WORKERS: &[UnitTypeId] = &[
     UnitTypeId::Drone,
     UnitTypeId::DroneBurrowed,
     UnitTypeId::SCV,
     UnitTypeId::Probe,
+];
+
+const HIGH_PRIORITY_EASY_TARGETS: &[UnitTypeId] = &[
+    UnitTypeId::HighTemplar,
+    UnitTypeId::DarkTemplar,
+    UnitTypeId::WarpPrism,
+    UnitTypeId::Observer,
+    UnitTypeId::ObserverSiegeMode,
+    UnitTypeId::Oracle,
+    UnitTypeId::Sentry,
+    UnitTypeId::Ghost,
+    UnitTypeId::Infestor,
+    UnitTypeId::InfestorBurrowed,
+    UnitTypeId::Viper,
+    UnitTypeId::Raven,
+    UnitTypeId::Overseer,
+    UnitTypeId::OverseerSiegeMode,
+    UnitTypeId::SwarmHostMP,
+    UnitTypeId::SwarmHostBurrowedMP,
+    UnitTypeId::OverlordTransport,
+    UnitTypeId::OverlordCocoon,
+];
+
+const LURKERS: &[UnitTypeId] = &[
+    UnitTypeId::LurkerMPEgg,
+    UnitTypeId::LurkerMP,
+    UnitTypeId::LurkerMPBurrowed,
+];
+
+const STATIC_DEFENSE_AIR: &[UnitTypeId] = &[
+    UnitTypeId::MissileTurret,
+    UnitTypeId::Bunker,
+    UnitTypeId::SporeCrawler,
+    UnitTypeId::PhotonCannon,
+    UnitTypeId::AutoTurret
+];
+
+const STATIC_DEFENSE_GROUND: &[UnitTypeId] = &[
+    UnitTypeId::PlanetaryFortress,
+    UnitTypeId::Bunker,
+    UnitTypeId::SpineCrawler,
+    UnitTypeId::PhotonCannon,
+    UnitTypeId::SiegeTankSieged,
+    UnitTypeId::AutoTurret
+];
+
+const HEAVY_UNITS: &[UnitTypeId] = &[
+    UnitTypeId::Battlecruiser,
+    UnitTypeId::Liberator,
+    UnitTypeId::LiberatorAG,
+    UnitTypeId::Thor,
+    UnitTypeId::ThorAP,
+    UnitTypeId::Carrier,
+    UnitTypeId::Tempest,
+    UnitTypeId::Mothership,
+    UnitTypeId::Colossus,
+    UnitTypeId::BroodLord,
+    UnitTypeId::BroodLordCocoon,
+    UnitTypeId::Ultralisk,
+    UnitTypeId::UltraliskBurrowed,
 ];
 
 lazy_static! {
@@ -17,106 +76,202 @@ lazy_static! {
         let mut list: HashMap<UnitTypeId, TargetingPriorities> = HashMap::new();
 
         // === BANSHEE
-        add_to_targeting(&mut list, UnitTypeId::Banshee, PriorityLevel::High, WORKERS);
+        add_to_targeting(&mut list, UnitTypeId::Banshee, PriorityLevel::High, &[
+            UnitTypeId::Baneling,
+            UnitTypeId::BanelingBurrowed,
+            UnitTypeId::Adept,
+            UnitTypeId::Reaper
+        ]);
+        add_to_targeting(&mut list, UnitTypeId::Banshee, PriorityLevel::High, LURKERS);
+        add_to_targeting(&mut list, UnitTypeId::Banshee, PriorityLevel::VeryHigh, WORKERS);
+        add_to_targeting(&mut list, UnitTypeId::Banshee, PriorityLevel::Max, HIGH_PRIORITY_EASY_TARGETS);
 
         // === BATTLECRUISER
-        add_to_targeting(&mut list, UnitTypeId::Battlecruiser, PriorityLevel::High,
-            &[UnitTypeId::Probe, UnitTypeId::Drone, UnitTypeId::SCV]);
-        add_to_targeting(&mut list, UnitTypeId::Battlecruiser, PriorityLevel::VeryHigh,
-            &[UnitTypeId::Marine, UnitTypeId::Reaper, UnitTypeId::Zergling, UnitTypeId::Baneling,
-              UnitTypeId::Zealot, UnitTypeId::Adept, UnitTypeId::Hellion, UnitTypeId::HellionTank]);
+        add_to_targeting(&mut list, UnitTypeId::Battlecruiser, PriorityLevel::High, WORKERS);
+        add_to_targeting(&mut list, UnitTypeId::Battlecruiser, PriorityLevel::High, &[
+            UnitTypeId::Marine,
+            UnitTypeId::Reaper,
+            UnitTypeId::Zergling,
+            UnitTypeId::ZerglingBurrowed,
+            UnitTypeId::Baneling,
+            UnitTypeId::BanelingBurrowed,
+            UnitTypeId::Zealot,
+            UnitTypeId::Adept,
+            UnitTypeId::Hellion,
+            UnitTypeId::HellionTank,
+        ]);
+        add_to_targeting(&mut list, UnitTypeId::Battlecruiser, PriorityLevel::High, STATIC_DEFENSE_GROUND);
+        add_to_targeting(&mut list, UnitTypeId::Battlecruiser, PriorityLevel::VeryHigh, STATIC_DEFENSE_AIR);
+        add_to_targeting(&mut list, UnitTypeId::Cyclone, PriorityLevel::Max, HIGH_PRIORITY_EASY_TARGETS);
 
         // === CYCLONE
-        add_to_targeting(&mut list, UnitTypeId::Cyclone, PriorityLevel::High,
-            &[UnitTypeId::WarpPrism, UnitTypeId::Zealot, UnitTypeId::Ghost, UnitTypeId::Viper,
-              UnitTypeId::Bunker, UnitTypeId::PhotonCannon, UnitTypeId::SpineCrawler, UnitTypeId::LurkerMPEgg, UnitTypeId::LurkerMP, UnitTypeId::LurkerMPBurrowed]);
-        add_to_targeting(&mut list, UnitTypeId::Cyclone, PriorityLevel::VeryHigh,
-            &[UnitTypeId::Infestor, UnitTypeId::SiegeTank, UnitTypeId::SiegeTankSieged,
-              UnitTypeId::HighTemplar, UnitTypeId::DarkTemplar, UnitTypeId::WarpPrismPhasing]);
+        add_to_targeting(&mut list, UnitTypeId::Cyclone, PriorityLevel::High, HIGH_PRIORITY_EASY_TARGETS);
+        add_to_targeting(&mut list, UnitTypeId::Cyclone, PriorityLevel::VeryHigh, STATIC_DEFENSE_GROUND);
+        add_to_targeting(&mut list, UnitTypeId::Cyclone, PriorityLevel::VeryHigh, HEAVY_UNITS);
 
         // === GHOST
-        add_to_targeting(&mut list, UnitTypeId::Ghost, PriorityLevel::High,
-            &[UnitTypeId::Zergling, UnitTypeId::OverlordTransport, UnitTypeId::OverlordCocoon]);
-        add_to_targeting(&mut list, UnitTypeId::Ghost, PriorityLevel::VeryHigh,
-            &[UnitTypeId::OverseerSiegeMode, UnitTypeId::Overseer, UnitTypeId::Viper, UnitTypeId::Corruptor,
-              UnitTypeId::BroodLord, UnitTypeId::BroodLordCocoon, UnitTypeId::Baneling,
-              UnitTypeId::SwarmHostMP, UnitTypeId::SwarmHostBurrowedMP, UnitTypeId::Mutalisk]);
-        add_to_targeting(&mut list, UnitTypeId::Ghost, PriorityLevel::VeryHigh,
-            &[UnitTypeId::Ultralisk, UnitTypeId::Infestor, UnitTypeId::LurkerMPEgg, UnitTypeId::LurkerMP, UnitTypeId::LurkerMPBurrowed,
-              UnitTypeId::SporeCrawler, UnitTypeId::Queen, UnitTypeId::SpineCrawler]);
+        add_to_targeting(&mut list, UnitTypeId::Ghost, PriorityLevel::High, WORKERS);
+        add_to_targeting(&mut list, UnitTypeId::Ghost, PriorityLevel::High, &[
+            UnitTypeId::Marine,
+            UnitTypeId::Marauder,
+            UnitTypeId::HellionTank,
+            UnitTypeId::Zergling,
+            UnitTypeId::ZerglingBurrowed,
+
+        ]);
+        add_to_targeting(&mut list, UnitTypeId::Ghost, PriorityLevel::VeryHigh, &[
+            UnitTypeId::Reaper,
+            UnitTypeId::Adept,
+            UnitTypeId::Roach,
+            UnitTypeId::RoachBurrowed,
+            UnitTypeId::Ravager,
+            UnitTypeId::RavagerBurrowed,
+            UnitTypeId::Hydralisk,
+            UnitTypeId::HydraliskBurrowed,
+        ]);
+        add_to_targeting(&mut list, UnitTypeId::Ghost, PriorityLevel::VeryHigh, LURKERS);
+        add_to_targeting(&mut list, UnitTypeId::Ghost, PriorityLevel::Max, &[
+            UnitTypeId::Baneling,
+            UnitTypeId::BanelingBurrowed,
+            UnitTypeId::HighTemplar,
+            UnitTypeId::DarkTemplar,
+            UnitTypeId::Ghost,
+            UnitTypeId::Infestor,
+            UnitTypeId::InfestorBurrowed,
+            UnitTypeId::Viper,
+            UnitTypeId::Overseer,
+            UnitTypeId::OverseerSiegeMode,
+            UnitTypeId::SwarmHostMP,
+            UnitTypeId::SwarmHostBurrowedMP,
+            UnitTypeId::OverlordTransport,
+            UnitTypeId::OverlordCocoon,
+        ]);
 
         // === HELLION
-        add_to_targeting(&mut list, UnitTypeId::Hellion, PriorityLevel::High,
-            &[UnitTypeId::Probe, UnitTypeId::Drone, UnitTypeId::SCV]);
-        add_to_targeting(&mut list, UnitTypeId::Hellion, PriorityLevel::VeryHigh,
-            &[UnitTypeId::Marine, UnitTypeId::Reaper, UnitTypeId::Zergling, UnitTypeId::Baneling,
-              UnitTypeId::Hydralisk, UnitTypeId::Zealot, UnitTypeId::Adept, UnitTypeId::Hellion,
-              UnitTypeId::HellionTank, UnitTypeId::Queen]);
+        add_to_targeting(&mut list, UnitTypeId::Hellion, PriorityLevel::High, &[
+            UnitTypeId::Marine,
+            UnitTypeId::Reaper,
+            UnitTypeId::Zergling,
+            UnitTypeId::Baneling,
+            UnitTypeId::Hydralisk,
+            UnitTypeId::Zealot,
+            UnitTypeId::Adept,
+            UnitTypeId::Hellion,
+            UnitTypeId::HellionTank,
+            UnitTypeId::Queen
+        ]);
+        add_to_targeting(&mut list, UnitTypeId::Hellion, PriorityLevel::VeryHigh, HIGH_PRIORITY_EASY_TARGETS);
+        add_to_targeting(&mut list, UnitTypeId::Hellion, PriorityLevel::Max, WORKERS);
 
         // === HELLIONTANK
-        add_to_targeting(&mut list, UnitTypeId::HellionTank, PriorityLevel::High,
-            &[UnitTypeId::Probe, UnitTypeId::Drone, UnitTypeId::SCV]);
-        add_to_targeting(&mut list, UnitTypeId::HellionTank, PriorityLevel::VeryHigh,
-            &[UnitTypeId::Marine, UnitTypeId::Reaper, UnitTypeId::Zergling, UnitTypeId::Baneling,
-              UnitTypeId::Hydralisk, UnitTypeId::Zealot, UnitTypeId::Adept, UnitTypeId::Hellion,
-              UnitTypeId::HellionTank, UnitTypeId::Queen]);
+        add_to_targeting(&mut list, UnitTypeId::HellionTank, PriorityLevel::High, &[
+            UnitTypeId::Marine,
+            UnitTypeId::Reaper,
+            UnitTypeId::Zergling,
+            UnitTypeId::Baneling,
+            UnitTypeId::Hydralisk,
+            UnitTypeId::Zealot,
+            UnitTypeId::Adept,
+            UnitTypeId::Hellion,
+            UnitTypeId::HellionTank,
+            UnitTypeId::Queen
+        ]);
+        add_to_targeting(&mut list, UnitTypeId::HellionTank, PriorityLevel::VeryHigh, HIGH_PRIORITY_EASY_TARGETS);
+        add_to_targeting(&mut list, UnitTypeId::HellionTank, PriorityLevel::Max, WORKERS);
 
         // === MARAUDER
-        add_to_targeting(&mut list, UnitTypeId::Marauder, PriorityLevel::High,
-            &[UnitTypeId::Zealot, UnitTypeId::Adept, UnitTypeId::Ghost, UnitTypeId::Viper,
-              UnitTypeId::Queen, UnitTypeId::Bunker, UnitTypeId::PhotonCannon,
-              UnitTypeId::SpineCrawler, UnitTypeId::LurkerMPEgg, UnitTypeId::LurkerMP, UnitTypeId::LurkerMPBurrowed]);
-        add_to_targeting(&mut list, UnitTypeId::Marauder, PriorityLevel::VeryHigh,
-            &[UnitTypeId::Baneling, UnitTypeId::Infestor, UnitTypeId::SiegeTank, UnitTypeId::SiegeTankSieged,
-              UnitTypeId::HighTemplar, UnitTypeId::DarkTemplar]);
+        add_to_targeting(&mut list, UnitTypeId::Marauder, PriorityLevel::High, STATIC_DEFENSE_GROUND);
+        add_to_targeting(&mut list, UnitTypeId::Marauder, PriorityLevel::VeryHigh, HIGH_PRIORITY_EASY_TARGETS);
+        add_to_targeting(&mut list, UnitTypeId::Marauder, PriorityLevel::Max, HEAVY_UNITS);
+        add_to_targeting(&mut list, UnitTypeId::Marauder, PriorityLevel::Max, LURKERS);
 
         // === MARINE
-        add_to_targeting(&mut list, UnitTypeId::Marine, PriorityLevel::High,
-            &[UnitTypeId::Zealot, UnitTypeId::Adept, UnitTypeId::Ghost, UnitTypeId::Viper,
-              UnitTypeId::Queen, UnitTypeId::Bunker, UnitTypeId::PhotonCannon,
-              UnitTypeId::SpineCrawler, UnitTypeId::LurkerMPEgg, UnitTypeId::LurkerMP, UnitTypeId::LurkerMPBurrowed]);
-        add_to_targeting(&mut list, UnitTypeId::Marine, PriorityLevel::VeryHigh,
-            &[UnitTypeId::Baneling, UnitTypeId::Infestor, UnitTypeId::SiegeTank, UnitTypeId::SiegeTankSieged,
-              UnitTypeId::HighTemplar, UnitTypeId::DarkTemplar]);
+        add_to_targeting(&mut list, UnitTypeId::Marine, PriorityLevel::High, HIGH_PRIORITY_EASY_TARGETS);
+        add_to_targeting(&mut list, UnitTypeId::Marine, PriorityLevel::VeryHigh, STATIC_DEFENSE_GROUND);
 
         // === REAPER
         add_to_targeting(&mut list, UnitTypeId::Reaper, PriorityLevel::High, WORKERS);
-        add_to_targeting(&mut list, UnitTypeId::Reaper, PriorityLevel::VeryHigh,
-            &[UnitTypeId::Marine, UnitTypeId::Reaper, UnitTypeId::Zergling, UnitTypeId::Baneling, UnitTypeId::Zealot]);
 
         // === SIEGETANK
         add_to_targeting(&mut list, UnitTypeId::SiegeTank, PriorityLevel::High, WORKERS);
-        add_to_targeting(&mut list, UnitTypeId::SiegeTank, PriorityLevel::VeryHigh,
-            &[UnitTypeId::Marine, UnitTypeId::Reaper, UnitTypeId::Zergling, UnitTypeId::Baneling, UnitTypeId::Zealot]);
-        add_to_targeting(&mut list, UnitTypeId::SiegeTank, PriorityLevel::VeryHigh,
-            &[UnitTypeId::SiegeTank, UnitTypeId::SiegeTankSieged, UnitTypeId::Roach, UnitTypeId::Ravager,
-               UnitTypeId::LurkerMPEgg, UnitTypeId::LurkerMP, UnitTypeId::LurkerMPBurrowed, UnitTypeId::Stalker]);
+        add_to_targeting(&mut list, UnitTypeId::SiegeTank, PriorityLevel::VeryHigh, STATIC_DEFENSE_GROUND);
+        add_to_targeting(&mut list, UnitTypeId::SiegeTank, PriorityLevel::Max, &[
+            UnitTypeId::SiegeTank,
+            UnitTypeId::SiegeTankSieged,
+            UnitTypeId::Roach,
+            UnitTypeId::RoachBurrowed,
+            UnitTypeId::Ravager,
+            UnitTypeId::RavagerBurrowed,
+            UnitTypeId::LurkerMPEgg,
+            UnitTypeId::LurkerMP,
+            UnitTypeId::LurkerMPBurrowed,
+            UnitTypeId::Stalker,
+            UnitTypeId::Colossus
+        ]);
+        add_to_targeting(&mut list, UnitTypeId::SiegeTankSieged, PriorityLevel::Max, HIGH_PRIORITY_EASY_TARGETS);
 
         // === SIEGETANKSIEGED
         add_to_targeting(&mut list, UnitTypeId::SiegeTankSieged, PriorityLevel::High, WORKERS);
-        add_to_targeting(&mut list, UnitTypeId::SiegeTankSieged, PriorityLevel::VeryHigh,
-            &[UnitTypeId::Marine, UnitTypeId::Reaper, UnitTypeId::Zergling, UnitTypeId::Baneling, UnitTypeId::Zealot]);
-        add_to_targeting(&mut list, UnitTypeId::SiegeTankSieged, PriorityLevel::VeryHigh,
-            &[UnitTypeId::SiegeTank, UnitTypeId::SiegeTankSieged, UnitTypeId::Roach, UnitTypeId::Ravager,
-               UnitTypeId::LurkerMPEgg, UnitTypeId::LurkerMP, UnitTypeId::LurkerMPBurrowed, UnitTypeId::Stalker]);
+        add_to_targeting(&mut list, UnitTypeId::SiegeTankSieged, PriorityLevel::VeryHigh, &[
+            UnitTypeId::Marine,
+            UnitTypeId::Reaper,
+            UnitTypeId::Zergling,
+            UnitTypeId::ZerglingBurrowed,
+            UnitTypeId::Baneling,
+            UnitTypeId::BanelingBurrowed,
+            UnitTypeId::Zealot
+        ]);
+        add_to_targeting(&mut list, UnitTypeId::SiegeTankSieged, PriorityLevel::Max, &[
+            UnitTypeId::SiegeTank,
+            UnitTypeId::SiegeTankSieged,
+            UnitTypeId::Roach,
+            UnitTypeId::RoachBurrowed,
+            UnitTypeId::Ravager,
+            UnitTypeId::RavagerBurrowed,
+            UnitTypeId::LurkerMPEgg,
+            UnitTypeId::LurkerMP,
+            UnitTypeId::LurkerMPBurrowed,
+            UnitTypeId::Stalker,
+            UnitTypeId::Colossus
+        ]);
+        add_to_targeting(&mut list, UnitTypeId::SiegeTankSieged, PriorityLevel::Max, HIGH_PRIORITY_EASY_TARGETS);
 
-        // === VIKINGFIGHTER
-        add_to_targeting(&mut list, UnitTypeId::VikingFighter, PriorityLevel::High,
-            &[UnitTypeId::Medivac, UnitTypeId::Oracle, UnitTypeId::WarpPrism, UnitTypeId::WarpPrismPhasing,
-              UnitTypeId::Liberator, UnitTypeId::LiberatorAG, UnitTypeId::BroodLord]);
-        add_to_targeting(&mut list, UnitTypeId::VikingFighter, PriorityLevel::VeryHigh,
-            &[UnitTypeId::VikingFighter, UnitTypeId::Raven, UnitTypeId::Battlecruiser, UnitTypeId::Phoenix,
-              UnitTypeId::VoidRay, UnitTypeId::Tempest, UnitTypeId::Carrier, UnitTypeId::Mothership,
-              UnitTypeId::Corruptor, UnitTypeId::Mutalisk, UnitTypeId::Viper]);
+        // === VIKINGFIGHTER (AIR)
+        add_to_targeting(&mut list, UnitTypeId::VikingFighter, PriorityLevel::High, &[
+            UnitTypeId::OverlordCocoon,
+            UnitTypeId::Overseer,
+            UnitTypeId::OverseerSiegeMode,
+            UnitTypeId::Observer,
+            UnitTypeId::ObserverSiegeMode,
+        ]);
+        add_to_targeting(&mut list, UnitTypeId::VikingFighter, PriorityLevel::VeryHigh, &[
+            UnitTypeId::Medivac,
+            UnitTypeId::Banshee,
+            UnitTypeId::Raven,
+            UnitTypeId::Liberator,
+            UnitTypeId::LiberatorAG,
+            UnitTypeId::OverlordTransport,
+            UnitTypeId::Oracle,
+            UnitTypeId::WarpPrism,
+            UnitTypeId::WarpPrismPhasing,
+            UnitTypeId::BroodLord,
+            UnitTypeId::BroodLordCocoon,
+        ]);
+        add_to_targeting(&mut list, UnitTypeId::VikingFighter, PriorityLevel::Max, &[
+            UnitTypeId::VikingFighter,
+            UnitTypeId::Battlecruiser,
+            UnitTypeId::Phoenix,
+            UnitTypeId::VoidRay,
+            UnitTypeId::Tempest,
+            UnitTypeId::Carrier,
+            UnitTypeId::Mothership,
+            UnitTypeId::Corruptor,
+            UnitTypeId::Mutalisk,
+            UnitTypeId::Viper,
+        ]);
 
-        // === VIKINGASSAULT
-        add_to_targeting(&mut list, UnitTypeId::VikingAssault, PriorityLevel::High,
-            &[UnitTypeId::Medivac, UnitTypeId::Oracle, UnitTypeId::WarpPrism, UnitTypeId::WarpPrismPhasing,
-              UnitTypeId::Liberator, UnitTypeId::LiberatorAG, UnitTypeId::BroodLord]);
-        add_to_targeting(&mut list, UnitTypeId::VikingAssault, PriorityLevel::VeryHigh,
-            &[UnitTypeId::VikingFighter, UnitTypeId::Raven, UnitTypeId::Battlecruiser, UnitTypeId::Phoenix,
-              UnitTypeId::VoidRay, UnitTypeId::Tempest, UnitTypeId::Carrier, UnitTypeId::Mothership,
-              UnitTypeId::Corruptor, UnitTypeId::Mutalisk, UnitTypeId::Viper]);
+        // === VIKINGASSAULT (GROUND)
+        add_to_targeting(&mut list, UnitTypeId::VikingAssault, PriorityLevel::High, WORKERS);
 
         TargetingPrioritiesList { list }
     };
@@ -217,7 +372,9 @@ fn add_to_targeting(
     targets: &[UnitTypeId],
 ) {
     list.entry(unit)
-        .or_insert_with(|| TargetingPriorities { priorities: Vec::new() })
+        .or_insert_with(|| TargetingPriorities {
+            priorities: Vec::new(),
+        })
         .priorities
         .extend(targets.iter().copied().map(|t| TargetPriorityInfo {
             unit_type: t,
@@ -232,7 +389,9 @@ fn add_threats(
     threats: &[UnitTypeId],
 ) {
     list.entry(unit)
-        .or_insert_with(|| ThreatLevels { threats: Vec::new() })
+        .or_insert_with(|| ThreatLevels {
+            threats: Vec::new(),
+        })
         .threats
         .extend(threats.iter().copied().map(|t| ThreatLevelInfo {
             unit_type: t,
