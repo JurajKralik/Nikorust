@@ -1,5 +1,6 @@
 use rust_sc2::{bot, geometry::*, prelude::*};
 
+mod consts;
 mod debug;
 mod ex_main;
 mod helpers;

@@ -12,7 +12,7 @@ fn barracks_tech_lab_control(bot: &mut Nikolaj) {
     for structure in bot.units.my.structures.of_type(UnitTypeId::BarracksTechLab).ready() {
         if let Some(abilities) = structure.abilities() {
             let combat_shield_researched = !abilities.contains(&AbilityId::ResearchCombatShield);
-            let can_afford_combat_shield_research = true; //bot.can_afford(AbilityId::ResearchCombatShield, false);
+            let can_afford_combat_shield_research = bot.can_afford_upgrade(UpgradeId::ShieldWall);
             if !combat_shield_researched && can_afford_combat_shield_research {
                 structure.use_ability(AbilityId::ResearchCombatShield, false);
                 if bot.debugger.printing_research {

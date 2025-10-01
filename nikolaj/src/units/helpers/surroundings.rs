@@ -1,5 +1,10 @@
+#![allow(unused_variables)]
+
+use crate::units::helpers::targeting::*;
+use crate::units::helpers::threat_detection::*;
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
+
 
 #[derive(Clone)]
 pub struct SurroundingsInfo {
@@ -24,6 +29,8 @@ impl Default for SurroundingsInfo {
 }
 
 pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo {
+    let targeting_priorities = get_targeting_priorities(&unit.type_id());
+    let threat_levels = get_threat_levels(&unit.type_id());
     let mut surroundings = SurroundingsInfo::default();
     let enemies = bot.units.enemy.units.clone();
     let sorted_enemies = enemies
