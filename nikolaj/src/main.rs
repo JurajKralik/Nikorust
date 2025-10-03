@@ -148,22 +148,29 @@ impl Nikolaj {
     }
 }
 
-
-#[cfg(feature = "ladder")]
 fn main() -> SC2Result<()> {
-    ex_main::main(Nikolaj::default())
-}
+    #[cfg(feature = "ladder")]
+    {
+        return ex_main::main(Nikolaj::default());
+    }
 
-#[cfg(feature = "wine_sc2")]
-fn main() -> SC2Result<()> {
-    let mut bot = Nikolaj::default();
-    run_vs_computer(
-        &mut bot,
-        Computer::new(Race::Terran, Difficulty::VeryHard, Some(AIBuild::Rush)),
-        "BerlingradAIE",
-        LaunchOptions {
-            realtime: true,
-            ..Default::default()
-        },
-    )
+    #[cfg(feature = "wine_sc2")]
+    {
+        let mut bot = Nikolaj::default();
+        return run_vs_computer(
+            &mut bot,
+            Computer::new(Race::Terran, Difficulty::VeryHard, Some(AIBuild::Rush)),
+            "BerlingradAIE",
+            LaunchOptions {
+                realtime: true,
+                ..Default::default()
+            },
+        );
+    }
+
+    #[cfg(not(any(feature = "ladder", feature = "wine_sc2")))]
+    {
+        SC2Result::Ok(())?;
+        panic!("This build of the bot is not configured to run. Please enable either the 'ladder' or 'wine_sc2' feature in Cargo.toml.");
+    }
 }

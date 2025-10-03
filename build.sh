@@ -1,26 +1,29 @@
 #!/bin/bash
-set -e  # exit on error
+REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo "$(pwd)")"
+cd "$REPO_ROOT"
 
-# Go to repo
-cd /home/dax/Bob/Repositories/Nikorust
+echo "Repo root: $REPO_ROOT"
 
-# Build with musl target
 rustup target add x86_64-unknown-linux-musl
-cargo build --release --target=x86_64-unknown-linux-musl --features ladder
+cargo build --release --target x86_64-unknown-linux-musl --features ladder
 
-# Paths
 BUILD_DIR="target/x86_64-unknown-linux-musl/release"
 BIN_SRC="$BUILD_DIR/Nikolaj"
 BIN_DEST="$BUILD_DIR/RustyNikolaj"
 ZIP_NAME="RustyNikolaj.zip"
+ň
+if [[ -f "$BIN_SRC" ]]; then
+    cp "$BIN_SRC" "$BIN_DEST"
+    echo "Binary copied to $BIN_DEST"
+else
+    echo "Error: binary not found at $BIN_SRC"
+fi
 
-# Rename binary
-cp "$BIN_SRC" "$BIN_DEST"
-
-# Create zip
-cd "$BUILD_DIR"
-zip -r "$ZIP_NAME" "RustyNikolaj"
-
-# Move zip to /
-mv "$ZIP_NAME" /home/dax/Bob/Repositories/Nikorust
-echo "Build complete! 🦾"
+if [[ -f "$BIN_DEST" ]]; then
+    cd "$BUILD_DIR"
+    zip -r "$ZIP_NAME" "RustyNikolaj"
+    mv "$ZIP_NAME" "$REPO_ROOT/"
+    echo "Build complete! 🦾"
+else
+    echo "Skipping zip: no binary at $BIN_DEST"
+fi
