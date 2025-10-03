@@ -3,7 +3,9 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [ -f "$SCRIPT_DIR/.env" ]; then
-    export $(grep -v '^#' "$SCRIPT_DIR/.env" | xargs)
+    set -a 
+    source "$SCRIPT_DIR/.env"
+    set +a
 fi
 
 export WINEDEBUG=${WINEDEBUG:--all}

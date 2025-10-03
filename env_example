@@ -1,0 +1,2 @@
+WINEDEBUG=-all
+SC2PATH="/home/StarCraft II/"
