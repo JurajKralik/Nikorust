@@ -50,7 +50,8 @@ impl Player for Nikolaj {
         Ok(())
     }
     fn on_step(&mut self, _iteration: usize) -> SC2Result<()> {
-        self.iteration = _iteration;
+        self.time_step();
+
         scv_step(self);
         construction_info_step(self);
         decide_build_strategy(self);
@@ -82,6 +83,12 @@ impl Player for Nikolaj {
 
 #[allow(dead_code)]
 impl Nikolaj {
+    fn time_step(&mut self) {
+        self.iteration += 1;
+        let time = (self.time * 10.0).round() / 10.0;
+        self.debugger.time = time;
+        self.worker_allocator.debugger.time = time;
+    }
     fn end_game_report(&self, result: GameResult) {
         println!("---------------------");
         println!("On end:");
@@ -149,11 +156,6 @@ impl Nikolaj {
 }
 
 fn main() -> SC2Result<()> {
-    #[cfg(feature = "ladder")]
-    {
-        return ex_main::main(Nikolaj::default());
-    }
-
     #[cfg(feature = "wine_sc2")]
     {
         let mut bot = Nikolaj::default();
@@ -167,10 +169,8 @@ fn main() -> SC2Result<()> {
             },
         );
     }
-
-    #[cfg(not(any(feature = "ladder", feature = "wine_sc2")))]
+    #[cfg(not(feature = "wine_sc2"))]
     {
-        SC2Result::Ok(())?;
-        panic!("This build of the bot is not configured to run. Please enable either the 'ladder' or 'wine_sc2' feature in Cargo.toml.");
+        return ex_main::main(Nikolaj::default());
     }
 }

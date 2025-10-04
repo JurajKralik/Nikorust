@@ -95,19 +95,19 @@ pub fn build(bot: &mut Nikolaj, position: Point2, structure: UnitTypeId) {
         };
         bot.construction_info.under_construction.push(under_construction);
         if bot.debugger.printing_construction {
-            println!("[DEBUGGER] Started building {:?} at {:?}", structure, bot.time);
+            println!("[DEBUGGER] {} Started building {:?} at {:?}", bot.debugger.time, structure, bot.time);
         }
     }
 }
 
-pub fn add_to_in_training(bot: &mut Nikolaj, unit: UnitTypeId) {
+pub fn add_to_in_training(bot: &mut Nikolaj, unit: UnitTypeId, structure: Unit) {
     let in_training = InTraining {
         unit,
-        time_started: bot.time,
+        time_started: bot.time
     };
     bot.construction_info.in_training.push(in_training);
     if bot.debugger.printing_construction {
-        println!("[DEBUGGER] Started training {:?} at {:?}", unit, bot.time);
+        println!("[DEBUGGER] {} Started training {:?} at {:?} from {:?}", bot.debugger.time, unit, bot.time, structure.tag());
     }
 }
 
@@ -144,7 +144,7 @@ pub fn finish_constructions_without_worker(bot: &mut Nikolaj) {
             let structure_tag = structure.tag().clone();
             bot.construction_info.structures_being_finished.insert(structure_tag, worker_tag);
             if bot.debugger.printing_construction {
-                println!("[DEBUGGER] Finishing construction of {:?} at {:?}", structure.type_id(), bot.time);
+                println!("[DEBUGGER] {} Finishing construction of {:?} at {:?}", bot.debugger.time, structure.type_id(), bot.time);
             }
         }
     }
@@ -218,7 +218,7 @@ pub fn cancel_constructions_in_danger(bot: &mut Nikolaj) {
             if enemy.can_attack_ground() {
                 structure.cancel_building(false);
                 if bot.debugger.printing_construction {
-                    println!("[DEBUGGER] Cancelled construction of {:?} at {:?}", structure.type_id(), bot.time);
+                    println!("[DEBUGGER] {} Cancelled construction of {:?} at {:?}", bot.debugger.time, structure.type_id(), bot.time);
                 }
                 break;
             }

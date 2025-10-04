@@ -119,7 +119,7 @@ fn handle_grounded_barracks(bot: &mut Nikolaj) {
 		return;
 	}
 
-	for barracks in bot.units.my.structures.of_type(UnitTypeId::Barracks).idle().clone() {
+	for barracks in bot.units.my.structures.of_type(UnitTypeId::Barracks).idle().ready().clone() {
         if barracks.rally_targets().is_empty(){
             if let Some(base) = bot.units.my.townhalls.closest(barracks.position()) {
                 barracks.smart(Target::Pos(base.position()), false);
@@ -130,11 +130,11 @@ fn handle_grounded_barracks(bot: &mut Nikolaj) {
 				try_build_techlab_or_lift(bot, &barracks);
 			} else {
 				barracks.train(unit_type, false);
-				add_to_in_training(bot, unit_type);
+				add_to_in_training(bot, unit_type, barracks.clone());
 			}
 		} else {
 			barracks.train(unit_type, false);
-			add_to_in_training(bot, unit_type);
+			add_to_in_training(bot, unit_type, barracks.clone());
 		}
 	}
 }

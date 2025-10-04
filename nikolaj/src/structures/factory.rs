@@ -108,22 +108,22 @@ fn handle_grounded_factory(bot: &mut Nikolaj) {
 		return;
 	}
 	
-	for factory in bot.units.my.structures.of_type(UnitTypeId::Factory).idle().clone() {
-        if factory.rally_targets().is_empty(){
-            if let Some(base) = bot.units.my.townhalls.closest(factory.position()) {
-                factory.smart(Target::Pos(base.position()), false);
-            }
-        }
+	for factory in bot.units.my.structures.of_type(UnitTypeId::Factory).idle().ready().clone() {
+		if factory.rally_targets().is_empty() {
+			if let Some(base) = bot.units.my.townhalls.closest(factory.position()) {
+				factory.smart(Target::Pos(base.position()), false);
+			}
+		}
 		if requires_techlab_factory(unit_type) {
 			if !factory.has_techlab() {
 				try_build_factory_techlab_or_lift(bot, &factory);
 			} else {
 				factory.train(unit_type, false);
-				add_to_in_training(bot, unit_type);
+				add_to_in_training(bot, unit_type, factory.clone());
 			}
 		} else {
 			factory.train(unit_type, false);
-			add_to_in_training(bot, unit_type);
+			add_to_in_training(bot, unit_type, factory.clone());
 		}
 	}
 }

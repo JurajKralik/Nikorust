@@ -25,7 +25,7 @@ pub fn scv_step(bot: &mut Nikolaj) {
     let current_bases = bot.worker_allocator.bases.clone();
     bot.worker_allocator.bases = get_mining_bases(&bot.units);
     if bot.debugger.printing_bases_assignments {
-        print_new_bases_assignments(&current_bases, &bot.worker_allocator.bases.clone());
+        print_new_bases_assignments(&current_bases, &bot.worker_allocator.bases.clone(), bot.debugger.time);
     }
     
     // Repair
@@ -66,16 +66,16 @@ impl WorkerAllocator {
             Some(old_role) if old_role != new_role => {
                 if printing {
                     println!(
-                        "[DEBUGGER] Worker {} changed role {:?} -> {:?}",
-                        worker_tag, old_role, new_role
+                        "[DEBUGGER] {} Worker {} changed role {:?} -> {:?}",
+                        self.debugger.time, worker_tag, old_role, new_role
                     );
                 }
             }
             None => {
                 if printing {
                     println!(
-                        "[DEBUGGER] Worker {} assigned initial role {:?}",
-                        worker_tag, new_role
+                        "[DEBUGGER] {} Worker {} assigned initial role {:?}",
+                        self.debugger.time, worker_tag, new_role
                     );
                 }
             }
@@ -88,8 +88,8 @@ impl WorkerAllocator {
         if !self.resources.contains_key(&tag) {
             if printing {
                 println!(
-                    "[DEBUGGER] Added {:?} resource {}",
-                    role, tag
+                    "[DEBUGGER] {} Added {:?} resource {}",
+                    self.debugger.time, role, tag
                 );
             }
             self.resources.insert(
@@ -107,7 +107,7 @@ impl WorkerAllocator {
         let printing = self.debugger.printing_resources_assignments;
         if self.resources.remove(&tag).is_some() {
             if printing {
-                println!("[DEBUGGER] Removed resource {}", tag);
+                println!("[DEBUGGER] {} Removed resource {}", self.debugger.time, tag);
             }
         }
     }
@@ -116,8 +116,8 @@ impl WorkerAllocator {
         if !self.repair.contains_key(&tag) {
             if self.debugger.printing_repair_targets_assignments {
                 println!(
-                    "[DEBUGGER] Added repair target {} (max_workers = {})",
-                    tag, alloc.max_workers
+                    "[DEBUGGER] {} Added repair target {} (max_workers = {})",
+                    self.debugger.time, tag, alloc.max_workers
                 );
             }
             self.repair.insert(tag, alloc);
@@ -130,7 +130,7 @@ impl WorkerAllocator {
                 self.set_worker_role(worker_tag, WorkerRole::Idle);
             }
             if self.debugger.printing_repair_targets_assignments {
-                println!("[DEBUGGER] Removed repair target {}", tag);
+                println!("[DEBUGGER] {} Removed repair target {}", self.debugger.time, tag);
             }
         }
     }
@@ -286,14 +286,14 @@ impl WorkerAllocator {
                     workers_to_assign.push(worker_tag);
                     repair_orders.push((worker_tag, *tag));
                 } else {
-                    println!("Worker with tag {} not found for repair", worker_tag);
+                    println!("{} Worker with tag {} not found for repair", self.debugger.time, worker_tag);
                 }
             }
         }
 
         for worker_tag in workers_to_assign {
             if self.debugger.printing_workers_assignments {
-                println!("[DEBUGGER] Worker {} assigned to Repair", worker_tag);
+                println!("[DEBUGGER] {} Worker {} assigned to Repair", self.debugger.time, worker_tag);
             }
             self.set_worker_role(worker_tag, WorkerRole::Repair);
         }
@@ -309,7 +309,7 @@ impl WorkerAllocator {
             let worker_tag = worker.tag();
             if !self.worker_roles.contains_key(&worker_tag) {
                 if self.debugger.printing_workers_assignments {
-                    println!("[DEBUGGER] New worker without role detected: {}", worker_tag);
+                    println!("[DEBUGGER] {} New worker without role detected: {}", self.debugger.time, worker_tag);
                 }
                 self.set_worker_role(worker_tag, WorkerRole::Idle);
             } else if let Some(role) = self.worker_roles.get(&worker_tag) {
@@ -319,7 +319,7 @@ impl WorkerAllocator {
                     }
                     if worker.is_idle() || worker.is_gathering() || worker.is_repairing() {
                         if self.debugger.printing_workers_assignments {
-                            println!("[DEBUGGER] Worker {} finished task. Set back to work", worker_tag);
+                            println!("[DEBUGGER] {} Worker {} finished task. Set back to work", self.debugger.time, worker_tag);
                         }
                         self.reassign_worker_role(worker_tag);
                     }
@@ -366,8 +366,8 @@ impl WorkerAllocator {
         for worker_tag in workers_to_idle {
             if self.debugger.printing_workers_assignments {
                 println!(
-                    "[DEBUGGER] Worker {} set to Idle. Removed from resource",
-                    worker_tag
+                    "[DEBUGGER] {} Worker {} set to Idle. Removed from resource",
+                    self.debugger.time, worker_tag
                 );
             }
             self.set_worker_role(worker_tag, WorkerRole::Idle);
@@ -375,7 +375,7 @@ impl WorkerAllocator {
 
         for tag in invalid_resources_tags {
             if self.debugger.printing_full_resource_assignments {
-                println!("[DEBUGGER] Removed resource {}", tag);
+                println!("[DEBUGGER] {} Removed resource {}", self.debugger.time, tag);
             }
             self.remove_resource(tag);
         }
@@ -418,7 +418,7 @@ impl WorkerAllocator {
             if !self.worker_roles.contains_key(&worker_tag) {
                 self.set_worker_role(worker_tag, WorkerRole::Idle);
                 if self.debugger.printing_workers_assignments {
-                    println!("[DEBUGGER] New worker without role detected: {}", worker_tag);
+                    println!("[DEBUGGER] {} New worker without role detected: {}", self.debugger.time, worker_tag);
                 }
             }
             let worker_role = self.worker_roles.get(&worker_tag).unwrap_or(&WorkerRole::Idle).clone();
@@ -450,7 +450,7 @@ impl WorkerAllocator {
                             self.set_worker_role(worker_tag, WorkerRole::Idle);
                             self.assign_worker_to_gas(worker_tag, units);
                             if self.debugger.printing_workers_assignments {
-                                println!("[DEBUGGER] Worker {} switched from Mineral to Gas", worker_tag);
+                                println!("[DEBUGGER] {} Worker {} switched from Mineral to Gas", self.debugger.time, worker_tag);
                             }
                         }
                     }
@@ -469,7 +469,7 @@ impl WorkerAllocator {
                             self.set_worker_role(worker_tag, WorkerRole::Idle);
                             self.assign_worker_to_minerals(worker_tag, units);
                             if self.debugger.printing_workers_assignments {
-                                println!("[DEBUGGER] Worker {} reassigned to different Mineral", worker_tag);
+                                println!("[DEBUGGER] {} Worker {} reassigned to different Mineral", self.debugger.time, worker_tag);
                             }
                         }
                     }
@@ -585,7 +585,7 @@ impl WorkerAllocator {
             if let Some(role) = self.worker_roles.get(&worker_tag) {
                 if role == &WorkerRole::Idle {
                     if self.debugger.printing_workers_assignments {
-                        println!("[DEBUGGER] Idle worker: {}", worker_tag);
+                        println!("[DEBUGGER] {} Idle worker: {}", self.debugger.time, worker_tag);
                     }
                     continue;
                 } else if role == &WorkerRole::Busy {

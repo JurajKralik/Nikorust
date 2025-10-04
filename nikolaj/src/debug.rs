@@ -6,6 +6,7 @@ use std::{collections::HashMap,};
 
 #[derive(Debug, Clone)]
 pub struct NikolajDebugger{
+    pub time: f32,
     pub printing_full_resource_assignments: bool,
     pub printing_bases_assignments: bool,
     pub printing_workers_assignments: bool,
@@ -29,27 +30,57 @@ pub struct NikolajDebugger{
 }
 impl Default for NikolajDebugger {
     fn default() -> Self {
-        Self {
-            printing_full_resource_assignments: false,
-            printing_bases_assignments: false,
-            printing_workers_assignments: false,
-            printing_resources_assignments: false,
-            printing_full_repair_assignments: false,
-            printing_repair_targets_assignments: false,
-            printing_construction: true,
-            printing_full_construction_info: false,
-            printing_combat_info: false,
-            printing_build_order: false,
-            printing_research: false,
-            displaying_worker_roles: false,
-            displaying_worker_mining_steps: false,
-            displaying_bases: false,
-            displaying_repair: false,
-            displaying_mining: false,
-            displaying_strategy_points: false,
-            displaying_selected_tags: true,
-            run_resource_assignments_checks: false,
-            workers_current_mining_steps: vec![],
+        #[cfg(feature = "wine_sc2")]
+        {
+            Self {
+                time: 0.0,
+                printing_full_resource_assignments: false,
+                printing_bases_assignments: false,
+                printing_workers_assignments: false,
+                printing_resources_assignments: false,
+                printing_full_repair_assignments: false,
+                printing_repair_targets_assignments: false,
+                printing_construction: true,
+                printing_full_construction_info: false,
+                printing_combat_info: false,
+                printing_build_order: false,
+                printing_research: false,
+                displaying_worker_roles: false,
+                displaying_worker_mining_steps: false,
+                displaying_bases: false,
+                displaying_repair: false,
+                displaying_mining: false,
+                displaying_strategy_points: false,
+                displaying_selected_tags: true,
+                run_resource_assignments_checks: false,
+                workers_current_mining_steps: vec![],
+            }
+        }
+        #[cfg(not(feature = "wine_sc2"))]
+        {
+            Self {
+                time: 0.0,
+                printing_full_resource_assignments: false,
+                printing_bases_assignments: false,
+                printing_workers_assignments: false,
+                printing_resources_assignments: false,
+                printing_full_repair_assignments: false,
+                printing_repair_targets_assignments: false,
+                printing_construction: true,
+                printing_full_construction_info: false,
+                printing_combat_info: false,
+                printing_build_order: false,
+                printing_research: false,
+                displaying_worker_roles: false,
+                displaying_worker_mining_steps: false,
+                displaying_bases: false,
+                displaying_repair: false,
+                displaying_mining: false,
+                displaying_strategy_points: false,
+                displaying_selected_tags: true,
+                run_resource_assignments_checks: false,
+                workers_current_mining_steps: vec![],
+            }
         }
     }
 }
@@ -99,7 +130,7 @@ fn debug_show_bases(
             let color = "yellow";
             bot.debug_cube(position, size, color);
         } else {
-            println!("[DEBUGGER] Base with tag {} not found", base_tag);
+            println!("[DEBUGGER] {} Base with tag {} not found", bot.debugger.time, base_tag);
         }
     }
 }
@@ -133,7 +164,7 @@ fn debug_show_mining(
                 bot.debug_cube(position, size, resource_color);
                 resource_position = Some(position.clone());
             } else {
-                println!("[DEBUGGER] Mineral with tag {} not found", tag);
+                println!("[DEBUGGER] {} Mineral with tag {} not found", bot.debugger.time, tag);
             }
         } else {
             if let Some(refinery) = bot.units.my.structures.iter().find_tag(tag.clone()){
@@ -143,7 +174,7 @@ fn debug_show_mining(
                 bot.debug_cube(position, size, resource_color);
                 resource_position = Some(position.clone());
             } else {
-                println!("[DEBUGGER] Refinery with tag {} not found", tag);
+                println!("[DEBUGGER] {} Refinery with tag {} not found", bot.debugger.time, tag);
             }
         }
         // Show workers
@@ -159,9 +190,9 @@ fn debug_show_mining(
                         if role == &WorkerRole::Gas {
                             continue;
                         }
-                        println!("[DEBUGGER] (1) Worker with tag {}, role {:?} not found", worker_tag, role);
+                        println!("[DEBUGGER] {} (1) Worker with tag {}, role {:?} not found", bot.debugger.time, worker_tag, role);
                     }
-                    println!("[DEBUGGER] (1) Worker with tag {}, without role not found", worker_tag);
+                    println!("[DEBUGGER] {} (1) Worker with tag {}, without role not found", bot.debugger.time, worker_tag);
                 }
             }
         }
@@ -195,7 +226,7 @@ fn debug_show_worker_mining_steps(
             let text = format!("{:?}", worker_step.step);
             worker_infos.push((text, position, color));
         } else {
-            println!("[DEBUGGER] (2) Worker with tag {} not found", worker_step.tag);
+            println!("[DEBUGGER] {} (2) Worker with tag {} not found", bot.debugger.time, worker_step.tag);
         }
     }
     for (text, pos, color) in worker_infos {
@@ -230,7 +261,7 @@ fn debug_show_worker_roles(
             };
             worker_infos.push((text, position, color));
         } else {
-            println!("[DEBUGGER] Worker role for tag {} not found", tag);
+            println!("[DEBUGGER] {} Worker role for tag {} not found", bot.debugger.time, tag);
         }
     }
     for (_text, pos, color) in worker_infos {
@@ -269,7 +300,7 @@ fn debug_show_repair(
                 bot.debug_cube(position, size, target_color);
                 target_position = Some(position.clone());
             } else {
-                println!("[DEBUGGER] Structure with tag {} not found", tag);
+                println!("[DEBUGGER] {} Structure with tag {} not found", bot.debugger.time, tag);
             }
         } else {
             if let Some(unit) = bot.units.my.units.iter().find_tag(tag.clone()){
@@ -279,7 +310,7 @@ fn debug_show_repair(
                 bot.debug_cube(position, size, target_color);
                 target_position = Some(position.clone());
             } else {
-                println!("[DEBUGGER] Unit with tag {} not found", tag);
+                println!("[DEBUGGER] {} Unit with tag {} not found", bot.debugger.time, tag);
             }
         }
         // Show workers
@@ -291,7 +322,7 @@ fn debug_show_repair(
                     bot.debug_sphere(worker_pos, 0.5, target_color);
                     bot.debug_line(worker_pos, target_pos, color);
                 } else {
-                    println!("[DEBUGGER] (3) Worker with tag {} not found", worker_tag);
+                    println!("[DEBUGGER] {} (3) Worker with tag {} not found", bot.debugger.time, worker_tag);
                 }
             }
         }
@@ -378,15 +409,15 @@ fn debug_print_resource_assignments(
     println!("----------------------------");
 }
 
-pub fn print_new_bases_assignments(old_bases: &Vec<u64>, new_bases: &Vec<u64>) {
+pub fn print_new_bases_assignments(old_bases: &Vec<u64>, new_bases: &Vec<u64>, time: f32) {
     for base in new_bases {
         if !old_bases.contains(base) {
-            println!("[DEBUGGER] New base added with tag {}", base);
+            println!("[DEBUGGER] {} New base added with tag {}", time, base);
         }
     }
     for base in old_bases {
         if !new_bases.contains(base) {
-            println!("[DEBUGGER] Base removed with tag {}", base);
+            println!("[DEBUGGER] {} Base removed with tag {}", time, base);
         }
     }
 }
@@ -444,7 +475,7 @@ fn debug_resource_assignments_checks(bot: &mut Nikolaj) {
     for (_, alloc) in &bot.worker_allocator.resources {
         for worker_tag in &alloc.workers {
             if let Some(existing_role) = used_workers.get(worker_tag) {
-                println!("[DEBUGGER][ERROR] Worker with tag {} assigned to multiple resources: {:?} and {:?}", worker_tag, existing_role, alloc.worker_role);
+                println!("[DEBUGGER] {} Worker with tag {} assigned to multiple resources: {:?} and {:?}", bot.debugger.time, worker_tag, existing_role, alloc.worker_role);
             } else {
                 used_workers.insert(*worker_tag, alloc.worker_role.clone());
             }

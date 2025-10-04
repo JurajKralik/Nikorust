@@ -16,7 +16,7 @@ fn barracks_tech_lab_control(bot: &mut Nikolaj) {
             if !combat_shield_researched && can_afford_combat_shield_research {
                 structure.use_ability(AbilityId::ResearchCombatShield, false);
                 if bot.debugger.printing_research {
-                    println!("[DEBUGGER] Researching Combat Shield");
+                    println!("[DEBUGGER] {} Researching Combat Shield", bot.debugger.time);
                 }
                 continue;
             }
@@ -27,7 +27,7 @@ fn barracks_tech_lab_control(bot: &mut Nikolaj) {
             if !stimpack_researched && can_afford_stimpack_research {
                 structure.use_ability(AbilityId::BarracksTechLabResearchStimpack, false);
                 if bot.debugger.printing_research {
-                    println!("[DEBUGGER] Researching Stimpack");
+                    println!("[DEBUGGER] {} Researching Stimpack", bot.debugger.time);
                 }
                 continue;
             }
@@ -44,7 +44,7 @@ fn factory_tech_lab_control(bot: &mut Nikolaj) {
             if !drilling_claws_researched && can_afford_drilling_claws_research {
                 structure.use_ability(AbilityId::ResearchDrillingClaws, false);
                 if bot.debugger.printing_research {
-                    println!("[DEBUGGER] Researching Drilling Claws");
+                    println!("[DEBUGGER] {} Researching Drilling Claws", bot.debugger.time);
                 }
                 continue;
             }
@@ -61,7 +61,7 @@ fn starport_tech_lab_control(bot: &mut Nikolaj) {
             if !banshee_cloak_researched && can_afford_banshee_cloak_research {
                 structure.use_ability(AbilityId::ResearchBansheeCloakingField, false);
                 if bot.debugger.printing_research {
-                    println!("[DEBUGGER] Researching Banshee Cloak");
+                    println!("[DEBUGGER] {} Researching Banshee Cloak", bot.debugger.time);
                 }
                 continue;
             }

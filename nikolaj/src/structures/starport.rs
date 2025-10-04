@@ -104,7 +104,7 @@ fn handle_grounded_starport(bot: &mut Nikolaj) {
 		return;
 	}
 
-	for starport in bot.units.my.structures.of_type(UnitTypeId::Starport).idle().clone() {
+	for starport in bot.units.my.structures.of_type(UnitTypeId::Starport).idle().ready().clone() {
 		if starport.rally_targets().is_empty() {
 			if let Some(base) = bot.units.my.townhalls.closest(starport.position()) {
 				starport.smart(Target::Pos(base.position()), false);
@@ -116,11 +116,11 @@ fn handle_grounded_starport(bot: &mut Nikolaj) {
 				try_build_starport_techlab_or_lift(bot, &starport);
 			} else {
 				starport.train(unit_type, false);
-				add_to_in_training(bot, unit_type);
+				add_to_in_training(bot, unit_type, starport.clone());
 			}
 		} else {
 			starport.train(unit_type, false);
-			add_to_in_training(bot, unit_type);
+			add_to_in_training(bot, unit_type, starport.clone());
 		}
 	}
 }
