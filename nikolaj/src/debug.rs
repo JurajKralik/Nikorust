@@ -13,6 +13,7 @@ pub struct NikolajDebugger{
     pub printing_full_repair_assignments: bool,
     pub printing_repair_targets_assignments: bool,
     pub printing_construction: bool,
+    pub printing_full_construction_info: bool,
     pub printing_combat_info: bool,
     pub printing_build_order: bool,
     pub printing_research: bool,
@@ -36,6 +37,7 @@ impl Default for NikolajDebugger {
             printing_full_repair_assignments: false,
             printing_repair_targets_assignments: false,
             printing_construction: true,
+            printing_full_construction_info: false,
             printing_combat_info: false,
             printing_build_order: false,
             printing_research: false,
@@ -79,6 +81,7 @@ pub fn debug_step(
     debug_print_build_order(bot);
     debug_resource_assignments_checks(bot);
     debug_display_selected_tags(bot);
+    debug_print_full_construction_info(bot);
 }
 // Debugging
 fn debug_show_bases(
@@ -468,6 +471,26 @@ fn debug_display_selected_tags(bot: &mut Nikolaj) {
         }
         bot.debug_text(&text, position, "white", Some(14));
     }
+}
+
+fn debug_print_full_construction_info(bot: &mut Nikolaj) {
+    if !bot.debugger.printing_full_construction_info {
+        return;
+    }
+    if bot.construction_info.under_construction.is_empty() {
+        return;
+    }
+    println!("--- Construction Info ---");
+    for construction in &bot.construction_info.under_construction {
+        println!(
+            "Structure: {:?}, Worker: {}, Position: {:?}, Started at: {:.2}",
+            construction.structure,
+            construction.worker_tag,
+            construction.position,
+            construction.time_started
+        );
+    }
+    println!("-------------------------");
 }
 
 #[derive(Debug, Clone, PartialEq)]

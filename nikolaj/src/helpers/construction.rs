@@ -87,11 +87,12 @@ pub fn get_builder(bot: &mut Nikolaj, target: Target) -> Option<&Unit> {
 pub fn build(bot: &mut Nikolaj, position: Point2, structure: UnitTypeId) {
     if let Some(builder) = get_builder(bot, Target::Pos(position)){
         builder.build(structure, position, false);
-        let mut under_construction = UnderConstruction::default();
-        under_construction.worker_tag = builder.tag();
-        under_construction.position = position;
-        under_construction.structure = structure;
-        under_construction.time_started = bot.time as f32 / 22.4;
+        let under_construction = UnderConstruction {
+            worker_tag: builder.tag(),
+            position: position,
+            structure: structure,
+            time_started: bot.time,
+        };
         bot.construction_info.under_construction.push(under_construction);
         if bot.debugger.printing_construction {
             println!("[DEBUGGER] Started building {:?} at {:?}", structure, bot.time);
@@ -99,11 +100,36 @@ pub fn build(bot: &mut Nikolaj, position: Point2, structure: UnitTypeId) {
     }
 }
 
+pub fn add_to_in_training(bot: &mut Nikolaj, unit: UnitTypeId) {
+    let in_training = InTraining {
+        unit,
+        time_started: bot.time,
+    };
+    bot.construction_info.in_training.push(in_training);
+    if bot.debugger.printing_construction {
+        println!("[DEBUGGER] Started training {:?} at {:?}", unit, bot.time);
+    }
+}
+
+pub fn is_in_training(bot: &Nikolaj, unit: UnitTypeId) -> bool {
+    for in_training in bot.construction_info.in_training.iter() {
+        if in_training.unit == unit {
+            return true;
+        }
+    }
+    false
+}
+
 pub fn construction_info_step(bot: &mut Nikolaj) {
     let time_now = bot.time;
     for under_construction in bot.construction_info.under_construction.clone().iter() {
-        if time_now - under_construction.time_started > 20.0 {
+        if time_now - under_construction.time_started > 5.0 {
             bot.construction_info.under_construction.retain(|x| x.worker_tag != under_construction.worker_tag);
+        }
+    }
+    for in_training in bot.construction_info.in_training.clone().iter() {
+        if time_now - in_training.time_started > 1.0 {
+            bot.construction_info.in_training.retain(|x| x.unit != in_training.unit);
         }
     }
 }
@@ -204,13 +230,15 @@ pub fn cancel_constructions_in_danger(bot: &mut Nikolaj) {
 pub struct ConstructionInfo {
     pub under_construction: Vec<UnderConstruction>,
     pub structures_being_finished: HashMap<u64, u64>,
+    pub in_training: Vec<InTraining>,
 }
 
 impl Default for ConstructionInfo {
     fn default() -> Self {
         ConstructionInfo {
-            under_construction: vec![UnderConstruction::default()],
+            under_construction: vec![],
             structures_being_finished: HashMap::new(),
+            in_training: vec![],
         }
     }
 }
@@ -223,13 +251,8 @@ pub struct UnderConstruction {
     pub time_started: f32,
 }
 
-impl Default for UnderConstruction {
-    fn default() -> Self {
-        UnderConstruction {
-            worker_tag: 0,
-            position: Point2::new(0.0, 0.0),
-            structure: UnitTypeId::NotAUnit,
-            time_started: 0.0,
-        }
-    }
+#[derive(Debug, Clone)]
+pub struct InTraining {
+    pub unit: UnitTypeId,
+    pub time_started: f32,
 }

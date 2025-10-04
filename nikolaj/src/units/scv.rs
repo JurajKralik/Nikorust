@@ -8,8 +8,8 @@ use crate::helpers::construction::*;
 
 
 pub fn scv_step(bot: &mut Nikolaj) {
-    // Early game skip
-    if bot.time > 0.5 && bot.time < 2.0 {
+    // Skip first seconds to avoid collision
+    if bot.iteration != 1 && bot.time < 2.0 {
         return;
     }
     // Worker rush
@@ -509,7 +509,7 @@ impl WorkerAllocator {
     }
 
     fn get_resource_priority_gas(&self) -> bool {
-        const GAS_PRIORITY_THRESHOLD: f32 = 2.2;
+        const GAS_PRIORITY_THRESHOLD: f32 = 2.8;
         let mineral_workers = self.worker_roles.values().filter(|&&role| role == WorkerRole::Mineral).count() as f32;
         let gas_workers = self.worker_roles.values().filter(|&&role| role == WorkerRole::Gas).count() as f32;
         if gas_workers < 5.0 && mineral_workers > 10.0 {

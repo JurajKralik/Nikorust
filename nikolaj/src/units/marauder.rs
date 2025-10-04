@@ -35,45 +35,45 @@ pub fn marauder_control(bot: &mut Nikolaj, unit: &Unit) {
         // Idle
         } else {
             let idle_point = bot.strategy_data.idle_point;
-            unit.move_to(Target::Pos(idle_point), false);
+            move_no_spam(unit, Target::Pos(idle_point));
         }
     } else {
         // No threats, no worries
         if surroundings.clone().closest_threat.is_none() {
             if let Some(target) = surroundings.clone().best_target_in_range {
-                unit.move_to(Target::Pos(target.position()), false);
+                move_no_spam(unit, Target::Pos(target.position()));
             } else if let Some(target) = surroundings.clone().better_target_off_range {
-                unit.move_to(Target::Pos(target.position()), false);
+                move_no_spam(unit, Target::Pos(target.position()));
             } else if bot.strategy_data.defend {
                 let defend_point = bot.strategy_data.defense_point;
-                unit.move_to(Target::Pos(defend_point), false);
+                move_no_spam(unit, Target::Pos(defend_point));
             } else if bot.strategy_data.attack {
                 if unit.distance(bot.strategy_data.army_center) > 8.0 {
-                    unit.move_to(Target::Pos(bot.strategy_data.army_center), false);
+                    move_no_spam(unit, Target::Pos(bot.strategy_data.army_center));
                 } else {
                     let attack_point = bot.strategy_data.attack_point;
-                    unit.move_to(Target::Pos(attack_point), false);
+                    move_no_spam(unit, Target::Pos(attack_point));
                 }
             } else {
                 let idle_point = bot.strategy_data.idle_point;
-                unit.move_to(Target::Pos(idle_point), false);
+                move_no_spam(unit, Target::Pos(idle_point));
             }
         // Threats, flee
         } else if surroundings.clone().in_danger || low_health {
             flee_bio(bot, unit, surroundings.clone());
         } else if bot.strategy_data.defend {
             let defend_point = bot.strategy_data.defense_point;
-            unit.move_to(Target::Pos(defend_point), false);
+            move_no_spam(unit, Target::Pos(defend_point));
         } else if bot.strategy_data.attack {
             if unit.distance(bot.strategy_data.army_center) > 8.0 {
-                unit.move_to(Target::Pos(bot.strategy_data.army_center), false);
+                move_no_spam(unit, Target::Pos(bot.strategy_data.army_center));
             } else {
                 let attack_point = bot.strategy_data.attack_point;
-                unit.move_to(Target::Pos(attack_point), false);
+                move_no_spam(unit, Target::Pos(attack_point));
             }
         } else {
             let idle_point = bot.strategy_data.idle_point;
-            unit.move_to(Target::Pos(idle_point), false);
+            move_no_spam(unit, Target::Pos(idle_point));
         }
     }
 }

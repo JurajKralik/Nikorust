@@ -96,7 +96,11 @@ fn handle_grounded_starport(bot: &mut Nikolaj) {
 		return;
 	};
 
-	if bot.macro_manager.expand_priority && bot.get_unit_cost(unit_type).minerals > bot.minerals - 400 {
+	if is_in_training(bot, unit_type) {
+		return;
+	}
+
+	if bot.macro_manager.expand_priority && bot.get_unit_cost(unit_type).minerals > bot.minerals.saturating_sub(400) {
 		return;
 	}
 
@@ -112,9 +116,11 @@ fn handle_grounded_starport(bot: &mut Nikolaj) {
 				try_build_starport_techlab_or_lift(bot, &starport);
 			} else {
 				starport.train(unit_type, false);
+				add_to_in_training(bot, unit_type);
 			}
 		} else {
 			starport.train(unit_type, false);
+			add_to_in_training(bot, unit_type);
 		}
 	}
 }

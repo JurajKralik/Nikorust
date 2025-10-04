@@ -254,9 +254,14 @@ pub fn townhall_control(bot: &mut Nikolaj) {
                     continue;
                 }
                 //SCVs
+                if is_in_training(bot, UnitTypeId::SCV) {
+                    continue;
+                }
+
                 if bot.units.my.workers.len() < (bot.units.my.townhalls.len() * 22)
                 && bot.units.my.workers.len() + bot.already_pending(UnitTypeId::SCV) < 70 {
                     base.train(UnitTypeId::SCV, false);
+                    add_to_in_training(bot, UnitTypeId::SCV);
                     continue;
                 }
             }
