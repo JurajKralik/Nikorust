@@ -10,7 +10,9 @@ pub fn decide_build_strategy(bot: &mut Nikolaj) {
 }
 
 fn decide_expansion_priority(bot: &mut Nikolaj) {
-    if bot.worker_allocator.resources.len() < 8 {
+    if bot.worker_allocator.resources.len() < 8 
+        && !!bot.strategy_data.enemy_flooding 
+        && !bot.strategy_data.enemy_worker_rush {
         bot.macro_manager.expand_priority = true;
     } else {
         bot.macro_manager.expand_priority = false;

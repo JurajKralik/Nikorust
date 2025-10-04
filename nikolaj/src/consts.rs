@@ -279,7 +279,7 @@ pub static ref THREAT_LEVELS: ThreatLevelsList = {
         let mut list: HashMap<UnitTypeId, ThreatLevels> = HashMap::new();
 
         // === BANSHEE
-        add_threats(&mut list, UnitTypeId::Banshee, ThreatLevel::Danger, &[
+        add_threats(&mut list, UnitTypeId::Banshee, ThreatLevel::Flee, &[
             UnitTypeId::MissileTurret,
             UnitTypeId::SporeCrawler,
             UnitTypeId::PhotonCannon,
@@ -358,10 +358,20 @@ pub static ref THREAT_LEVELS: ThreatLevelsList = {
 
         ThreatLevelsList { list }
     };
-    pub static ref IGNORE_UNITS: Vec<UnitTypeId> = vec![
+    pub static ref UNITS_PRIORITY_IGNORE: Vec<UnitTypeId> = vec![
         UnitTypeId::AdeptPhaseShift,
         UnitTypeId::Egg,
         UnitTypeId::Larva
+    ];
+    pub static ref UNITS_PRIORITY_LOW: Vec<UnitTypeId> = vec![
+        UnitTypeId::Changeling,
+        UnitTypeId::ChangelingMarine,
+        UnitTypeId::ChangelingZealot,
+        UnitTypeId::ChangelingZergling,
+        UnitTypeId::LocustMP,
+        UnitTypeId::LocustMPFlying,
+        UnitTypeId::Overlord,
+        UnitTypeId::MULE
     ];
 }
 

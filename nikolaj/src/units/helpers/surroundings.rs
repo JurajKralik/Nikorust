@@ -1,5 +1,3 @@
-#![allow(unused_variables)]
-
 use crate::units::helpers::targeting::*;
 use crate::units::helpers::threat_detection::*;
 use crate::Nikolaj;
@@ -62,7 +60,7 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo
                 // Better target
                 if let Some(best_target) = &surroundings.best_target_in_range {
                     surroundings.best_target_in_range =
-                        Some(better_of_targets(unit, &best_target, enemy));
+                        Some(better_of_targets(unit, &best_target, enemy, targeting_priorities.clone()));
                 // First
                 } else {
                     surroundings.best_target_in_range = Some(enemy.clone());
@@ -77,10 +75,10 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo
                 } else if let Some(better_target_off_range) = &surroundings.better_target_off_range
                 {
                     surroundings.better_target_off_range =
-                        Some(better_of_targets(unit, &better_target_off_range, enemy));
+                        Some(better_of_targets(unit, &better_target_off_range, enemy, targeting_priorities.clone()));
                 // Better than in range
                 } else if let Some(best_target_in_range) = &surroundings.best_target_in_range {
-                    let better_target = better_of_targets(unit, &best_target_in_range, enemy);
+                    let better_target = better_of_targets(unit, &best_target_in_range, enemy, targeting_priorities.clone());
                     if better_target.tag() != best_target_in_range.tag() {
                         surroundings.better_target_off_range = Some(better_target);
                     }
@@ -96,7 +94,7 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo
         &surroundings.best_target_in_range,
     ) {
         (Some(better), Some(best)) => {
-            if best.tag() == better_of_targets(unit, better, best).tag() {
+            if best.tag() == better_of_targets(unit, better, best, targeting_priorities).tag() {
                 surroundings.better_target_off_range = None;
             }
         }
@@ -143,7 +141,7 @@ fn in_range(attacker: &Unit, target: &Unit) -> bool {
     }
     false
 }
-fn better_of_targets(attacker: &Unit, current_target: &Unit, new_target: &Unit) -> Unit {
+fn better_of_targets(attacker: &Unit, current_target: &Unit, new_target: &Unit, targeting_priorities: TargetingPriorities) -> Unit {
     let current_target_damage = attacker.real_range_vs(current_target);
     let current_target_health =
         (current_target.health() + current_target.shield()) as f32;
@@ -152,19 +150,15 @@ fn better_of_targets(attacker: &Unit, current_target: &Unit, new_target: &Unit) 
     let new_target_health =
         (new_target.health() + new_target.shield()) as f32;
     let new_target_dies = new_target_health - new_target_damage <= 0.0;
-    let higher_damage_target = if current_target_damage >= new_target_damage {
-        current_target
-    } else {
-        new_target
-    };
-    let lower_health_target = if current_target_health <= new_target_health {
-        current_target
-    } else {
-        new_target
-    };
+    let higher_damage_target = if current_target_damage >= new_target_damage {current_target} else {new_target};
+    let lower_health_target = if current_target_health <= new_target_health {current_target} else {new_target};
+    let higher_priority_target = targeting_priorities.compare_priority(current_target.clone(), new_target.clone());
 
     if current_target_dies {
         if new_target_dies {
+            if let Some(higher_priority) = higher_priority_target {
+                return higher_priority;
+            }
             return higher_damage_target.clone();
         } else {
             return current_target.clone();
@@ -172,6 +166,9 @@ fn better_of_targets(attacker: &Unit, current_target: &Unit, new_target: &Unit) 
     } else if new_target_dies {
         return new_target.clone();
     } else if current_target_damage != new_target_damage {
+        if let Some(higher_priority) = higher_priority_target {
+            return higher_priority;
+        }
         return higher_damage_target.clone();
     }
     lower_health_target.clone()

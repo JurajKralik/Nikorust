@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use rust_sc2::prelude::*;
 use std::collections::HashMap;
 
@@ -49,8 +47,12 @@ impl Default for TargetingPriorities {
 
 impl TargetingPriorities {
     pub fn get_priority_level(&self, unit_type: &UnitTypeId) -> PriorityLevel {
-        if IGNORE_UNITS.contains(unit_type) {
+        if UNITS_PRIORITY_IGNORE.contains(unit_type) {
             return PriorityLevel::Ignore;
+        }
+
+        if UNITS_PRIORITY_LOW.contains(unit_type) {
+            return PriorityLevel::Low;
         }
 
         for priority_info in &self.priorities {
@@ -61,15 +63,15 @@ impl TargetingPriorities {
 
         PriorityLevel::Medium
     }
-    pub fn compare_priority(&self, unit_a: Unit, unit_b: Unit) -> Option<u64> {
+    pub fn compare_priority(&self, unit_a: Unit, unit_b: Unit) -> Option<Unit> {
         let priority_a = self.get_priority_level(&unit_a.type_id());
         let priority_b = self.get_priority_level(&unit_b.type_id());
         if priority_a == priority_b {
             return None;
         } else if priority_a > priority_b {
-            return Some(unit_a.tag());
+            return Some(unit_a);
         }
-        Some(unit_b.tag())
+        Some(unit_b)
     }
 }
 

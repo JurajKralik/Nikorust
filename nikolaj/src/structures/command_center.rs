@@ -32,14 +32,8 @@ pub fn construct_command_centers(bot: &mut Nikolaj) {
         }
     }
 
-    // Prerequisites
-    if bot.units.my.structures.of_type_including_alias(UnitTypeId::Factory).is_empty() {
-        return;
-    }
-
     // Resources
-    let minerals = bot.minerals;
-    if minerals < 400 {
+    if !bot.can_afford(UnitTypeId::CommandCenter, false) {
         return;
     }
 

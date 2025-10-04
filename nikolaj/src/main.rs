@@ -161,7 +161,7 @@ fn main() -> SC2Result<()> {
         let mut bot = Nikolaj::default();
         return run_vs_computer(
             &mut bot,
-            Computer::new(Race::Terran, Difficulty::VeryHard, Some(AIBuild::Rush)),
+            Computer::new(Race::Terran, Difficulty::VeryHard, Some(AIBuild::RandomBuild)),
             "BerlingradAIE",
             LaunchOptions {
                 realtime: true,
