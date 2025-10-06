@@ -18,7 +18,7 @@ BUILD_DIR="target/x86_64-unknown-linux-musl/release"
 BIN_SRC="$BUILD_DIR/Nikolaj"
 BIN_DEST="$BUILD_DIR/RustyNikolaj"
 ZIP_NAME="RustyNikolaj.zip"
-ň
+
 if [[ -f "$BIN_SRC" ]]; then
     cp "$BIN_SRC" "$BIN_DEST"
     echo "Binary copied to $BIN_DEST"

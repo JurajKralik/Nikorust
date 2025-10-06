@@ -55,7 +55,7 @@ fn flee_to_medivac(units: AllUnits, unit: &Unit) -> bool {
     let medivacs = units.my.units.of_type(UnitTypeId::Medivac);
     let nearby_medivacs = medivacs.closer(12.0, unit.position());
     if let Some(medivac) = nearby_medivacs.first() {
-        if medivac.cargo_left().unwrap_or(0) >= unit.cargo_size()
+        if medivac.cargo_space_taken().unwrap_or(0) == 0
             && medivac.health_percentage() > 0.5
         {
             unit.smart(Target::Tag(medivac.tag()), false);
