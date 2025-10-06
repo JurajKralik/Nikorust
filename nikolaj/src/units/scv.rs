@@ -868,14 +868,12 @@ fn collect_damaged_targets(units: &AllUnits) -> HashMap<u64, RepairAllocation> {
         }
         if health_percentage < 0.8 {
             let max_workers = match structure_type {
-                UnitTypeId::SupplyDepot
-                | UnitTypeId::SupplyDepotLowered => 2,
                 UnitTypeId::Bunker
                 | UnitTypeId::MissileTurret
                 | UnitTypeId::CommandCenter
                 | UnitTypeId::OrbitalCommand => 3,
                 UnitTypeId::PlanetaryFortress => 5,
-                _ => 1,
+                _ => 2,
             };
             damaged_targets.insert(
                 structure.tag(),
