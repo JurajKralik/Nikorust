@@ -419,4 +419,20 @@ lazy_static! {
         AbilityId::EngineeringBayResearchTerranInfantryWeaponsLevel3,
         AbilityId::EngineeringBayResearchTerranInfantryArmorLevel3,
     ];
+    pub static ref ARMORY_GROUND_UPGRADE_ORDER: Vec<AbilityId> = vec![
+        AbilityId::ArmoryResearchTerranVehicleWeaponsLevel1,
+        AbilityId::ArmoryResearchTerranVehicleAndShipPlatingLevel1,
+        AbilityId::ArmoryResearchTerranVehicleWeaponsLevel2,
+        AbilityId::ArmoryResearchTerranVehicleAndShipPlatingLevel2,
+        AbilityId::ArmoryResearchTerranVehicleWeaponsLevel3,
+        AbilityId::ArmoryResearchTerranVehicleAndShipPlatingLevel3,
+    ];
+    pub static ref ARMORY_AIR_UPGRADE_ORDER: Vec<AbilityId> = vec![
+        AbilityId::ArmoryResearchTerranShipWeaponsLevel1,
+        AbilityId::ArmoryResearchTerranVehicleAndShipPlatingLevel1,
+        AbilityId::ArmoryResearchTerranShipWeaponsLevel2,
+        AbilityId::ArmoryResearchTerranVehicleAndShipPlatingLevel2,
+        AbilityId::ArmoryResearchTerranShipWeaponsLevel3,
+        AbilityId::ArmoryResearchTerranVehicleAndShipPlatingLevel3,
+    ];
 }

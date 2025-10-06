@@ -17,7 +17,7 @@ pub fn construct_engineering_bay(bot: &mut Nikolaj) {
 fn should_try_build_engineering_bay(bot: &Nikolaj) -> bool {
     // Basics
     // Needs at least one base
-    if bot.units.my.townhalls.is_empty() {
+    if bot.units.my.townhalls.ready().is_empty() {
         return false;
     }
 	// Under construction
@@ -89,7 +89,7 @@ pub fn engineering_bay_control(bot: &mut Nikolaj) {
             if bot.macro_manager.expand_priority && 250 > bot.minerals.saturating_sub(400) {
                 return;
             }
-
+            // TODO: Price check
             engineering_bay.use_ability(next_upgrade, false);
         }
     }

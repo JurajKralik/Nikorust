@@ -6,3 +6,4 @@ pub mod refinery;
 pub mod starport;
 pub mod addons;
 pub mod engineering_bay;
+pub mod armory;

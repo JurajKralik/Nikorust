@@ -22,6 +22,7 @@ use crate::structures::refinery::*;
 use crate::structures::starport::*;
 use crate::structures::addons::*;
 use crate::structures::engineering_bay::*;
+use crate::structures::armory::*;
 use crate::units::scv::*;
 use crate::units::helpers::combat_units::*;
 use crate::units::helpers::combat_info::*;
@@ -68,6 +69,8 @@ impl Player for Nikolaj {
         starport_control(self);
         construct_engineering_bay(self);
         engineering_bay_control(self);
+        construct_armory(self);
+        armory_control(self);
         addons_control(self);
         strategy_step(self);
         combat_info_step(self);
