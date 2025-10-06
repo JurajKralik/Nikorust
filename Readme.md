@@ -39,8 +39,8 @@ Copying of Nikolaj's parts is permitted, but please follow the [guidelines](http
 |                     | Fly / Land                |    ✅   |
 | **Bunker**          | Construct                 |    ⬜   |
 |                     | Load / Unload Control     |    ⬜   |
-| **Engineering Bay** | Construct                 |    ⬜   |
-|                     | Research Upgrades         |    ⬜   |
+| **Engineering Bay** | Construct                 |    ✅   |
+|                     | Research Upgrades         |    ✅   |
 | **Armory**          | Construct                 |    ⬜   |
 |                     | Research Upgrades         |    ⬜   |
 | **Fusion Core**     | Construct                 |    ⬜   |

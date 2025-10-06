@@ -30,6 +30,10 @@ fn should_try_build_barracks(bot: &Nikolaj) -> bool {
 			return false;
 		}
 	}
+	// Savings for expansion
+	if bot.macro_manager.expand_priority && bot.get_unit_cost(UnitTypeId::Barracks).minerals > bot.minerals.saturating_sub(400) {
+		return false;
+	}
 	// Can't afford it
 	if !bot.can_afford(UnitTypeId::Barracks, false) {
 		return false;

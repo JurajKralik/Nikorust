@@ -275,7 +275,7 @@ lazy_static! {
 
         TargetingPrioritiesList { list }
     };
-pub static ref THREAT_LEVELS: ThreatLevelsList = {
+    pub static ref THREAT_LEVELS: ThreatLevelsList = {
         let mut list: HashMap<UnitTypeId, ThreatLevels> = HashMap::new();
 
         // === BANSHEE
@@ -407,4 +407,16 @@ fn add_threats(
             unit_type: t,
             threat_level: level,
         }));
+}
+
+// Upgrades
+lazy_static! {
+    pub static ref ENGINEERING_BAY_UPGRADE_ORDER: Vec<AbilityId> = vec![
+        AbilityId::EngineeringBayResearchTerranInfantryWeaponsLevel1,
+        AbilityId::EngineeringBayResearchTerranInfantryArmorLevel1,
+        AbilityId::EngineeringBayResearchTerranInfantryWeaponsLevel2,
+        AbilityId::EngineeringBayResearchTerranInfantryArmorLevel2,
+        AbilityId::EngineeringBayResearchTerranInfantryWeaponsLevel3,
+        AbilityId::EngineeringBayResearchTerranInfantryArmorLevel3,
+    ];
 }

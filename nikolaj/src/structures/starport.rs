@@ -29,6 +29,10 @@ fn should_try_build_starport(bot: &Nikolaj) -> bool {
 			return false;
 		}
 	}
+	// Savings for expansion
+	if bot.macro_manager.expand_priority && bot.get_unit_cost(UnitTypeId::Starport).minerals > bot.minerals.saturating_sub(400) {
+		return false;
+	}
 	// Can't afford it
 	if !bot.can_afford(UnitTypeId::Starport, false) {
 		return false;
