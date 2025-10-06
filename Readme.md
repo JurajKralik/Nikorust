@@ -8,184 +8,112 @@ Made with [rust-sc2 library](https://github.com/UltraMachine/rust-sc2)
 Idea is to make slow push Terran BOT same as in the python, but with less performance limitation.
 
 Copying of Nikolaj's parts is permitted, but please follow the [guidelines](https://aiarena.net/wiki/bot-development/getting-started/#wiki-toc-using-existing-bots-as-a-reference-or-starting-point).
-## Structures
-
-<summary><strong>Command Center</strong></summary>
-
-| Task                         | Status |
-|-----------------------------|--------|
-| Construct                   | ✅     |
-| Fly/Land                    | ✅     |
-| Morph                       | ✅     |
-| Scan hidden enemies         | ✅     |
-| Search for leftover bases   | ✅     |
-| M.U.L.E. drop               | ✅     |
-| Train SCVs                  | ✅     |
-| Drop Emergency Depot        | ⬜     |
 
 
-<summary><strong>Refinery</strong></summary>
+<details> <summary><strong>🏗️ Structures</strong></summary>
 
-| Task       | Status |
-|------------|--------|
-| Construct  | ✅     |
+| Structure           | Task / Feature            | Status |
+| ------------------- | ------------------------- | :----: |
+| **Command Center**  | Construct                 |    ✅   |
+|                     | Fly / Land                |    ✅   |
+|                     | CC Morph (Orbital / PF)   |    ✅   |
+|                     | Scan Hidden Enemies       |    ✅   |
+|                     | Search for Leftover Bases |    ✅   |
+|                     | M.U.L.E. Drop             |    ✅   |
+|                     | Train SCVs                |    ✅   |
+|                     | Emergency Depot Drop      |    ⬜   |
+| **Refinery**        | Construct                 |    ✅   |
+| **Supply Depot**    | Construct                 |    ✅   |
+|                     | Depots Open / Close       |    ✅   |
+| **Barracks**        | Construct                 |    ✅   |
+|                     | Construct Addon           |    ✅   |
+|                     | Train Units               |    ✅   |
+|                     | Fly / Land                |    ✅   |
+| **Factory**         | Construct                 |    ✅   |
+|                     | Construct Addon           |    ✅   |
+|                     | Train Units               |    ✅   |
+|                     | Fly / Land                |    ✅   |
+| **Starport**        | Construct                 |    ✅   |
+|                     | Construct Addon           |    ✅   |
+|                     | Train Units               |    ✅   |
+|                     | Fly / Land                |    ✅   |
+| **Bunker**          | Construct                 |    ⬜   |
+|                     | Load / Unload Control     |    ⬜   |
+| **Engineering Bay** | Construct                 |    ⬜   |
+|                     | Research Upgrades         |    ⬜   |
+| **Armory**          | Construct                 |    ⬜   |
+|                     | Research Upgrades         |    ⬜   |
+| **Fusion Core**     | Construct                 |    ⬜   |
+|                     | Research Upgrades         |    ⬜   |
+| **Missile Turret**  | Construct                 |    ⬜   |
+| **Ghost Academy**   | Construct                 |    ⬜   |
+|                     | Research Upgrades         |    ⬜   |
+|                     | Nuke Production / Launch  |    ⬜   |
+| **Sensor Tower**    | Construct                 |    ⬜   |
 
+</details>
+<details> <summary><strong>👷‍♂️ SCV</strong></summary>
 
-<summary><strong>Supply Depot</strong></summary>
+| Task                            | Status |
+| ------------------------------- | :----: |
+| Distribution                    |    ✅   |
+| Speedmining                     |    ✅   |
+| Finish building without workers |    ✅   |
+| Attack nearby enemy             |    ⬜   |
+| Repair friendly units           |    ✅   |
+| Repair buildings                |    ✅   |
+| Ramp block response             |    ⬜   |
+| Worker rush response            |    ⬜   |
+| Planetary Fortress rush answer  |    ⬜   |
 
-| Task         | Status |
-|--------------|--------|
-| Construct    | ✅     |
-| Open/Close   | ✅     |
+</details>
 
+<details> <summary><strong>🪖 Barracks Units</strong></summary>
 
-<summary><strong>Barracks</strong></summary>
+| Unit     | Train | Control |
+| -------- | :---: | :-----: |
+| Marine   |   ✅   |    ✅    |
+| Marauder |   ✅   |    ✅    |
+| Reaper   |   ✅   |    ✅    |
+| Ghost    |   ⬜   |    ⬜    |
 
-| Task             | Status |
-|------------------|--------|
-| Construct        | ✅     |
-| Construct Addon  | ✅     |
-| Train            | ✅     |
-| Fly/Land         | ✅     |
+</details>
 
-<summary><strong>Factory</strong></summary>
-
-| Task             | Status |
-|------------------|--------|
-| Construct        | ✅     |
-| Construct Addon  | ✅     |
-| Train            | ✅     |
-| Fly/Land         | ✅     |
-
-<summary><strong>Starport</strong></summary>
-
-| Task             | Status |
-|------------------|--------|
-| Construct        | ✅     |
-| Construct Addon  | ✅     |
-| Train            | ✅     |
-| Fly/Land         | ✅     |
-
-<summary><strong>Engineering Bay</strong></summary>
-
-| Task     | Status |
-|----------|--------|
-| Construct| ⬜     |
-| Upgrades | ⬜     |
-
-<summary><strong>Armory</strong></summary>
-
-| Task     | Status |
-|----------|--------|
-| Construct| ⬜     |
-| Upgrades | ⬜     |
-
-<summary><strong>Fusion Core</strong></summary>
-
-| Task     | Status |
-|----------|--------|
-| Construct| ⬜     |
-| Upgrades | ⬜     |
-
-<summary><strong>Missile Turret</strong></summary>
-
-| Task     | Status |
-|----------|--------|
-| Construct| ⬜     |
-
-<summary><strong>Bunker</strong></summary>
-
-| Task     | Status |
-|----------|--------|
-| Construct| ⬜     |
-| Control  | ⬜     |
-
-<summary><strong>Ghost Academy</strong></summary>
-
-| Task     | Status |
-|----------|--------|
-| Construct| ⬜     |
-| Upgrades | ⬜     |
-| Nukes    | ⬜     |
-
-<summary><strong>Sensor Tower</strong></summary>
-
-| Task     | Status |
-|----------|--------|
-| Construct| ⬜     |
-
----
-
-## CC Units
-
-<summary><strong>SCV</strong></summary>
-
-| Task                              | Status |
-|-----------------------------------|--------|
-| Distribution                      | ✅     |
-| Speedmining                       | ✅     |
-| Finish building without workers   | ✅     |
-| Attack nearby enemy               | ⬜     |
-| Repair friendly units             | ✅     |
-| Repair buildings                  | ✅     |
-| Ramp block answer                 | ⬜     |
-| Worker rush answer                | ⬜     |
-| Planetary Fortress rush answer    | ⬜     |
-
----
-
-## Barracks Units
-
-<summary><strong>Barracks Units</strong></summary>
-
-| Unit    | Train | Control |
-|---------|:-----:|:-------:|
-| Marine  | ✅    | ⬜      |
-| Marauder| ✅    | ⬜      |
-| Reaper  | ✅    | ⬜      |
-| Ghost   | ⬜    | ⬜      |
-
-
----
-
-## Factory Units
-
-<summary><strong>Factory Units</strong></summary>
+<details> <summary><strong>⚙️ Factory Units</strong></summary>
 
 | Unit       | Train | Control |
-|------------|:-----:|:-------:|
-| Hellion    | ⬜    | ⬜      |
-| Siege Tank | ⬜    | ⬜      |
-| Widow Mine | ⬜    | ⬜      |
-| Cyclone    | ⬜    | ⬜      |
-| Thor       | ⬜    | ⬜      |
+| ---------- | :---: | :-----: |
+| Hellion    |   ⬜   |    ⬜    |
+| Siege Tank |   ✅   |    ✅    |
+| Widow Mine |   ✅   |    ✅    |
+| Cyclone    |   ✅   |    ⬜    |
+| Thor       |   ✅   |    ⬜    |
 
----
+</details>
 
-## Starport Units
+<details> <summary><strong>🚀Starport Units</strong></summary>
 
-<summary><strong>Starport Units</strong></summary>
+| Unit          | Train | Control | Harass |
+| ------------- | :---: | :-----: | :----: |
+| Viking        |   ✅   |    ⬜    |        |
+| Medivac       |   ✅   |    ✅    |    ⬜   |
+| Banshee       |   ✅   |    ✅    |    ✅   |
+| Raven         |   ✅   |    ✅    |    ⬜   |
+| Liberator     |   ⬜   |    ⬜    |    ⬜   |
+| Battlecruiser |   ⬜   |    ⬜    |    ⬜   |
 
-| Unit         | Train | Control | Harass | 
-|--------------|:-----:|:-------:|:------:|
-| Viking       | ⬜    | ⬜      |        |
-| Medivac      | ⬜    | ⬜      | ⬜      |
-| Banshee      | ⬜    | ⬜      | ⬜      |
-| Raven        | ⬜    | ⬜      | ⬜      |
-| Liberator    | ⬜    | ⬜      | ⬜      |
-| Battlecruiser| ⬜    | ⬜      | ⬜      |
+</details>
 
----
+<details> <summary><strong>🧰Utilities</strong></summary>
 
-## Utilities
+| Feature            | Status |
+| ------------------ | :----: |
+| Building placement |    ✅   |
+| Combat strategy    |    ✅   |
+| Unit counter       |    ⬜   |
+| Unit rally points  |    ✅   |
+| Walls              |    ⬜   |
+| Heatmaps           |    ⬜   |
+| Pathfinding        |    ⬜   |
 
-<summary><strong>Utilities</strong></summary>
-
-| Feature             | Status |
-|---------------------|--------|
-| Building placement  | ✅     |
-| Combat strategy     | ✅     |
-| Unit counter        | ⬜     |
-| Unit rally points   | ✅     |
-| Walls               | ⬜     |
-| Pathfinding         | ⬜     |
+</details>
