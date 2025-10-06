@@ -8,6 +8,9 @@ pub fn flee_bio(bot: &mut Nikolaj, unit: &Unit, surroundings: SurroundingsInfo) 
     if flee_to_bunker(units.clone(), unit) {
         return;
     }
+    if flee_to_mine(units.clone(), unit) {
+        return;
+    }
     if flee_to_medivac(units.clone(), unit) {
         return;
     }
@@ -18,7 +21,7 @@ pub fn flee_bio(bot: &mut Nikolaj, unit: &Unit, surroundings: SurroundingsInfo) 
         return;
     }
     let idle_point = bot.strategy_data.idle_point;
-    unit.move_to(Target::Pos(idle_point), false);
+    move_no_spam(unit, Target::Pos(idle_point))
 }
 fn flee_to_bunker(units: AllUnits, unit: &Unit) -> bool {
     let bunkers = units.my.structures.of_type(UnitTypeId::Bunker).ready();
@@ -27,6 +30,23 @@ fn flee_to_bunker(units: AllUnits, unit: &Unit) -> bool {
         if bunker.cargo_left().unwrap_or(0) >= unit.cargo_size() {
             unit.smart(Target::Tag(bunker.tag()), false);
             return true;
+        }
+    }
+    false
+}
+fn flee_to_mine(units: AllUnits, unit: &Unit) -> bool {
+    let mines = units.my.units.of_type_including_alias(UnitTypeId::WidowMine).ready();
+    let nearby_mines = mines.closer(12.0, unit.position());
+    let sorted_mines = nearby_mines.iter().sort_by_distance(unit.position());
+    for mine in sorted_mines {
+        if mine.buff_duration_remain().unwrap_or(1) == 0 {
+            if unit.distance(mine.position()) > 3.0 {
+                move_no_spam(unit, Target::Pos(mine.position()));
+                return true;
+            } else {
+                attack_no_spam(unit, Target::Pos(mine.position()));
+                return true;
+            }
         }
     }
     false
@@ -49,10 +69,10 @@ fn flee_to_tank(units: AllUnits, unit: &Unit) -> bool {
     let nearby_tanks = tanks.closer(12.0, unit.position());
     if let Some(tank) = nearby_tanks.first() {
         if unit.distance(tank.position()) > 3.0 {
-            unit.move_to(Target::Pos(tank.position()), false);
+            move_no_spam(unit, Target::Pos(tank.position()));
             return true;
         } else {
-            attack_no_spam(unit, Target::Pos(tank.position()));
+            attack_no_spam(unit, Target::Pos(unit.position()));
             return true;
         }
     }
