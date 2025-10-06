@@ -43,9 +43,11 @@ fn should_try_build_armory(bot: &Nikolaj) -> bool {
     }
 
     // Additional conditions
-    // Needs at least 8 bio units
     // TODO: Add flying enemies condition
     if bot.supply_army < 10 {
+        return false;
+    }
+    if bot.units.my.structures.of_type(UnitTypeId::EngineeringBay).ready().is_empty() {
         return false;
     }
     true
