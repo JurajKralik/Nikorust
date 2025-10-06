@@ -1,3 +1,5 @@
+use std::env;
+
 use rust_sc2::{bot, geometry::*, prelude::*};
 
 mod consts;
@@ -41,12 +43,7 @@ impl Player for Nikolaj {
         PlayerSettings::new(Race::Terran)
     }
     fn on_start(&mut self) -> SC2Result<()> {
-        println!("---------------------");
-        println!("On start:");
-        println!("Map name: {}", self.game_info.map_name);
-        println!("---------------------");
-        println!("On loop:");
-        self.worker_allocator.debugger = self.debugger.clone();
+        self.start_game_report();
         Ok(())
     }
     fn on_step(&mut self, _iteration: usize) -> SC2Result<()> {
@@ -88,6 +85,17 @@ impl Nikolaj {
         let time = (self.time * 10.0).round() / 10.0;
         self.debugger.time = time;
         self.worker_allocator.debugger.time = time;
+    }
+    fn start_game_report(&mut self) {
+        let version_info = format!("Nikolaj version: {}", env!("CARGO_PKG_VERSION"));
+        println!("---------------------");
+        println!("On start:");
+        println!("Map name: {}", self.game_info.map_name.clone());
+        println!("{}", version_info);
+        println!("{}", env!("CARGO_PKG_DESCRIPTION"));
+        println!("---------------------");
+        self.chat(version_info.as_str());
+        self.chat("Good luck, have fun!");
     }
     fn end_game_report(&self, result: GameResult) {
         println!("---------------------");

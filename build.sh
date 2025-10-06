@@ -4,6 +4,13 @@ cd "$REPO_ROOT"
 
 echo "Repo root: $REPO_ROOT"
 
+if [[ -f "version_control.py" ]]; then
+    echo "Running version bump..."
+    python3 version_control.py
+else
+    echo "⚠️ Error: version_control.py not found, skipping version bump"
+fi
+
 rustup target add x86_64-unknown-linux-musl
 cargo build --release --target x86_64-unknown-linux-musl --features ladder
 
@@ -16,7 +23,7 @@ if [[ -f "$BIN_SRC" ]]; then
     cp "$BIN_SRC" "$BIN_DEST"
     echo "Binary copied to $BIN_DEST"
 else
-    echo "Error: binary not found at $BIN_SRC"
+    echo "⚠️ Error: binary not found at $BIN_SRC"
 fi
 
 if [[ -f "$BIN_DEST" ]]; then
@@ -25,5 +32,5 @@ if [[ -f "$BIN_DEST" ]]; then
     mv "$ZIP_NAME" "$REPO_ROOT/"
     echo "Build complete! 🦾"
 else
-    echo "Skipping zip: no binary at $BIN_DEST"
+    echo "⚠️ Error: no binary at $BIN_DEST"
 fi
