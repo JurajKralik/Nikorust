@@ -11,12 +11,36 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
-    - name: Add target for Linux
-      run: rustup target add x86_64-unknown-linux-musl
-    - uses: actions/checkout@v4
-    - name: Build
-      run: cargo build --release --target=x86_64-unknown-linux-musl --features ladder
+      - uses: actions/checkout@v4
+
+      - name: Add musl target
+        run: rustup target add x86_64-unknown-linux-musl
+
+      - name: Build bot
+        run: cargo build --release --target x86_64-unknown-linux-musl --features ladder
+
+      - name: Rename and zip binary
+        run: |
+          BUILD_DIR="target/x86_64-unknown-linux-musl/release"
+          BIN_SRC="$BUILD_DIR/Nikolaj"
+          BIN_DEST="$BUILD_DIR/RustyNikolaj"
+          ZIP_NAME="RustyNikolaj.zip"
+
+          if [[ -f "$BIN_SRC" ]]; then
+              cp "$BIN_SRC" "$BIN_DEST"
+              echo "Binary copied to $BIN_DEST"
+              cd "$BUILD_DIR"
+              zip -r "$ZIP_NAME" "RustyNikolaj"
+              mv "$ZIP_NAME" "$GITHUB_WORKSPACE/"
+          else
+              echo "Error: binary not found at $BIN_SRC"
+              exit 1
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RustyNikolaj
+          path: RustyNikolaj.zip
