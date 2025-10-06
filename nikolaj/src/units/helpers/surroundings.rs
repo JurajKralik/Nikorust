@@ -85,7 +85,10 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo
                 }
             }
         }
-        surroundings.closest_counter = None; // TODO
+        let higher_threat_level = threat_levels.compare_threat_levels(surroundings.closest_counter.clone(), enemy.clone());
+        if let Some(higher_threat) = higher_threat_level {
+            surroundings.closest_counter = Some(higher_threat);
+        }
     }
 
     // Avoid fake better target

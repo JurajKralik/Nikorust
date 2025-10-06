@@ -1,5 +1,3 @@
-#![allow(dead_code)]
-
 use rust_sc2::prelude::*;
 use std::collections::HashMap;
 
@@ -20,7 +18,7 @@ pub struct ThreatLevelInfo {
     pub threat_level: ThreatLevel,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum ThreatLevel {
     None = 0,
     Danger = 1,
@@ -53,6 +51,22 @@ impl ThreatLevels {
         }
 
         ThreatLevel::None
+    }
+    pub fn compare_threat_levels(&self, unit_a: Option<Unit>, unit_b: Unit) -> Option<Unit> {
+        let threat_level_b = self.get_threat_level(&unit_b.type_id());
+        if threat_level_b == ThreatLevel::None {
+            return unit_a;
+        }
+        if let Some(unit_a) = unit_a {
+            let threat_level_a = self.get_threat_level(&unit_a.type_id());
+            if threat_level_a == threat_level_b {
+                return None;
+            } else if threat_level_a > threat_level_b {
+                return Some(unit_a);
+            }
+            return Some(unit_a);
+        }
+        None
     }
 }
 
