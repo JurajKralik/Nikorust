@@ -296,7 +296,7 @@ pub static ref THREAT_LEVELS: ThreatLevelsList = {
         ]);
 
         // === BATTLECRUISER
-        add_threats(&mut list, UnitTypeId::Battlecruiser, ThreatLevel::Danger, &[
+        add_threats(&mut list, UnitTypeId::Battlecruiser, ThreatLevel::Countered, &[
             UnitTypeId::MissileTurret,
             UnitTypeId::SporeCrawler,
             UnitTypeId::PhotonCannon,
@@ -313,37 +313,37 @@ pub static ref THREAT_LEVELS: ThreatLevelsList = {
         ]);
 
         // === GHOST
-        add_threats(&mut list, UnitTypeId::Ghost, ThreatLevel::Danger, &[
+        add_threats(&mut list, UnitTypeId::Ghost, ThreatLevel::Countered, &[
             UnitTypeId::Zergling,
             UnitTypeId::Zealot,
         ]);
 
         // === HELLION
-        add_threats(&mut list, UnitTypeId::Hellion, ThreatLevel::Danger, &[
+        add_threats(&mut list, UnitTypeId::Hellion, ThreatLevel::Countered, &[
             UnitTypeId::PhotonCannon,
         ]);
 
         // === HELLIONTANK
-        add_threats(&mut list, UnitTypeId::HellionTank, ThreatLevel::Danger, &[
+        add_threats(&mut list, UnitTypeId::HellionTank, ThreatLevel::Countered, &[
             UnitTypeId::PhotonCannon,
         ]);
 
         // === MARAUDER
-        add_threats(&mut list, UnitTypeId::Marauder, ThreatLevel::Danger, &[
+        add_threats(&mut list, UnitTypeId::Marauder, ThreatLevel::Countered, &[
             UnitTypeId::Baneling,
             UnitTypeId::Archon,
             UnitTypeId::Ultralisk,
         ]);
 
         // === MARINE
-        add_threats(&mut list, UnitTypeId::Marine, ThreatLevel::Danger, &[
+        add_threats(&mut list, UnitTypeId::Marine, ThreatLevel::Countered, &[
             UnitTypeId::Baneling,
             UnitTypeId::Archon,
             UnitTypeId::Ultralisk,
         ]);
 
         // === REAPER
-        add_threats(&mut list, UnitTypeId::Reaper, ThreatLevel::Danger, &[
+        add_threats(&mut list, UnitTypeId::Reaper, ThreatLevel::Countered, &[
             UnitTypeId::Adept,
             UnitTypeId::Stalker,
             UnitTypeId::Queen,

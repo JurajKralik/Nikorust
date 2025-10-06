@@ -1,6 +1,7 @@
 use crate::Nikolaj;
 use crate::units::helpers::combat_movement::*;
 use crate::units::helpers::surroundings::*;
+use crate::units::helpers::threat_detection::*;
 use rust_sc2::prelude::*;
 
 
@@ -8,6 +9,7 @@ pub fn marauder_control(bot: &mut Nikolaj, unit: &Unit) {
     let surroundings = get_surroundings_info(bot, unit);
     let low_health = unit.health_percentage() < 0.4;
     let weapon_ready = unit.weapon_cooldown().unwrap_or(0.0) < 0.2;
+    let in_danger = surroundings.clone().threat_level > ThreatLevel::None;
 
     if weapon_ready {
         use_stimpack(unit, &surroundings.clone());
@@ -59,7 +61,7 @@ pub fn marauder_control(bot: &mut Nikolaj, unit: &Unit) {
                 move_no_spam(unit, Target::Pos(idle_point));
             }
         // Threats, flee
-        } else if surroundings.clone().in_danger || low_health {
+        } else if in_danger || low_health {
             flee_bio(bot, unit, surroundings.clone());
         } else if bot.strategy_data.defend {
             let defend_point = bot.strategy_data.defense_point;

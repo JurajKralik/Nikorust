@@ -1,3 +1,4 @@
+use crate::units::helpers::threat_detection::*;
 use crate::units::helpers::surroundings::*;
 use crate::Nikolaj;
 use rust_sc2::{prelude::*, units::AllUnits};
@@ -80,8 +81,9 @@ fn flee_from_threat(bot: &mut Nikolaj, unit: &Unit, threat: Option<Unit>) -> boo
     false
 }
 pub fn flee_flying_unit(bot: &mut Nikolaj, unit: &Unit, surroundings: SurroundingsInfo) {
+    let in_danger = surroundings.clone().threat_level > ThreatLevel::None;
     if surroundings.clone().closest_threat.is_some()
-        || (surroundings.clone().in_danger && surroundings.clone().closest_structure.is_some())
+        || (in_danger && surroundings.clone().closest_structure.is_some())
     {
         if let Some(threat) = surroundings.clone().closest_threat {
             let retreat_position = unit.position().towards(threat.position(), -5.0);
@@ -273,9 +275,10 @@ pub fn kd8_charge(unit: &Unit, surroundings: &SurroundingsInfo) -> bool {
 }
 
 pub fn banshee_cloak(unit: &Unit, surroundings: &SurroundingsInfo) -> bool {
+    let in_danger = surroundings.clone().threat_level > ThreatLevel::None;
     if let Some(abilities) = unit.abilities() {
         if abilities.contains(&AbilityId::BehaviorCloakOnBanshee) && !unit.is_cloaked() {
-            if surroundings.clone().closest_threat.is_some() || surroundings.clone().in_danger {
+            if surroundings.clone().closest_threat.is_some() || in_danger {
                 unit.use_ability(AbilityId::BehaviorCloakOnBanshee, false);
                 return true;
             }

@@ -22,7 +22,8 @@ pub struct ThreatLevelInfo {
 pub enum ThreatLevel {
     None = 0,
     Danger = 1,
-    Flee = 2
+    Countered = 2,
+    Flee = 3
 }
 
 impl ThreatLevelsList {

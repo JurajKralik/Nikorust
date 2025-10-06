@@ -1,6 +1,7 @@
 use crate::Nikolaj;
 use crate::units::helpers::combat_movement::*;
 use crate::units::helpers::surroundings::*;
+use crate::units::helpers::threat_detection::*;
 use rust_sc2::prelude::*;
 
 
@@ -9,20 +10,21 @@ pub fn reaper_control(bot: &mut Nikolaj, unit: &Unit) {
     let surroundings = get_surroundings_info(bot, unit);
     let low_health = unit.health_percentage() < 0.6;
     let weapon_ready = unit.weapon_cooldown().unwrap_or(0.0) < 0.2;
+    let in_danger = surroundings.clone().threat_level > ThreatLevel::None;
 
     if kd8_charge(unit, &surroundings) {
         return;
     }
 
     if low_health {
-        if surroundings.clone().closest_threat.is_some() || surroundings.clone().in_danger {
+        if surroundings.clone().closest_threat.is_some() || in_danger {
             flee_bio(bot, unit, surroundings.clone());
         } else {
             move_no_spam(unit, Target::Pos(bot.strategy_data.idle_point));
         }
     } else {
         if weapon_ready {
-            if surroundings.clone().in_danger {
+            if in_danger {
                 flee_bio(bot, unit, surroundings.clone());
             } else {
                 if let Some(target) = surroundings.best_target_in_range {
@@ -35,7 +37,7 @@ pub fn reaper_control(bot: &mut Nikolaj, unit: &Unit) {
                 }
             }
         } else {
-            if surroundings.clone().in_danger {
+            if in_danger {
                 flee_bio(bot, unit, surroundings.clone());
             } else {
                 if let Some(target) = surroundings.better_target_off_range {

@@ -11,7 +11,7 @@ pub struct SurroundingsInfo {
     pub closest_threat: Option<Unit>,
     pub closest_counter: Option<Unit>,
     pub closest_structure: Option<Unit>,
-    pub in_danger: bool,
+    pub threat_level: ThreatLevel,
 }
 impl Default for SurroundingsInfo {
     fn default() -> Self {
@@ -21,7 +21,7 @@ impl Default for SurroundingsInfo {
             closest_threat: None,
             closest_counter: None,
             closest_structure: None,
-            in_danger: false,
+            threat_level: ThreatLevel::None,
         }
     }
 }
@@ -50,7 +50,9 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo
                     surroundings.closest_threat = Some(enemy.clone());
                 }
                 if in_range(enemy, unit) {
-                    surroundings.in_danger = true;
+                    if surroundings.threat_level == ThreatLevel::None {
+                        surroundings.threat_level = ThreatLevel::Danger;
+                    }
                 }
             }
         }
@@ -116,7 +118,9 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo
                 surroundings.closest_threat = Some(structure.clone());
             }
             if in_range(structure, unit) {
-                surroundings.in_danger = true;
+                if surroundings.threat_level == ThreatLevel::None {
+                    surroundings.threat_level = ThreatLevel::Danger;
+                }
             }
         }
     }
