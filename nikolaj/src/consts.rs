@@ -71,6 +71,25 @@ const HEAVY_UNITS: &[UnitTypeId] = &[
     UnitTypeId::UltraliskBurrowed,
 ];
 
+pub const FLYING_UNITS: &[UnitTypeId; 16] = &[
+    UnitTypeId::VikingFighter,
+    UnitTypeId::VikingAssault,
+    UnitTypeId::Banshee,
+    UnitTypeId::Raven,
+    UnitTypeId::Liberator,
+    UnitTypeId::LiberatorAG,
+    UnitTypeId::Battlecruiser,
+    UnitTypeId::Mutalisk,
+    UnitTypeId::Corruptor,
+    UnitTypeId::BroodLord,
+    UnitTypeId::Phoenix,
+    UnitTypeId::VoidRay,
+    UnitTypeId::Carrier,
+    UnitTypeId::Tempest,
+    UnitTypeId::Oracle,
+    UnitTypeId::Mothership,
+];
+
 lazy_static! {
     pub static ref TARGETING_PRIORITIES: TargetingPrioritiesList = {
         let mut list: HashMap<UnitTypeId, TargetingPriorities> = HashMap::new();

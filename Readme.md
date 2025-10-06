@@ -45,7 +45,7 @@ Copying of Nikolaj's parts is permitted, but please follow the [guidelines](http
 |                     | Research Upgrades         |    ⬜   |
 | **Fusion Core**     | Construct                 |    ⬜   |
 |                     | Research Upgrades         |    ⬜   |
-| **Missile Turret**  | Construct                 |    ⬜   |
+| **Missile Turret**  | Construct                 |    ✅   |
 | **Ghost Academy**   | Construct                 |    ⬜   |
 |                     | Research Upgrades         |    ⬜   |
 |                     | Nuke Production / Launch  |    ⬜   |

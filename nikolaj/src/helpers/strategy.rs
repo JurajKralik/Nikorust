@@ -1,5 +1,7 @@
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
+use crate::consts::*;
+
 
 pub fn strategy_step(bot: &mut Nikolaj) {
     refresh_idle_point(bot);
@@ -340,6 +342,7 @@ fn read_enemy_strategy(bot: &mut Nikolaj) {
 
     detect_enemy_flooding(bot);
     detect_cloaking_enemy(bot);
+    detect_flying_enemy(bot);
 }
 fn detect_enemy_worker_rush(bot: &mut Nikolaj) {
     let enemy_workers = bot.units.enemy.workers.clone();
@@ -481,6 +484,31 @@ fn detect_cloaking_enemy(bot: &mut Nikolaj) {
         }
     }
 }
+
+fn detect_flying_enemy(bot: &mut Nikolaj) {
+    if bot.strategy_data.enemy_flying_units {
+        return;
+    }
+
+    let enemy_units = bot.strategy_data.enemy_army.clone();
+    for enemy in enemy_units {
+        let enemy_type = enemy.type_id;
+        if FLYING_UNITS.contains(&enemy_type) {
+            if !bot.strategy_data.enemy_flying_units {
+                println!(
+                    "Strategy: Detected enemy flying unit {:?} at time {:.1}",
+                    enemy_type,
+                    bot.time
+                );
+            }
+            bot.strategy_data.enemy_flying_units = true;
+            return;
+        }
+    }
+}
+
+
+#[derive(Default)]
 pub struct StrategyData {
     pub enemy_army: Vec<UnitSnapshot>,
     pub idle_point: Point2,
@@ -498,29 +526,7 @@ pub struct StrategyData {
     pub enemy_ramp_blocking: bool,
     pub enemy_ramp_blocking_steps: usize,
     pub enemy_ramp_blocking_time: f32,
-}
-
-impl Default for StrategyData {
-    fn default() -> Self {
-        StrategyData {
-            enemy_army: Vec::new(),
-            idle_point: Point2::new(0.0, 0.0),
-            defense_point: Point2::new(0.0, 0.0),
-            attack_point: Point2::new(0.0, 0.0),
-            army_center: Point2::new(0.0, 0.0),
-            harass_points: Vec::new(),
-            repair_points: Vec::new(),
-            defend: false,
-            attack: false,
-            enemy_cloaking: false,
-            enemy_flooding: false,
-            enemy_worker_rush: false,
-            enemy_worker_rush_time: -6.0,
-            enemy_ramp_blocking: false,
-            enemy_ramp_blocking_steps: 0,
-            enemy_ramp_blocking_time: -6.0,
-        }
-    }
+    pub enemy_flying_units: bool,
 }
 
 impl StrategyData {

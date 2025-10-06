@@ -43,9 +43,8 @@ fn should_try_build_engineering_bay(bot: &Nikolaj) -> bool {
     }
 
     // Additional conditions
-    // Needs at least 8 bio units
-    // TODO: Add flying enemies condition
-    if bot.unit_count(UnitTypeId::Marine) + bot.unit_count(UnitTypeId::Marauder) < 8 && !bot.strategy_data.enemy_cloaking {
+    // Needs at least 8 bio units or missile turrets are needed
+    if bot.unit_count(UnitTypeId::Marine) + bot.unit_count(UnitTypeId::Marauder) < 8 && !bot.strategy_data.enemy_cloaking && !bot.strategy_data.enemy_flying_units {
         return false;
     }
     true

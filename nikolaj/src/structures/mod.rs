@@ -7,3 +7,4 @@ pub mod starport;
 pub mod addons;
 pub mod engineering_bay;
 pub mod armory;
+pub mod missile_turrets;
