@@ -47,7 +47,7 @@ fn should_try_build_bunker(bot: &Nikolaj) -> bool {
         return false;
     }
     // One base defense
-    if bot.units.my.townhalls.ready().len() == 1 && !bot.strategy_data.enemy_flooding {
+    if bot.units.my.townhalls.ready().len() < 2 && !bot.strategy_data.enemy_flooding {
         return false;
     }
     true

@@ -13,7 +13,7 @@ pub fn construct_refinery(bot: &mut Nikolaj) {
         }
     }
 
-    if bot.already_pending(UnitTypeId::Refinery) > 0 {
+    if bot.already_pending(UnitTypeId::Refinery) > 0 && bot.units.my.structures.of_type_including_alias(UnitTypeId::Refinery).len() > 1 {
         return;
     }
 

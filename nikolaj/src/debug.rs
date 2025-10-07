@@ -49,7 +49,7 @@ impl Default for NikolajDebugger {
                 displaying_worker_mining_steps: false,
                 displaying_bases: false,
                 displaying_repair: false,
-                displaying_mining: false,
+                displaying_mining: true,
                 displaying_strategy_points: false,
                 displaying_selected_tags: true,
                 run_resource_assignments_checks: false,
@@ -160,8 +160,11 @@ fn debug_show_mining(
             if let Some(mineral) = bot.units.mineral_fields.iter().find_tag(tag.clone()){
                 let position = mineral.position();
                 let size = 0.5;
+                let workers_amount = alloc.workers.len().clone().to_string();
                 resource_color = "blue";
                 bot.debug_cube(position, size, resource_color);
+
+                bot.debug_text(workers_amount.as_str(), position, "yellow", Some(16));
                 resource_position = Some(position.clone());
             } else {
                 println!("[DEBUGGER] {} Mineral with tag {} not found", bot.debugger.time, tag);

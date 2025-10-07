@@ -441,7 +441,7 @@ impl WorkerAllocator {
                         .find(|(_, alloc)| alloc.worker_role == WorkerRole::Mineral && alloc.workers.contains(&worker_tag))
                         .map(|(tag, _)| *tag);
                     if let Some(resource_tag) = resource_tag_of_worker {
-                        let low_gas_workers = self.worker_roles.values().filter(|&&role| role == WorkerRole::Gas).count() < 3;
+                        let low_gas_workers = self.worker_roles.values().filter(|&&role| role == WorkerRole::Gas).count() < 6;
                         let heavy_gas_undersaturation = low_gas_workers && self.saturation.mineral_tags_oversaturated.is_empty();
                         if self.saturation.mineral_tags_oversaturated.contains(&resource_tag) || heavy_gas_undersaturation {
                             if let Some(allocation) = self.resources.get_mut(&resource_tag) {
@@ -624,7 +624,7 @@ impl WorkerAllocator {
     }
 
     fn command_gather_mineral(&self, worker: Unit, worker_tag: u64, units: &AllUnits) -> WorkersMiningSteps{
-        const CHECK_OFFSET: f32 = 0.3;
+        const CHECK_OFFSET: f32 = 0.5;
         const COMMAND_OFFSET: f32 = 0.0;
         const MINIMUM_RANGE: f32 = 1.5;
 

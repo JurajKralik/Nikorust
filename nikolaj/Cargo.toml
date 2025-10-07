@@ -1,6 +1,6 @@
 [package]
 name = "nikolaj"
-version = "1.0.3"
+version = "1.0.5"
 edition = "2021"
 description = "A StarCraft II Terran bot. Last build: 07/10/2025"
 license = "MIT"
