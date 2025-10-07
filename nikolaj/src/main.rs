@@ -14,6 +14,7 @@ use crate::helpers::construction::*;
 use crate::helpers::build_order::*;
 use crate::helpers::strategy::*;
 use crate::helpers::macro_manager::*;
+use crate::helpers::map_manager::*;
 use crate::structures::command_center::*;
 use crate::structures::supply_depots::*;
 use crate::structures::barracks::*;
@@ -39,6 +40,7 @@ struct Nikolaj {
     strategy_data: StrategyData,
     construction_info: ConstructionInfo,
     combat_info: CombatInfo,
+    map_manager: MapManager
 }
 
 impl Player for Nikolaj {
@@ -76,6 +78,7 @@ impl Player for Nikolaj {
         addons_control(self);
         strategy_step(self);
         combat_info_step(self);
+        map_manager_step(self);
         army_step(self);
         debug_step(self);
         Ok(())
