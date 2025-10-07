@@ -9,8 +9,6 @@ pub fn get_placement_on_grid(
 ) -> Option<Point2> {
     let start = bot.start_location;
     let start_height = bot.get_z_height(start);
-    let start_x = start.x as i32;
-    let start_y = start.y as i32;
     let spacing_x = 7;
     let spacing_y = 3;
     let search_range = 25;
@@ -18,7 +16,7 @@ pub fn get_placement_on_grid(
     for x_offset in (-search_range..search_range).step_by(spacing_x) {
         for y_offset in (-search_range..search_range).step_by(spacing_y) {
             // Make a corridor in the middle
-            if (x_offset - start_x).abs() < 3 || (y_offset - start_y).abs() < 3 {
+            if (x_offset as i32).abs() < 2 || (y_offset as i32).abs() < 2 {
                 continue;
             }
             let position = start + Point2::new(x_offset as f32, y_offset as f32);
