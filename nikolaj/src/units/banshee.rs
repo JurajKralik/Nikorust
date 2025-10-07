@@ -7,7 +7,7 @@ use rust_sc2::prelude::*;
 
 pub fn banshee_control(bot: &mut Nikolaj, unit: &Unit) {
     let surroundings = get_surroundings_info(bot, unit);
-    let weapon_ready = unit.weapon_cooldown().unwrap_or(0.0) < 0.2;
+    let weapon_ready = unit.weapon_cooldown() < 0.2;
     let in_repair_list = bot.worker_allocator.repair.contains_key(&unit.tag());
     let in_danger = surroundings.clone().threat_level > ThreatLevel::None;
 

@@ -543,7 +543,7 @@ checksum = "adad44e29e4c806119491a7f06f03de4d1af22c3a680dd47f1e6e179439d1f56"
 [[package]]
 name = "rust-sc2"
 version = "1.2.0"
-source = "git+https://github.com/JurajKralik/rust-sc2#d9adf70f8dd409498fb0c51b63217fb1740394be"
+source = "git+https://github.com/JurajKralik/rust-sc2#b8fc34883d3a40f6fd419401a4ee4edaf966f2b6"
 dependencies = [
  "dirs",
  "indexmap",
@@ -574,7 +574,7 @@ checksum = "08d43f7aa6b08d49f382cde6a7982047c3426db949b1424bc4b7ec9ae12c6ce2"
 [[package]]
 name = "sc2-macro"
 version = "1.0.0"
-source = "git+https://github.com/JurajKralik/rust-sc2#d9adf70f8dd409498fb0c51b63217fb1740394be"
+source = "git+https://github.com/JurajKralik/rust-sc2#b8fc34883d3a40f6fd419401a4ee4edaf966f2b6"
 dependencies = [
  "sc2-proc-macro",
 ]
@@ -582,7 +582,7 @@ dependencies = [
 [[package]]
 name = "sc2-proc-macro"
 version = "1.0.0"
-source = "git+https://github.com/JurajKralik/rust-sc2#d9adf70f8dd409498fb0c51b63217fb1740394be"
+source = "git+https://github.com/JurajKralik/rust-sc2#b8fc34883d3a40f6fd419401a4ee4edaf966f2b6"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -593,7 +593,7 @@ dependencies = [
 [[package]]
 name = "sc2-proto"
 version = "0.2.4"
-source = "git+https://github.com/JurajKralik/rust-sc2#d9adf70f8dd409498fb0c51b63217fb1740394be"
+source = "git+https://github.com/JurajKralik/rust-sc2#b8fc34883d3a40f6fd419401a4ee4edaf966f2b6"
 dependencies = [
  "protobuf",
 ]

@@ -27,7 +27,7 @@ fn flee_to_bunker(units: AllUnits, unit: &Unit) -> bool {
     let bunkers = units.my.structures.of_type(UnitTypeId::Bunker).ready();
     let nearby_bunkers = bunkers.closer(12.0, unit.position());
     if let Some(bunker) = nearby_bunkers.first() {
-        if bunker.cargo_left().unwrap_or(0) >= unit.cargo_size() {
+        if bunker.cargo_left() >= unit.cargo_size() {
             unit.smart(Target::Tag(bunker.tag()), false);
             return true;
         }
@@ -39,7 +39,7 @@ fn flee_to_mine(units: AllUnits, unit: &Unit) -> bool {
     let nearby_mines = mines.closer(12.0, unit.position());
     let sorted_mines = nearby_mines.iter().sort_by_distance(unit.position());
     for mine in sorted_mines {
-        if mine.buff_duration_remain().unwrap_or(1) == 0 {
+        if mine.buff_duration_remain() == 0 {
             if unit.distance(mine.position()) > 3.0 {
                 move_no_spam(unit, Target::Pos(mine.position()));
                 return true;
@@ -55,7 +55,7 @@ fn flee_to_medivac(units: AllUnits, unit: &Unit) -> bool {
     let medivacs = units.my.units.of_type(UnitTypeId::Medivac);
     let nearby_medivacs = medivacs.closer(12.0, unit.position());
     if let Some(medivac) = nearby_medivacs.first() {
-        if medivac.cargo_space_taken().unwrap_or(0) == 0
+        if medivac.cargo_space_taken() == 0
             && medivac.health_percentage() > 0.5
         {
             unit.smart(Target::Tag(medivac.tag()), false);
