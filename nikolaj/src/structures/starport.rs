@@ -66,6 +66,10 @@ fn should_try_build_starport(bot: &Nikolaj) -> bool {
 			return false;
 		}
 	}
+	// No expansion yet
+	if bot.units.my.townhalls.len() < 2 && bot.units.my.structures.of_type_including_alias(UnitTypeId::Starport).len() > 0 {
+		return false;
+	}
 	true
 }
 

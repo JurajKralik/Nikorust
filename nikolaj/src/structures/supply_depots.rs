@@ -37,12 +37,16 @@ fn check_depots_needed(bot: &mut Nikolaj) -> bool {
     if supply_cap > 199 || bot.units.my.townhalls.is_empty() {
         return false;
     }
+    // Start
+    if supply_left < 3 && pending == 0 {
+        return true;
+    }
     // Classic
-    if supply_left < 6 && pending == 0 {
+    if supply_used > 30 && supply_left < 6 && pending == 0 {
         return true;
     }
     // Supply block close
-    if supply_left < 6 && pending < 2 && supply_used > 30 {
+    if supply_used > 30 && supply_left < 6 && pending < 2 && supply_used > 30 {
         return true;
     }
     // Supply block too close

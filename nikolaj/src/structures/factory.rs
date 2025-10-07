@@ -69,7 +69,10 @@ fn should_try_build_factory(bot: &Nikolaj) -> bool {
 			return false;
 		}
 	}
-
+	// No expansion yet
+	if bot.units.my.townhalls.len() < 2 && bot.units.my.structures.of_type_including_alias(UnitTypeId::Factory).len() > 0 {
+		return false;
+	}
 	true
 }
 

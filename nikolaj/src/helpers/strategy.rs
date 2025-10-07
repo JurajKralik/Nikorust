@@ -302,6 +302,7 @@ fn delete_dead_enemy_snapshots(bot: &mut Nikolaj, dead_units: Vec<u64>) {
         .retain(|snapshot| !dead_units.contains(&snapshot.id));
 }
 fn decide_offensive(bot: &mut Nikolaj) {
+    // TODO: Improve logic
     let enemy_supply = bot.strategy_data.get_army_supply();
     let my_supply = bot.supply_army;
 

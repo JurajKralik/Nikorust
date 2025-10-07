@@ -38,7 +38,7 @@ pub fn construct_command_center(bot: &mut Nikolaj) {
     }
 
     // Saturation check
-    if bot.worker_allocator.saturation.mineral_tags_undersaturated.is_empty() {
+    if bot.supply_workers < (bot.units.my.townhalls.len() * 20) as u32 {
         return;
     }
 

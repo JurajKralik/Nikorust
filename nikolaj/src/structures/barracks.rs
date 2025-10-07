@@ -81,6 +81,10 @@ fn should_try_build_barracks(bot: &Nikolaj) -> bool {
 			return false;
 		}
 	}
+	// No expansion yet
+	if bot.units.my.townhalls.len() < 2 && bot.units.my.structures.of_type_including_alias(UnitTypeId::Barracks).len() > 0 {
+		return false;
+	}
 	true
 }
 

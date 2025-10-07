@@ -34,7 +34,7 @@ fn should_try_build_bunker(bot: &Nikolaj) -> bool {
         return false;
     }
     // Needs at least one barracks
-    let barracks = bot.units.my.structures.of_type_including_alias(UnitTypeId::Barracks);
+    let barracks = bot.units.my.structures.of_type_including_alias(UnitTypeId::Barracks).ready();
     if barracks.is_empty() {
         return false;
     }
@@ -44,6 +44,10 @@ fn should_try_build_bunker(bot: &Nikolaj) -> bool {
     let bunker_total = bot.structure_count(UnitTypeId::Bunker)
         + bot.already_pending(UnitTypeId::Bunker);
     if bunker_total > 0 {
+        return false;
+    }
+    // One base defense
+    if bot.units.my.townhalls.ready().len() == 1 && !bot.strategy_data.enemy_flooding {
         return false;
     }
     true
