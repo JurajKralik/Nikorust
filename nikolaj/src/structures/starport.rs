@@ -12,7 +12,7 @@ pub fn construct_starport(bot: &mut Nikolaj) {
 	}
 }
 
-pub fn starport_control(bot: &mut Nikolaj) {
+pub fn control_starport(bot: &mut Nikolaj) {
 	handle_grounded_starport(bot);
 	handle_flying_starport(bot);
 }
@@ -105,6 +105,10 @@ fn handle_grounded_starport(bot: &mut Nikolaj) {
 	}
 
 	if bot.macro_manager.expand_priority && bot.get_unit_cost(unit_type).minerals > bot.minerals.saturating_sub(400) {
+		return;
+	}
+
+	if !bot.can_afford(unit_type, true) {
 		return;
 	}
 

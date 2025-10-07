@@ -13,7 +13,7 @@ pub fn construct_barracks(bot: &mut Nikolaj) {
 	}
 }
 
-pub fn barracks_control(bot: &mut Nikolaj) {
+pub fn control_barracks(bot: &mut Nikolaj) {
 	handle_grounded_barracks(bot);
 	handle_flying_barracks(bot);
 }
@@ -120,6 +120,10 @@ fn handle_grounded_barracks(bot: &mut Nikolaj) {
 	}
 
 	if bot.macro_manager.expand_priority && bot.get_unit_cost(unit_type).minerals > bot.minerals.saturating_sub(400) {
+		return;
+	}
+	
+	if !bot.can_afford(unit_type, true) {
 		return;
 	}
 

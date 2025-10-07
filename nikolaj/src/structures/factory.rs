@@ -13,7 +13,7 @@ pub fn construct_factory(bot: &mut Nikolaj) {
 	}
 }
 
-pub fn factory_control(bot: &mut Nikolaj) {
+pub fn control_factory(bot: &mut Nikolaj) {
 	handle_grounded_factory(bot);
 	handle_flying_factory(bot);
 }
@@ -112,6 +112,10 @@ fn handle_grounded_factory(bot: &mut Nikolaj) {
 		return;
 	}
 	
+	if !bot.can_afford(unit_type, true) {
+		return;
+	}
+
 	for factory in bot.units.my.structures.of_type(UnitTypeId::Factory).idle().ready().clone() {
 		if factory.rally_targets().is_empty() {
 			if let Some(base) = bot.units.my.townhalls.closest(factory.position()) {

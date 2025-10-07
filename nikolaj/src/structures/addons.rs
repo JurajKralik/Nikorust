@@ -2,7 +2,7 @@ use crate::Nikolaj;
 use rust_sc2::prelude::*;
 
 
-pub fn addons_control(bot: &mut Nikolaj) {
+pub fn control_addons(bot: &mut Nikolaj) {
     barracks_tech_lab_control(bot);
     factory_tech_lab_control(bot);
     starport_tech_lab_control(bot);

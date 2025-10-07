@@ -14,7 +14,7 @@ const CLOAK_AND_BURROW: &'static [UnitTypeId] = &[
     UnitTypeId::RoachBurrowed,
 ];
 
-pub fn construct_command_centers(bot: &mut Nikolaj) {
+pub fn construct_command_center(bot: &mut Nikolaj) {
     // One at a time
     if bot.already_pending(UnitTypeId::CommandCenter) > 0 {
         return;
@@ -62,7 +62,7 @@ pub fn construct_command_centers(bot: &mut Nikolaj) {
     build(bot, position, structure);
 }
 
-pub fn townhall_control(bot: &mut Nikolaj) {
+pub fn control_command_center(bot: &mut Nikolaj) {
     for base in &bot.units.my.townhalls.ready() {
         if base.is_flying() {
             let enemies = bot.units.enemy.units.closer(15.0, base);
@@ -252,9 +252,10 @@ pub fn townhall_control(bot: &mut Nikolaj) {
                     continue;
                 }
 
-                if bot.units.my.workers.len() < (bot.units.my.townhalls.len() * 22)
-                && bot.units.my.workers.len() + bot.already_pending(UnitTypeId::SCV) < 70 
-                && bot.can_afford(UnitTypeId::SCV, true) {
+                let not_fully_saturated = bot.units.my.workers.len() < (bot.units.my.townhalls.len() * 22);
+                let scv_not_capped = bot.units.my.workers.len() + bot.already_pending(UnitTypeId::SCV) < 70;
+
+                if not_fully_saturated && scv_not_capped && bot.can_afford(UnitTypeId::SCV, true) {
                     base.train(UnitTypeId::SCV, false);
                     add_to_in_training(bot, UnitTypeId::SCV, base.clone());
                     continue;

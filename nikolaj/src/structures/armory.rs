@@ -79,7 +79,7 @@ fn find_armory_placement(bot: &Nikolaj) -> Option<Point2> {
 	None
 }
 
-pub fn armory_control(bot: &mut Nikolaj) {
+pub fn control_armory(bot: &mut Nikolaj) {
     let flying_army = bot.units.my.units.flying();
     let mut flying_army_supply_cost = 0.0;
     for unit in flying_army {

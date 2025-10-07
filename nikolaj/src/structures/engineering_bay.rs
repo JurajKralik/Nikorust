@@ -76,7 +76,7 @@ fn find_engineering_bay_placement(bot: &Nikolaj) -> Option<Point2> {
 	None
 }
 
-pub fn engineering_bay_control(bot: &mut Nikolaj) {
+pub fn control_engineering_bay(bot: &mut Nikolaj) {
     // No units
     if bot.unit_count(UnitTypeId::Marine) + bot.unit_count(UnitTypeId::Marauder) < 8 {
         return;

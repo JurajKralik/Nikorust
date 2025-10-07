@@ -3,7 +3,7 @@ use crate::Nikolaj;
 use rust_sc2::prelude::*;
 use rust_sc2::ramp::Ramp;
 
-pub fn construct_supply_depots(bot: &mut Nikolaj) {
+pub fn construct_supply_depot(bot: &mut Nikolaj) {
     if !check_depots_needed(bot) {
         return;
     }
@@ -152,7 +152,7 @@ fn get_next_depot_position(bot: &mut Nikolaj) -> Target {
     Target::None
 }
 
-pub fn supply_depots_control(bot: &mut Nikolaj) {
+pub fn control_supply_depot(bot: &mut Nikolaj) {
     if bot.units.my.structures.of_type_including_alias(UnitTypeId::SupplyDepot).is_empty() {
         return;
     }
