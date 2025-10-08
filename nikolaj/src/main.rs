@@ -13,7 +13,6 @@ use crate::debug::*;
 use crate::helpers::construction::*;
 use crate::helpers::macro_manager::*;
 use crate::helpers::strategy::*;
-use crate::helpers::map_manager::*;
 use crate::units::scv::*;
 use crate::units::helpers::combat_units::*;
 use crate::units::helpers::combat_info::*;
@@ -28,8 +27,7 @@ struct Nikolaj {
     macro_manager: MacroManager,
     strategy_data: StrategyData,
     construction_info: ConstructionInfo,
-    combat_info: CombatInfo,
-    map_manager: MapManager
+    combat_info: CombatInfo
 }
 
 impl Player for Nikolaj {
@@ -47,7 +45,6 @@ impl Player for Nikolaj {
         macro_manager_step(self);
         strategy_step(self);
         combat_info_step(self);
-        map_manager_step(self);
         army_step(self);
         debug_step(self);
         Ok(())

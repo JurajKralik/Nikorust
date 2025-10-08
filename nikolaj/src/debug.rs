@@ -24,7 +24,7 @@ pub struct NikolajDebugger{
     pub displaying_repair: bool,
     pub displaying_mining: bool,
     pub displaying_strategy_points: bool,
-    pub displaying_selected_tags: bool,
+    pub displaying_selected: bool,
     pub run_resource_assignments_checks: bool,
     pub workers_current_mining_steps: Vec<WorkersCurrentMiningStep>,
 }
@@ -51,7 +51,7 @@ impl Default for NikolajDebugger {
                 displaying_repair: false,
                 displaying_mining: true,
                 displaying_strategy_points: false,
-                displaying_selected_tags: true,
+                displaying_selected: true,
                 run_resource_assignments_checks: false,
                 workers_current_mining_steps: vec![],
             }
@@ -77,7 +77,7 @@ impl Default for NikolajDebugger {
                 displaying_repair: false,
                 displaying_mining: false,
                 displaying_strategy_points: false,
-                displaying_selected_tags: true,
+                displaying_selected: true,
                 run_resource_assignments_checks: false,
                 workers_current_mining_steps: vec![],
             }
@@ -111,7 +111,7 @@ pub fn debug_step(
     debug_print_combat_info(bot);
     debug_print_build_order(bot);
     debug_resource_assignments_checks(bot);
-    debug_display_selected_tags(bot);
+    debug_display_selected(bot);
     debug_print_full_construction_info(bot);
 }
 // Debugging
@@ -486,8 +486,8 @@ fn debug_resource_assignments_checks(bot: &mut Nikolaj) {
     }
 }
 
-fn debug_display_selected_tags(bot: &mut Nikolaj) {
-    if !bot.debugger.displaying_selected_tags {
+fn debug_display_selected(bot: &mut Nikolaj) {
+    if !bot.debugger.displaying_selected {
         return;
     }
     let mut selected_units: Vec<Unit> = vec![];
@@ -504,6 +504,20 @@ fn debug_display_selected_tags(bot: &mut Nikolaj) {
             continue;
         }
         bot.debug_text(&text, position, "white", Some(14));
+        
+        if let Some(heatmap) = bot.combat_info.heatmaps.get(&unit.tag()) {
+            let points_data: Vec<(String, Point2, &str, Option<u32>)> = heatmap.points
+                .iter()
+                .map(|point| {
+                    let color = "red";
+                    let text = format!("{:.0}", point.intensity);
+                    (text, point.position, color, Some(10))
+                })
+                .collect();
+            for (text, position, color, size) in points_data {
+                bot.debug_text(&text, position, color, size);
+            }
+        }
     }
 }
 
