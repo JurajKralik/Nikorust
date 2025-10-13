@@ -36,11 +36,12 @@ impl Player for Nikolaj {
     }
     fn on_start(&mut self) -> SC2Result<()> {
         self.start_game_report();
+        self.init_pathfinding();
+        self.calculate_zones_from_start_locations();
         Ok(())
     }
     fn on_step(&mut self, _iteration: usize) -> SC2Result<()> {
         self.time_step();
-
         scv_step(self);
         macro_manager_step(self);
         strategy_step(self);
@@ -149,7 +150,7 @@ fn main() -> SC2Result<()> {
             Computer::new(Race::Terran, Difficulty::VeryHard, Some(AIBuild::RandomBuild)),
             "BerlingradAIE",
             LaunchOptions {
-                realtime: false,
+                realtime: true,
                 ..Default::default()
             },
         );

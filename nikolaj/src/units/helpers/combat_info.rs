@@ -81,3 +81,10 @@ pub struct HeatPoint {
 	pub position: Point2,
 	pub intensity: f32,
 }
+
+fn create_heatmap_for_unit(unit_tag: u64) -> Heatmap {
+    Heatmap {
+        unit_tag,
+        points: Vec::new(),
+    }
+}

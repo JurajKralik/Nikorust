@@ -10,6 +10,7 @@ authors = ["Juraj Kralik (DAX)"]
 
 [dependencies]
 rust-sc2 = { git = "https://github.com/JurajKralik/rust-sc2" }
+quote = "1.0.41"
 clap = {version = "4.5.4", features = ["derive", "cargo"] }
 lazy_static = "1.4.0"
 rand = "0.8"
