@@ -43,6 +43,7 @@ pub fn scv_step(bot: &mut Nikolaj) {
     bot.worker_allocator.update_idle_workers(&bot.units.clone());
     let valid_resources_tags = collect_valid_resource_tags(&bot.units.clone());
     bot.worker_allocator.update_resources(valid_resources_tags, &bot.units.clone());
+    bot.worker_allocator.clean_dead_workers_from_resources(&bot.units.clone(), bot.time);
     bot.worker_allocator.update_saturation();
     bot.worker_allocator.assign_resource_workers(&bot.units.clone());
     bot.worker_allocator.workers_movement(&bot.units.clone());
@@ -57,6 +58,15 @@ pub struct WorkerAllocator {
     pub worker_roles: HashMap<u64, WorkerRole>,
     pub saturation: ResourceSaturation,
     pub construction_workers: HashSet<u64>,
+    pub worker_death_timers: HashMap<u64, WorkerDeathTimer>,
+}
+
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub struct WorkerDeathTimer {
+    pub worker_tag: u64,
+    pub first_missing_time: f32,
+    pub worker_role: WorkerRole,
 }
 
 impl WorkerAllocator {
@@ -381,6 +391,70 @@ impl WorkerAllocator {
         }
     }
 
+    fn clean_dead_workers_from_resources(&mut self, units: &AllUnits, current_time: f32) {
+        let worker_tags = units.my.workers.iter().map(|w| w.tag()).collect::<HashSet<u64>>();
+        let death_timer_threshold = 3.0;
+        
+        for (_resource_tag, allocation) in self.resources.iter_mut() {
+            let mut dead_workers: Vec<u64> = Vec::new();
+            
+            for worker_tag in allocation.workers.iter() {
+                if !worker_tags.contains(worker_tag) {
+                    // Worker not found - check if it's a gas worker (they disappear temporarily)
+                    let worker_role = self.worker_roles.get(worker_tag).cloned().unwrap_or(WorkerRole::Idle);
+                    
+                    if worker_role == WorkerRole::Gas {
+                        // Gas worker - use death timer system
+                        if let Some(timer) = self.worker_death_timers.get(worker_tag) {
+                            if current_time - timer.first_missing_time >= death_timer_threshold {
+                                dead_workers.push(*worker_tag);
+                                if self.debugger.printing_workers_assignments {
+                                    println!(
+                                        "[DEBUGGER] {} Gas worker {} confirmed dead after {:.1}s, removed from resource allocation",
+                                        self.debugger.time, worker_tag, current_time - timer.first_missing_time
+                                    );
+                                }
+                            }
+                        } else {
+                            // First time missing - start timer
+                            self.worker_death_timers.insert(*worker_tag, WorkerDeathTimer {
+                                worker_tag: *worker_tag,
+                                first_missing_time: current_time,
+                                worker_role: worker_role.clone(),
+                            });
+                        }
+                    } else {
+                        // Non-gas worker
+                        dead_workers.push(*worker_tag);
+                        if self.debugger.printing_workers_assignments {
+                            println!(
+                                "[DEBUGGER] {} Dead worker {} removed from resource allocation",
+                                self.debugger.time, worker_tag
+                            );
+                        }
+                    }
+                } else {
+                    // Worker found - remove death timer
+                    if self.worker_death_timers.remove(worker_tag).is_some() {
+                        if self.debugger.printing_workers_assignments {
+                            println!(
+                                "[DEBUGGER] {} Gas worker {} reappeared, canceling death timer",
+                                self.debugger.time, worker_tag
+                            );
+                        }
+                    }
+                }
+            }
+            
+            // Remove confirmed dead workers from this resource's worker list
+            allocation.workers.retain(|w| !dead_workers.contains(w));
+            
+            for worker_tag in dead_workers {
+                self.worker_roles.remove(&worker_tag);
+                self.worker_death_timers.remove(&worker_tag);
+            }
+        }
+    }
 
     fn update_saturation(&mut self) {
         self.saturation = ResourceSaturation {

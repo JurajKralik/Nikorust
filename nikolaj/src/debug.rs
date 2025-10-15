@@ -198,8 +198,9 @@ fn debug_show_mining(
                             continue;
                         }
                         println!("[DEBUGGER] {} (1) Worker with tag {}, role {:?} not found", bot.debugger.time, worker_tag, role);
+                    } else {
+                        println!("[DEBUGGER] {} (1) Worker with tag {}, without role not found", bot.debugger.time, worker_tag);
                     }
-                    println!("[DEBUGGER] {} (1) Worker with tag {}, without role not found", bot.debugger.time, worker_tag);
                 }
             }
         }
@@ -559,8 +560,13 @@ fn debug_show_heatmaps(bot: &mut Nikolaj) {
             for point in &heatmap.points {
                 let position = point.position;
                 let intensity = point.intensity;
+                if intensity == 0.0 {
+                    continue;
+                }
                 let color = if intensity >= 1000.0 {
                     "green"
+                } else if intensity > 0.0 {
+                    "orange"
                 } else {
                     "red"
                 };

@@ -2,12 +2,14 @@ use crate::Nikolaj;
 use crate::units::helpers::combat_movement::*;
 use crate::units::helpers::surroundings::*;
 use crate::units::helpers::threat_detection::*;
+use crate::units::helpers::combat_info::*;
 use rust_sc2::prelude::*;
 
 
 
 pub fn reaper_control(bot: &mut Nikolaj, unit: &Unit) {
     let surroundings = get_surroundings_info(bot, unit);
+    let _heatmap = get_heatmap_for_unit(bot, unit.tag());
     let low_health = unit.health_percentage() < 0.6;
     let weapon_ready = unit.weapon_cooldown() < 0.2;
     let in_danger = surroundings.clone().threat_level > ThreatLevel::None;
