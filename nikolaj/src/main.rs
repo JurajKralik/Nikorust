@@ -1,5 +1,4 @@
 use std::env;
-
 use rust_sc2::{bot, geometry::*, prelude::*};
 
 mod consts;

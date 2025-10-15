@@ -25,6 +25,7 @@ pub struct NikolajDebugger{
     pub displaying_mining: bool,
     pub displaying_strategy_points: bool,
     pub displaying_selected: bool,
+    pub displaying_heatmaps: bool,
     pub run_resource_assignments_checks: bool,
     pub workers_current_mining_steps: Vec<WorkersCurrentMiningStep>,
 }
@@ -52,6 +53,7 @@ impl Default for NikolajDebugger {
                 displaying_mining: true,
                 displaying_strategy_points: false,
                 displaying_selected: true,
+                displaying_heatmaps: true,
                 run_resource_assignments_checks: false,
                 workers_current_mining_steps: vec![],
             }
@@ -78,6 +80,7 @@ impl Default for NikolajDebugger {
                 displaying_mining: false,
                 displaying_strategy_points: false,
                 displaying_selected: true,
+                displaying_heatmaps: false,
                 run_resource_assignments_checks: false,
                 workers_current_mining_steps: vec![],
             }
@@ -113,6 +116,7 @@ pub fn debug_step(
     debug_resource_assignments_checks(bot);
     debug_display_selected(bot);
     debug_print_full_construction_info(bot);
+    debug_show_heatmaps(bot);
 }
 // Debugging
 fn debug_show_bases(
@@ -539,6 +543,34 @@ fn debug_print_full_construction_info(bot: &mut Nikolaj) {
         );
     }
     println!("-------------------------");
+}
+
+fn debug_show_heatmaps(bot: &mut Nikolaj) {
+    if !bot.debugger.displaying_heatmaps {
+        return;
+    }
+    let mut selected_units: Vec<Unit> = vec![];
+    for unit in bot.units.my.all.iter().filter(|u| u.is_selected()) {
+        selected_units.push(unit.clone());
+    }
+    let mut debug_texts: Vec<(String, Point2, &str, Option<u32>)> = vec![];
+    for unit in selected_units {
+        if let Some(heatmap) = bot.combat_info.heatmaps.get(&unit.tag()) {
+            for point in &heatmap.points {
+                let position = point.position;
+                let intensity = point.intensity;
+                let color = if intensity >= 1000.0 {
+                    "green"
+                } else {
+                    "red"
+                };
+                debug_texts.push((format!("{:.0}", intensity), position, color, Some(10)));
+            }
+        }
+    }
+    for (text, position, color, size) in debug_texts {
+        bot.debug_text(&text, position, color, size);
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
