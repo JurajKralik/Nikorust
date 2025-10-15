@@ -126,7 +126,7 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo
     }
     surroundings
 }
-fn can_attack(attacker: &Unit, target: &Unit) -> bool {
+pub fn can_attack(attacker: &Unit, target: &Unit) -> bool {
     if target.is_flying() && attacker.can_attack_air() {
         return true;
     }
@@ -135,7 +135,7 @@ fn can_attack(attacker: &Unit, target: &Unit) -> bool {
     }
     false
 }
-fn in_range(attacker: &Unit, target: &Unit) -> bool {
+pub fn in_range(attacker: &Unit, target: &Unit) -> bool {
     let distance = attacker.position().distance(target.position());
     if target.is_flying() {
         if distance <= attacker.air_range() {
@@ -149,11 +149,11 @@ fn in_range(attacker: &Unit, target: &Unit) -> bool {
     false
 }
 fn better_of_targets(attacker: &Unit, current_target: &Unit, new_target: &Unit, targeting_priorities: TargetingPriorities) -> Unit {
-    let current_target_damage = attacker.real_range_vs(current_target);
+    let current_target_damage = attacker.real_weapon_vs(current_target).damage as f32;
     let current_target_health =
         (current_target.health() + current_target.shield()) as f32;
     let current_target_dies = current_target_health - current_target_damage <= 0.0;
-    let new_target_damage = attacker.real_range_vs(new_target);
+    let new_target_damage = attacker.real_weapon_vs(new_target).damage as f32;
     let new_target_health =
         (new_target.health() + new_target.shield()) as f32;
     let new_target_dies = new_target_health - new_target_damage <= 0.0;
