@@ -9,7 +9,11 @@ use rust_sc2::prelude::*;
 
 pub fn reaper_control(bot: &mut Nikolaj, unit: &Unit) {
     let surroundings = get_surroundings_info(bot, unit);
-    let _heatmap = get_heatmap_for_unit(bot, unit.tag());
+    let heatmap_options = HeatmapOptions {
+        avoid_damage: true,
+        ..Default::default()
+    };
+    let heatmap = get_heatmap_for_unit(bot, unit.tag(), heatmap_options);
     let low_health = unit.health_percentage() < 0.6;
     let weapon_ready = unit.weapon_cooldown() < 0.2;
     let in_danger = surroundings.clone().threat_level > ThreatLevel::None;
@@ -39,10 +43,12 @@ pub fn reaper_control(bot: &mut Nikolaj, unit: &Unit) {
                 }
             }
         } else {
-            if in_danger {
-                flee_bio(bot, unit, surroundings.clone());
+            if let Some(best_position) = heatmap.get_best_position() {
+                move_no_spam(unit, Target::Pos(best_position));
             } else {
-                if let Some(target) = surroundings.better_target_off_range {
+                if in_danger {
+                    flee_bio(bot, unit, surroundings.clone());
+                } else if let Some(target) = surroundings.better_target_off_range {
                     move_no_spam(unit, Target::Pos(target.position()));
                 } else if let Some(target) = surroundings.best_target_in_range {
                     move_no_spam(unit, Target::Pos(target.position()));

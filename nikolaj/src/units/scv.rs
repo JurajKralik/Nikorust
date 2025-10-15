@@ -714,8 +714,8 @@ impl WorkerAllocator {
                             if target_distance > MINIMUM_RANGE {
                                 let mining_step = WorkersMiningSteps::MineralFarAway;
                                 // Antispam - already gathering
-                                if let Some(order) = worker.order() {
-                                    if order.1 == Target::Tag(target_tag) {
+                                if let Some(tag) = worker.target_tag() {
+                                    if tag == target_tag {
                                         return mining_step;
                                     }
                                 }
@@ -727,11 +727,17 @@ impl WorkerAllocator {
                                 let mineral_offset_position = target.position().towards(closest_base.clone().position(), offset);
                                 let mining_step = WorkersMiningSteps::MineralOffsetWalk;
                                 // Antispam - already moving close
-                                if let Some(order) = worker.order() {
-                                    if let Target::Pos(pos) = order.1 {
-                                        if pos.distance(mineral_offset_position) < COMMAND_OFFSET {
-                                            return mining_step;
-                                        }
+                                if let Some(pos) = worker.target_pos() {
+                                    if pos.distance(mineral_offset_position) < COMMAND_OFFSET {
+                                        return mining_step;
+                                    }
+                                }
+                                // Prevent getting stuck on closest mineral
+                                let worker_offset_position = worker.clone().position().towards(mineral_offset_position, 1.0);
+                                if let Some(closest_mineral_distance) = units.mineral_fields.closest_distance(worker_offset_position) {
+                                    if closest_mineral_distance < 1.5 {
+                                        worker.gather(target_tag, false);
+                                        return mining_step;
                                     }
                                 }
                                 worker.move_to(Target::Pos(mineral_offset_position), false);
@@ -741,8 +747,8 @@ impl WorkerAllocator {
                             } else {
                                 let mining_step = WorkersMiningSteps::MineralGather;
                                 // Antispam - already gathering
-                                if let Some(order) = worker.order() {
-                                    if order.1 == Target::Tag(target_tag) {
+                                if let Some(tag) = worker.target_tag() {
+                                    if tag == target_tag {
                                         return mining_step;
                                     }
                                 }
@@ -756,8 +762,8 @@ impl WorkerAllocator {
                             if return_distance > MINIMUM_RANGE {
                                 let mining_step = WorkersMiningSteps::BaseFarAway;
                                 // Antispam - already returning
-                                if let Some(order) = worker.order() {
-                                    if order.1 == Target::Tag(closest_base.tag()) {
+                                if let Some(tag) = worker.target_tag() {
+                                    if tag == closest_base.tag() {
                                         return mining_step;
                                     }
                                 }
@@ -769,11 +775,9 @@ impl WorkerAllocator {
                                 let offset = closest_base.radius() + COMMAND_OFFSET;
                                 let base_offset_position = closest_base.position().towards(worker.clone().position(), offset);
                                 // Antispam - already moving close
-                                if let Some(order) = worker.order() {
-                                    if let Target::Pos(pos) = order.1 {
-                                        if pos.distance(base_offset_position) < COMMAND_OFFSET {
-                                            return mining_step;
-                                        }
+                                if let Some(pos) = worker.target_pos() {
+                                    if pos.distance(base_offset_position) < COMMAND_OFFSET {
+                                        return mining_step;
                                     }
                                 }
                                 worker.move_to(Target::Pos(base_offset_position), false);
@@ -784,8 +788,8 @@ impl WorkerAllocator {
                             } else {
                                 // Antispam - already returning
                                 let mining_step = WorkersMiningSteps::BaseReturn;
-                                if let Some(order) = worker.order() {
-                                    if order.1 == Target::Tag(closest_base.tag()) {
+                                if let Some(tag) = worker.target_tag() {
+                                    if tag == closest_base.tag() {
                                         return mining_step;
                                     }
                                 }

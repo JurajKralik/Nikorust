@@ -509,20 +509,6 @@ fn debug_display_selected(bot: &mut Nikolaj) {
             continue;
         }
         bot.debug_text(&text, position, "white", Some(14));
-        
-        if let Some(heatmap) = bot.combat_info.heatmaps.get(&unit.tag()) {
-            let points_data: Vec<(String, Point2, &str, Option<u32>)> = heatmap.points
-                .iter()
-                .map(|point| {
-                    let color = "red";
-                    let text = format!("{:.0}", point.intensity);
-                    (text, point.position, color, Some(10))
-                })
-                .collect();
-            for (text, position, color, size) in points_data {
-                bot.debug_text(&text, position, color, size);
-            }
-        }
     }
 }
 
@@ -563,12 +549,13 @@ fn debug_show_heatmaps(bot: &mut Nikolaj) {
                 if intensity == 0.0 {
                     continue;
                 }
-                let color = if intensity >= 1000.0 {
-                    "green"
+                let color: &str;
+                if intensity >= 1000.0 {
+                    color = "green";
                 } else if intensity > 0.0 {
-                    "orange"
+                    color = "yellow";
                 } else {
-                    "red"
+                    color = "red";
                 };
                 debug_texts.push((format!("{:.0}", intensity), position, color, Some(10)));
             }

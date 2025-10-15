@@ -95,11 +95,11 @@ impl Default for HeatmapOptions {
     }
 }
 
-pub fn get_heatmap_for_unit(bot: &mut Nikolaj, unit_tag: u64) -> Heatmap {
+pub fn get_heatmap_for_unit(bot: &mut Nikolaj, unit_tag: u64, options: HeatmapOptions) -> Heatmap {
     if let Some(heatmap) = bot.combat_info.heatmaps.get_mut(&unit_tag) {
         heatmap.clone()
     } else {
-        let heatmap = create_heatmap_for_unit(bot, unit_tag, HeatmapOptions::default());
+        let heatmap = create_heatmap_for_unit(bot, unit_tag, options);
         bot.combat_info.heatmaps.insert(unit_tag, heatmap.clone());
         return heatmap;
     }
