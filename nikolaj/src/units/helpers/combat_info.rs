@@ -69,14 +69,6 @@ impl Heatmap {
 			.max_by(|a, b| a.intensity.partial_cmp(&b.intensity).unwrap_or(std::cmp::Ordering::Equal))
 			.map(|hp| hp.position)
 	}
-
-	pub fn get_best_attack_position(&self) -> Option<Point2> {
-		self.points
-			.iter()
-			.filter(|hp| hp.intensity >= 1000.0) 
-			.max_by(|a, b| a.intensity.partial_cmp(&b.intensity).unwrap_or(std::cmp::Ordering::Equal))
-			.map(|hp| hp.position)
-	}
 }
 
 #[derive(Clone, Debug)]
@@ -90,13 +82,15 @@ pub struct HeatPoint {
 pub struct HeatmapOptions {
     pub evaluate_detection: bool,
     pub step: f32,
+    pub avoid_damage: bool,
 }
 
 impl Default for HeatmapOptions {
     fn default() -> Self {
         HeatmapOptions {
-            evaluate_detection: true,
+            evaluate_detection: false,
             step: 1.0,
+            avoid_damage: false,
         }
     }
 }
@@ -118,63 +112,100 @@ fn create_heatmap_for_unit(bot: &mut Nikolaj, unit_tag: u64, options: HeatmapOpt
     };
     
     if let Some(unit) = bot.units.my.units.get(unit_tag) {
-        let unit_pos = unit.position();
-        let sight_range = unit.sight_range();
-        let step = heatmap.options.step;
-
-        // Add points
-        let grid_size = (sight_range / step).ceil() as i32;
-        for dx in -grid_size..=grid_size {
-            for dy in -grid_size..=grid_size {
-                let pos = Point2::new(unit_pos.x + dx as f32 * step, unit_pos.y + dy as f32 * step);
-
-                // Out of range
-                if unit_pos.distance(pos) > sight_range {
-                    continue;
-                }
-
-                // Not pathable
-                if !bot.is_pathable(pos) && !unit.is_flying() { 
-                    continue; 
-                }
-
-                let heatpoint = HeatPoint {
-                    position: pos,
-                    intensity: 0.0,
-                    can_attack: false,
-                };
-                heatmap.points.push(heatpoint);
-            }
-        }
-        // Evaluate points
-        for enemy in bot.units.enemy.units.iter() {
-            // Enemy can be attacked
-            if can_attack(unit, enemy) {
-                let weapon_range = unit.real_range_vs(enemy);
-                for heatpoint in heatmap.points.iter_mut() {
-                    if heatpoint.can_attack {
-                        continue; // Already can attack from this point
-                    }
-                    let distance = heatpoint.position.distance(enemy.position());
-                    if distance <= weapon_range {
-                        heatpoint.can_attack = true;
-                        heatpoint.intensity += 1000.0;
-                    }
-                }
-            }
-            // Incoming damage evaluation
-            if can_attack(unit, enemy) {
-                let enemy_weapon_range = enemy.real_range_vs(unit);
-                let damage = enemy.real_weapon_vs(unit).damage as f32;
-                for heatpoint in heatmap.points.iter_mut() {
-                    let distance = heatpoint.position.distance(enemy.position());
-                    if distance <= enemy_weapon_range {
-                        heatpoint.intensity -= damage; // Penalty for being in enemy range
-                    }
-                }
-            }
-        }
+        generate_heatmap_points(bot, &mut heatmap, unit);
+        evaluate_enemy_units(&mut heatmap, unit, &bot.units.enemy.units);
+        evaluate_enemy_structures(&mut heatmap, unit, &bot.units.enemy.structures);
+        apply_damage_avoidance(&mut heatmap);
     }
     
     heatmap
+}
+
+fn generate_heatmap_points(bot: &Nikolaj, heatmap: &mut Heatmap, unit: &Unit) {
+    let unit_pos = unit.position();
+    let sight_range = unit.sight_range();
+    let step = heatmap.options.step;
+    let grid_size = (sight_range / step).ceil() as i32;
+
+    for dx in -grid_size..=grid_size {
+        for dy in -grid_size..=grid_size {
+            let pos = Point2::new(unit_pos.x + dx as f32 * step, unit_pos.y + dy as f32 * step);
+
+            // Out of range
+            if unit_pos.distance(pos) > sight_range {
+                continue;
+            }
+
+            // Not pathable
+            if !bot.is_pathable(pos) && !unit.is_flying() { 
+                continue; 
+            }
+
+            let heatpoint = HeatPoint {
+                position: pos,
+                intensity: 0.0,
+                can_attack: false,
+            };
+            heatmap.points.push(heatpoint);
+        }
+    }
+}
+
+fn evaluate_enemy_units(heatmap: &mut Heatmap, unit: &Unit, enemy_units: &Units) {
+    for enemy in enemy_units.iter() {
+        evaluate_attack_opportunities(heatmap, unit, enemy);
+        evaluate_incoming_damage(heatmap, unit, enemy);
+    }
+}
+
+fn evaluate_enemy_structures(heatmap: &mut Heatmap, unit: &Unit, enemy_structures: &Units) {
+    for enemy in enemy_structures.iter() {
+        evaluate_incoming_damage(heatmap, unit, enemy);
+    }
+}
+
+fn evaluate_attack_opportunities(heatmap: &mut Heatmap, unit: &Unit, enemy: &Unit) {
+    if !can_attack(unit, enemy) {
+        return;
+    }
+
+    let weapon_range = unit.real_range_vs(enemy);
+    for heatpoint in heatmap.points.iter_mut() {
+        if heatpoint.can_attack {
+            continue; // Already can attack from this point
+        }
+        let distance = heatpoint.position.distance(enemy.position());
+        if distance <= weapon_range {
+            heatpoint.can_attack = true;
+            heatpoint.intensity += 1000.0;
+        }
+    }
+}
+
+fn evaluate_incoming_damage(heatmap: &mut Heatmap, unit: &Unit, enemy: &Unit) {
+    if !can_attack(enemy, unit) {
+        return;
+    }
+
+    let enemy_weapon_range = enemy.real_range_vs(unit);
+    let damage = enemy.real_weapon_vs(unit).damage as f32;
+    
+    for heatpoint in heatmap.points.iter_mut() {
+        let distance = heatpoint.position.distance(enemy.position());
+        if distance <= enemy_weapon_range {
+            heatpoint.intensity -= damage;
+        }
+    }
+}
+
+fn apply_damage_avoidance(heatmap: &mut Heatmap) {
+    if !heatmap.options.avoid_damage {
+        return;
+    }
+
+    for heatpoint in heatmap.points.iter_mut() {
+        if heatpoint.can_attack && heatpoint.intensity < 1000.0 {
+            heatpoint.intensity -= 1000.0;
+        }
+    }
 }
