@@ -5,3 +5,4 @@ pub mod workers_assignments;
 pub mod combat_info;
 pub mod targeting;
 pub mod threat_detection;
+pub mod heatmap;

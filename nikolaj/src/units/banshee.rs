@@ -2,7 +2,7 @@ use crate::Nikolaj;
 use crate::units::helpers::combat_movement::*;
 use crate::units::helpers::surroundings::*;
 use crate::units::helpers::threat_detection::*;
-use crate::units::helpers::combat_info::*;
+use crate::units::helpers::heatmap::*;
 use rust_sc2::prelude::*;
 
 
