@@ -37,12 +37,12 @@ Copying of Nikolaj's parts is permitted, but please follow the [guidelines](http
 |                     | Construct Addon           |    ✅   |
 |                     | Train Units               |    ✅   |
 |                     | Fly / Land                |    ✅   |
-| **Bunker**          | Construct                 |    ⬜   |
-|                     | Load / Unload Control     |    ⬜   |
+| **Bunker**          | Construct                 |    ✅   |
+|                     | Load / Unload Control     |    ✅   |
 | **Engineering Bay** | Construct                 |    ✅   |
 |                     | Research Upgrades         |    ✅   |
-| **Armory**          | Construct                 |    ⬜   |
-|                     | Research Upgrades         |    ⬜   |
+| **Armory**          | Construct                 |    ✅   |
+|                     | Research Upgrades         |    ✅   |
 | **Fusion Core**     | Construct                 |    ⬜   |
 |                     | Research Upgrades         |    ⬜   |
 | **Missile Turret**  | Construct                 |    ✅   |
@@ -110,10 +110,10 @@ Copying of Nikolaj's parts is permitted, but please follow the [guidelines](http
 | ------------------ | :----: |
 | Building placement |    ✅   |
 | Combat strategy    |    ✅   |
-| Unit counter       |    ⬜   |
+| Unit counter       |    ✅   |
 | Unit rally points  |    ✅   |
 | Walls              |    ⬜   |
-| Heatmaps           |    ⬜   |
-| Pathfinding        |    ⬜   |
+| Heatmaps           |    ✅   |
+| Pathfinding        |    ✅   |
 
 </details>
