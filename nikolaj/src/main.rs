@@ -31,7 +31,7 @@ struct Nikolaj {
 }
 
 impl Player for Nikolaj {
-    fn get_player_settings(&self) -> PlayerSettings {
+    fn get_player_settings(&self) -> PlayerSettings<'_> {
         PlayerSettings::new(Race::Terran)
     }
     fn on_start(&mut self) -> SC2Result<()> {

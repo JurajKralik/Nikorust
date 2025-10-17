@@ -5,6 +5,9 @@ use std::collections::HashMap;
 use crate::units::helpers::surroundings::can_attack;
 
 
+const POINT_ATTACK_BONUS: f32 = 1000.0;
+const POINT_DETECTION_PENALTY: f32 = 2000.0;
+
 pub fn combat_info_step(bot: &mut Nikolaj) {
     siege_timer_step(bot);
     bot.combat_info.heatmaps.clear();
@@ -30,6 +33,7 @@ pub struct CombatInfo {
     pub unsiege_timer: Vec<UnsiegeTimer>,
     pub scanner_sweep_time: f32,
     pub heatmaps: HashMap<u64, Heatmap>,
+    pub detected: bool,
 }
 
 impl CombatInfo {
@@ -37,7 +41,7 @@ impl CombatInfo {
         self.unsiege_timer.iter().find(|t| t.tag == tag)
     }
     pub fn add_unsiege_timer(&mut self, tag: u64) {
-        let new_time = rand::rng().random_range(2.0..6.0);
+        let new_time = rand::thread_rng().gen_range(2.0..6.0);
         self.remove_unsiege_timer(tag);
         self.unsiege_timer.push(UnsiegeTimer {
             tag,
@@ -75,7 +79,8 @@ impl Heatmap {
 pub struct HeatPoint {
 	pub position: Point2,
 	pub intensity: f32,
-    pub can_attack: bool
+    pub can_attack: bool,
+    pub detected: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -113,9 +118,14 @@ fn create_heatmap_for_unit(bot: &mut Nikolaj, unit_tag: u64, options: HeatmapOpt
     
     if let Some(unit) = bot.units.my.units.get(unit_tag) {
         generate_heatmap_points(bot, &mut heatmap, unit);
-        evaluate_enemy_units(&mut heatmap, unit, &bot.units.enemy.units);
-        evaluate_enemy_structures(&mut heatmap, unit, &bot.units.enemy.structures);
+        let nearby_enemy_units = bot.units.enemy.units.closer(18.0, unit.position());
+        evaluate_enemy_units(&mut heatmap, unit, &nearby_enemy_units);
+        let nearby_enemy_structures = bot.units.enemy.structures.closer(18.0, unit.position());
+        evaluate_enemy_structures(&mut heatmap, unit, &nearby_enemy_structures);
         apply_damage_avoidance(&mut heatmap);
+        let nearby_enemy_all = bot.units.enemy.all.closer(18.0, unit.position());
+        apply_detection_evaluation(&mut heatmap, unit, &nearby_enemy_all, bot.combat_info.detected);
+        blur_heatmap(&mut heatmap);
     }
     
     heatmap
@@ -145,6 +155,7 @@ fn generate_heatmap_points(bot: &Nikolaj, heatmap: &mut Heatmap, unit: &Unit) {
                 position: pos,
                 intensity: 0.0,
                 can_attack: false,
+                detected: false,
             };
             heatmap.points.push(heatpoint);
         }
@@ -177,7 +188,7 @@ fn evaluate_attack_opportunities(heatmap: &mut Heatmap, unit: &Unit, enemy: &Uni
         let distance = heatpoint.position.distance(enemy.position());
         if distance <= weapon_range {
             heatpoint.can_attack = true;
-            heatpoint.intensity += 1000.0;
+            heatpoint.intensity += POINT_ATTACK_BONUS;
         }
     }
 }
@@ -204,8 +215,72 @@ fn apply_damage_avoidance(heatmap: &mut Heatmap) {
     }
 
     for heatpoint in heatmap.points.iter_mut() {
-        if heatpoint.can_attack && heatpoint.intensity < 1000.0 {
-            heatpoint.intensity -= 1000.0;
+        if heatpoint.can_attack && heatpoint.intensity < POINT_ATTACK_BONUS {
+            heatpoint.intensity -= POINT_ATTACK_BONUS;
         }
+    }
+}
+
+fn apply_detection_evaluation(heatmap: &mut Heatmap, unit: &Unit, enemy_units: &Units, detected: bool) {
+    if !heatmap.options.evaluate_detection {
+        return;
+    }
+
+    for enemy_entity in enemy_units.iter() {
+        let mut penalty_range: Option<f32> = None;
+        if detected {
+            penalty_range = Some(enemy_entity.real_range_vs(unit));
+        }
+        if penalty_range.is_none() && enemy_entity.is_detector() {
+            penalty_range = Some(enemy_entity.sight_range());
+        }
+
+        if let Some(range) = penalty_range {
+            for heatpoint in heatmap.points.iter_mut() {
+                if heatpoint.detected {
+                    continue;
+                }
+                if heatpoint.position.distance(enemy_entity.position()) <= range {
+                    heatpoint.detected = true;
+                    heatpoint.intensity -= POINT_DETECTION_PENALTY;
+                }
+            }
+        }
+    }
+}
+
+fn blur_heatmap(heatmap: &mut Heatmap) {
+    let original_points = heatmap.points.clone();
+    let step = heatmap.options.step;
+
+    for heatpoint in heatmap.points.iter_mut() {
+        let current_pos = heatpoint.position;
+        let mut total_intensity = heatpoint.intensity;
+        let mut count = 1;
+        
+        let directions = [
+            Point2::new(0.0, step),
+            Point2::new(0.0, -step),
+            Point2::new(step, 0.0),
+            Point2::new(-step, 0.0),
+        ];
+        
+        for direction in &directions {
+            let neighbor_pos = Point2::new(
+                current_pos.x + direction.x,
+                current_pos.y + direction.y
+            );
+            
+            // Find the neighbor point in the original heatmap
+            if let Some(neighbor) = original_points.iter().find(|p| {
+                (p.position.x - neighbor_pos.x).abs() < 0.1 && 
+                (p.position.y - neighbor_pos.y).abs() < 0.1
+            }) {
+                total_intensity += neighbor.intensity;
+                count += 1;
+            }
+        }
+        
+        heatpoint.intensity = total_intensity / count as f32;
     }
 }
