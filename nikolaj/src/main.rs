@@ -7,11 +7,12 @@ mod ex_main;
 mod helpers;
 mod structures;
 mod units;
+mod strategy;
 
 use crate::debug::*;
 use crate::helpers::construction::*;
 use crate::helpers::macro_manager::*;
-use crate::helpers::strategy::*;
+use crate::strategy::*;
 use crate::units::scv::*;
 use crate::units::helpers::combat_units::*;
 use crate::units::helpers::combat_info::*;
