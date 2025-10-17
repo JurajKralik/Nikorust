@@ -118,20 +118,11 @@ fn handle_grounded_barracks(bot: &mut Nikolaj) {
 	let Some(unit_type) = bot.macro_manager.barracks_priority else {
 		return;
 	};
-
-	if is_in_training(bot, unit_type) {
-		return;
-	}
-
-	if bot.macro_manager.expand_priority && bot.get_unit_cost(unit_type).minerals > bot.minerals.saturating_sub(400) {
-		return;
-	}
-	
-	if !bot.can_afford(unit_type, true) {
-		return;
-	}
-
 	for barracks in bot.units.my.structures.of_type(UnitTypeId::Barracks).idle().ready().clone() {
+		if !should_try_train_unit(bot, unit_type) {
+			return;
+		}
+
         if barracks.rally_targets().is_empty(){
             if let Some(base) = bot.units.my.townhalls.closest(barracks.position()) {
                 barracks.smart(Target::Pos(base.position()), false);
@@ -149,6 +140,21 @@ fn handle_grounded_barracks(bot: &mut Nikolaj) {
 			add_to_in_training(bot, unit_type, barracks.clone());
 		}
 	}
+}
+
+fn should_try_train_unit(bot: &Nikolaj, unit_type: UnitTypeId) -> bool {
+	if is_in_training(bot, unit_type) {
+		return false;
+	}
+
+	if bot.macro_manager.expand_priority && bot.get_unit_cost(unit_type).minerals > bot.minerals.saturating_sub(400) {
+		return false;
+	}
+	
+	if !bot.can_afford(unit_type, true) {
+		return false;
+	}
+	true
 }
 
 fn handle_flying_barracks(bot: &mut Nikolaj) {
