@@ -6,6 +6,7 @@ use rust_sc2::prelude::*;
 const POINT_ATTACK_BONUS: f32 = 1000.0;
 const POINT_DETECTION_PENALTY: f32 = 2000.0;
 
+// TODO: Evaluate from snapshots
 #[derive(Clone, Debug)]
 pub struct Heatmap {
 	pub points: Vec<HeatPoint>,

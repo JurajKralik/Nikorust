@@ -71,7 +71,7 @@ const HEAVY_UNITS: &[UnitTypeId] = &[
     UnitTypeId::UltraliskBurrowed,
 ];
 
-pub const FLYING_UNITS: &[UnitTypeId; 16] = &[
+pub const FLYING_UNITS: &[UnitTypeId] = &[
     UnitTypeId::VikingFighter,
     UnitTypeId::VikingAssault,
     UnitTypeId::Banshee,

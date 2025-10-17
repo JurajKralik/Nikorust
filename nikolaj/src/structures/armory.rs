@@ -43,7 +43,6 @@ fn should_try_build_armory(bot: &Nikolaj) -> bool {
     }
 
     // Additional conditions
-    // TODO: Add flying enemies condition
     if bot.supply_army < 10 {
         return false;
     }
@@ -99,7 +98,13 @@ pub fn control_armory(bot: &mut Nikolaj) {
                 if bot.macro_manager.expand_priority && 250 > bot.minerals.saturating_sub(400) {
                     return;
                 }
-                // TODO: Price check
+                if let Some(affordable) = bot.can_afford_ability_research(next_upgrade) {
+                    if !affordable {
+                        return;
+                    }
+                } else {
+                    println!("Error checking affordability for ability {:?}", next_upgrade);
+                }
                 armory.use_ability(next_upgrade, false);
             }
         }
@@ -110,7 +115,13 @@ pub fn control_armory(bot: &mut Nikolaj) {
                 if bot.macro_manager.expand_priority && 250 > bot.minerals.saturating_sub(400) {
                     return;
                 }
-                // TODO: Price check
+                if let Some(affordable) = bot.can_afford_ability_research(next_upgrade) {
+                    if !affordable {
+                        return;
+                    }
+                } else {
+                    println!("Error checking affordability for ability {:?}", next_upgrade);
+                }
                 armory.use_ability(next_upgrade, false);
             }
         }

@@ -241,7 +241,7 @@ fn refresh_repair_points(bot: &mut Nikolaj) {
 fn enemy_army_snapshot(bot: &mut Nikolaj) {
     let visible_enemies = get_visible_enemies(bot);
     let appended_snapshot = get_appended_enemy_army_snapshot(bot, visible_enemies);
-    bot.strategy_data.enemy_army = appended_snapshot;
+    bot.strategy_data.enemy_army.units = appended_snapshot;
     delete_outdated_enemy_snapshots(bot);
     let dead_units = bot.state.observation.raw.dead_units.clone();
     delete_dead_enemy_snapshots(bot, dead_units);
@@ -272,7 +272,7 @@ fn get_appended_enemy_army_snapshot(
     bot: &mut Nikolaj,
     visible_enemies: Vec<UnitSnapshot>,
 ) -> Vec<UnitSnapshot> {
-    let mut current_snapshot: Vec<UnitSnapshot> = bot.strategy_data.enemy_army.clone();
+    let mut current_snapshot: Vec<UnitSnapshot> = bot.strategy_data.enemy_army.units.clone();
     // Mark all as snapshot
     for current_enemy in current_snapshot.iter_mut() {
         current_enemy.is_snapshot = true;
@@ -294,11 +294,13 @@ fn delete_outdated_enemy_snapshots(bot: &mut Nikolaj) {
     let current_time = bot.time;
     bot.strategy_data
         .enemy_army
+        .units
         .retain(|snapshot| current_time - snapshot.last_seen <= 120.0);
 }
 fn delete_dead_enemy_snapshots(bot: &mut Nikolaj, dead_units: Vec<u64>) {
     bot.strategy_data
         .enemy_army
+        .units
         .retain(|snapshot| !dead_units.contains(&snapshot.id));
 }
 fn decide_offensive(bot: &mut Nikolaj) {
@@ -449,7 +451,7 @@ fn detect_cloaking_enemy(bot: &mut Nikolaj) {
         UnitTypeId::LurkerMPBurrowed,
         UnitTypeId::LurkerMPEgg,
     ];
-    for enemy in enemy_units {
+    for enemy in enemy_units.units {
         let enemy_type = enemy.type_id;
         if cloaking_units.contains(&enemy_type) {
             if !bot.strategy_data.enemy_cloaking {
@@ -491,7 +493,7 @@ fn detect_flying_enemy(bot: &mut Nikolaj) {
         return;
     }
 
-    let enemy_units = bot.strategy_data.enemy_army.clone();
+    let enemy_units = bot.strategy_data.enemy_army.units.clone();
     for enemy in enemy_units {
         let enemy_type = enemy.type_id;
         if FLYING_UNITS.contains(&enemy_type) {
@@ -511,7 +513,7 @@ fn detect_flying_enemy(bot: &mut Nikolaj) {
 
 #[derive(Default)]
 pub struct StrategyData {
-    pub enemy_army: Vec<UnitSnapshot>,
+    pub enemy_army: EnemyArmySnapshot,
     pub idle_point: Point2,
     pub defense_point: Point2,
     pub attack_point: Point2,
@@ -532,7 +534,18 @@ pub struct StrategyData {
 
 impl StrategyData {
     pub fn get_army_supply(&self) -> usize {
-        self.enemy_army.iter().map(|unit| unit.supply).sum()
+        self.enemy_army.units.iter().map(|unit| unit.supply).sum()
+    }
+}
+
+#[derive(Default, Clone)]
+pub struct EnemyArmySnapshot {
+    pub units: Vec<UnitSnapshot>
+}
+
+impl EnemyArmySnapshot {
+    pub fn get_supply_by_type(&self, unit_type: UnitTypeId) -> usize {
+        self.units.iter().filter(|unit| unit.type_id == unit_type).map(|unit| unit.supply).sum()
     }
 }
 

@@ -4,6 +4,7 @@ use crate::Nikolaj;
 use rust_sc2::prelude::*;
 
 
+// TODO: Evaluate from snapshots
 #[derive(Clone)]
 pub struct SurroundingsInfo {
     pub best_target_in_range: Option<Unit>,

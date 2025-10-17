@@ -30,9 +30,12 @@ fn decide_barracks(bot: &mut Nikolaj) {
     let marauders =
         bot.unit_count(UnitTypeId::Marauder) + bot.already_pending(UnitTypeId::Marauder);
 
-    // Zerg (Marine priority) TODO: add marauders against roaches
+    // Zerg
     if bot.enemy_race == Race::Zerg {
-        if marines <= 4 {
+        let roaches_supply = bot.strategy_data.enemy_army.get_supply_by_type(UnitTypeId::Roach);
+        if roaches_supply > 4 && marauders < 6 {
+            bot.macro_manager.barracks_priority = Some(UnitTypeId::Marauder);
+        } else if marines <= 4 {
             bot.macro_manager.barracks_priority = Some(UnitTypeId::Marine);
         } else if marauders <= 2 {
             bot.macro_manager.barracks_priority = Some(UnitTypeId::Marauder);

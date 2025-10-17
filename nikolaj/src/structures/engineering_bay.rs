@@ -88,7 +88,13 @@ pub fn control_engineering_bay(bot: &mut Nikolaj) {
             if bot.macro_manager.expand_priority && 250 > bot.minerals.saturating_sub(400) {
                 return;
             }
-            // TODO: Price check
+            if let Some(affordable) = bot.can_afford_ability_research(next_upgrade) {
+                if !affordable {
+                    return;
+                }
+            } else {
+                println!("Error checking affordability for ability {:?}", next_upgrade);
+            }
             engineering_bay.use_ability(next_upgrade, false);
         }
     }
