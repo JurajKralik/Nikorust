@@ -5,6 +5,7 @@ use rust_sc2::prelude::*;
 
 const POINT_ATTACK_BONUS: f32 = 1000.0;
 const POINT_DETECTION_PENALTY: f32 = 2000.0;
+const POINT_ALLY_BONUS: f32 = 100.0;
 
 // TODO: Evaluate from snapshots
 #[derive(Clone, Debug)]
@@ -28,6 +29,7 @@ pub struct HeatPoint {
 	pub intensity: f32,
     pub can_attack: bool,
     pub detected: bool,
+    pub ally_present: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -35,6 +37,7 @@ pub struct HeatmapOptions {
     pub evaluate_detection: bool,
     pub step: f32,
     pub avoid_damage: bool,
+    pub allies_influence: bool,
 }
 
 impl Default for HeatmapOptions {
@@ -43,6 +46,7 @@ impl Default for HeatmapOptions {
             evaluate_detection: false,
             step: 1.0,
             avoid_damage: false,
+            allies_influence: false,
         }
     }
 }
@@ -72,6 +76,8 @@ fn create_heatmap_for_unit(bot: &mut Nikolaj, unit_tag: u64, options: HeatmapOpt
         apply_damage_avoidance(&mut heatmap);
         let nearby_enemy_all = bot.units.enemy.all.closer(18.0, unit.position());
         apply_detection_evaluation(&mut heatmap, unit, &nearby_enemy_all, bot.combat_info.detected);
+        let nearby_ally_units = bot.units.my.units.closer(18.0, unit.position());
+        apply_allies_influence(&mut heatmap, unit_tag, &nearby_ally_units);
         blur_heatmap(&mut heatmap);
     }
     
@@ -103,6 +109,7 @@ fn generate_heatmap_points(bot: &Nikolaj, heatmap: &mut Heatmap, unit: &Unit) {
                 intensity: 0.0,
                 can_attack: false,
                 detected: false,
+                ally_present: false,
             };
             heatmap.points.push(heatpoint);
         }
@@ -195,6 +202,28 @@ fn apply_detection_evaluation(heatmap: &mut Heatmap, unit: &Unit, enemy_units: &
                     heatpoint.intensity -= POINT_DETECTION_PENALTY;
                 }
             }
+        }
+    }
+}
+
+fn apply_allies_influence(heatmap: &mut Heatmap, unit_tag: u64, ally_units: &Units) {
+    if !heatmap.options.allies_influence {
+        return;
+    }
+
+    for heatpoint in heatmap.points.iter_mut() {
+        if heatpoint.ally_present {
+            continue;
+        }
+
+        let has_ally_nearby = ally_units.iter().any(|ally| {
+            ally.tag() != unit_tag && 
+            ally.position().distance(heatpoint.position) <= 5.0
+        });
+
+        if has_ally_nearby {
+            heatpoint.ally_present = true;
+            heatpoint.intensity += POINT_ALLY_BONUS;
         }
     }
 }
