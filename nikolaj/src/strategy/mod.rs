@@ -2,16 +2,20 @@ use crate::Nikolaj;
 use rust_sc2::prelude::*;
 
 pub mod points;
-pub mod snapshots;
+pub mod unit_snapshot;
+pub mod enemy_army;
+pub mod my_army;
 pub mod offensive;
 pub mod enemy_readings;
 
-use snapshots::EnemyArmySnapshot;
+use enemy_army::EnemyArmySnapshot;
+use my_army::MyArmySnapshot;
 
 
 pub fn strategy_step(bot: &mut Nikolaj) {
     points::refresh_points(bot);
-    snapshots::refresh_enemy_army_snapshot(bot);
+    enemy_army::refresh_enemy_army_snapshot(bot);
+    my_army::refresh_my_army_snapshot(bot);
     offensive::decide_offensive(bot);
     enemy_readings::read_enemy_strategy(bot);
 }
@@ -19,6 +23,7 @@ pub fn strategy_step(bot: &mut Nikolaj) {
 #[derive(Default)]
 pub struct StrategyData {
     pub enemy_army: EnemyArmySnapshot,
+    pub my_army: MyArmySnapshot,
     pub idle_point: Point2,
     pub defense_point: Point2,
     pub attack_point: Point2,

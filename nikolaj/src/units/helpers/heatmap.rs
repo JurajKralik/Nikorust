@@ -145,7 +145,10 @@ fn evaluate_incoming_damage(heatmap: &mut Heatmap, unit: &Unit, enemy: &Unit) {
         return;
     }
 
-    let enemy_weapon_range = enemy.real_range_vs(unit);
+    let mut enemy_weapon_range = enemy.real_range_vs(unit);
+    if enemy.is_worker() {
+        enemy_weapon_range += 1.5;
+    }
     let damage = enemy.real_weapon_vs(unit).damage as f32;
     
     for heatpoint in heatmap.points.iter_mut() {

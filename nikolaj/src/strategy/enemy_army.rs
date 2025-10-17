@@ -1,6 +1,7 @@
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
 
+use crate::strategy::unit_snapshot::UnitSnapshot;
 
 #[derive(Default, Clone)]
 pub struct EnemyArmySnapshot {
@@ -14,17 +15,6 @@ impl EnemyArmySnapshot {
     pub fn get_army_supply(&self) -> usize {
         self.units.iter().map(|unit| unit.supply).sum()
     }
-}
-
-#[derive(Clone)]
-pub struct UnitSnapshot {
-    pub id: u64,
-    pub type_id: UnitTypeId,
-    pub position: Point2,
-    pub health: f32,
-    pub supply: usize,
-    pub last_seen: f32,
-    pub is_snapshot: bool,
 }
 
 pub fn refresh_enemy_army_snapshot(bot: &mut Nikolaj) {

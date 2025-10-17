@@ -6,6 +6,7 @@ use crate::units::helpers::heatmap::{Heatmap};
 
 pub fn combat_info_step(bot: &mut Nikolaj) {
     siege_timer_step(bot);
+    bot.combat_info.detection_step(bot.time);
     bot.combat_info.heatmaps.clear();
 }
 
@@ -30,6 +31,7 @@ pub struct CombatInfo {
     pub scanner_sweep_time: f32,
     pub heatmaps: HashMap<u64, Heatmap>,
     pub detected: bool,
+    pub detected_at: f32,
 }
 
 impl CombatInfo {
@@ -46,6 +48,14 @@ impl CombatInfo {
     }
     pub fn remove_unsiege_timer(&mut self, tag: u64) {
         self.unsiege_timer.retain(|t| t.tag != tag);
+    }
+    pub fn detection_step(&mut self, current_time: f32) {
+        if !self.detected {
+            return;
+        }
+        if current_time - self.detected_at > 9.0 {
+            self.detected = false;
+        }
     }
 }
 

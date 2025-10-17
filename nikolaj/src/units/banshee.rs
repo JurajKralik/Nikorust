@@ -9,10 +9,10 @@ use rust_sc2::prelude::*;
 pub fn banshee_control(bot: &mut Nikolaj, unit: &Unit) {
     let surroundings = get_surroundings_info(bot, unit);
     let heatmap_options = HeatmapOptions {
-        evaluate_detection: true,
+        evaluate_detection: unit.has_buff(BuffId::BansheeCloak),
         ..Default::default()
     };
-    let _heatmap = get_heatmap_for_unit(bot, unit.tag(), heatmap_options);
+    let heatmap = get_heatmap_for_unit(bot, unit.tag(), heatmap_options);
     let weapon_ready = unit.weapon_cooldown() < 0.2;
     let in_repair_list = bot.worker_allocator.repair.contains_key(&unit.tag());
     let in_danger = surroundings.clone().threat_level > ThreatLevel::None;
@@ -43,7 +43,9 @@ pub fn banshee_control(bot: &mut Nikolaj, unit: &Unit) {
                 }
             }
         } else {
-            if in_danger {
+            if let Some(best_position) = heatmap.get_best_position() {
+                move_no_spam(unit, Target::Pos(best_position));
+            } else if in_danger {
                 flee_flying_unit(bot, unit, surroundings.clone());
             } else {
                 if let Some(target) = surroundings.better_target_off_range {
