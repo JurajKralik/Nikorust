@@ -18,6 +18,7 @@ pub struct NikolajDebugger{
     pub printing_combat_info: bool,
     pub printing_build_order: bool,
     pub printing_research: bool,
+    pub printing_enemy_army_snapshot: bool,
     pub displaying_worker_roles: bool,
     pub displaying_worker_mining_steps: bool,
     pub displaying_bases: bool,
@@ -46,6 +47,7 @@ impl Default for NikolajDebugger {
                 printing_combat_info: false,
                 printing_build_order: false,
                 printing_research: false,
+                printing_enemy_army_snapshot: true,
                 displaying_worker_roles: false,
                 displaying_worker_mining_steps: false,
                 displaying_bases: false,
@@ -73,6 +75,7 @@ impl Default for NikolajDebugger {
                 printing_combat_info: false,
                 printing_build_order: false,
                 printing_research: false,
+                printing_enemy_army_snapshot: false,
                 displaying_worker_roles: false,
                 displaying_worker_mining_steps: false,
                 displaying_bases: false,
@@ -117,6 +120,7 @@ pub fn debug_step(
     debug_display_selected(bot);
     debug_print_full_construction_info(bot);
     debug_show_heatmaps(bot);
+    debug_print_enemy_army_snapshot(bot);
 }
 // Debugging
 fn debug_show_bases(
@@ -564,6 +568,23 @@ fn debug_show_heatmaps(bot: &mut Nikolaj) {
     for (text, position, color, size) in debug_texts {
         bot.debug_text(&text, position, color, size);
     }
+}
+
+fn debug_print_enemy_army_snapshot(bot: &mut Nikolaj) {
+    if !bot.debugger.printing_enemy_army_snapshot {
+        return;
+    }
+    let mut enemy_army_snapshot = bot.strategy_data.enemy_army.units.clone();
+    if enemy_army_snapshot.is_empty() {
+        return;
+    }
+    enemy_army_snapshot.sort_by_key(|u| u.type_id as u32);
+
+    println!("--- Enemy Army Snapshot ---");
+    for unit in enemy_army_snapshot {
+        println!("Type: {:?}, Tag: {}, Snapshot: {}, At: {}", unit.type_id, unit.id, unit.is_snapshot, unit.last_seen);
+    }
+    println!("---------------------------");
 }
 
 #[derive(Debug, Clone, PartialEq)]

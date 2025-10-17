@@ -11,6 +11,7 @@ pub fn reaper_control(bot: &mut Nikolaj, unit: &Unit) {
     let surroundings = get_surroundings_info(bot, unit);
     let heatmap_options = HeatmapOptions {
         avoid_damage: true,
+        step: 2.0,
         ..Default::default()
     };
     let heatmap = get_heatmap_for_unit(bot, unit.tag(), heatmap_options);
