@@ -12,6 +12,7 @@ mod strategy;
 use crate::debug::*;
 use crate::helpers::construction::*;
 use crate::helpers::macro_manager::*;
+use crate::helpers::map_manager::*;
 use crate::strategy::*;
 use crate::units::scv::*;
 use crate::units::helpers::combat_units::*;
@@ -25,6 +26,7 @@ struct Nikolaj {
     debugger: NikolajDebugger,
     worker_allocator: WorkerAllocator,
     macro_manager: MacroManager,
+    map_manager: MapManager,
     strategy_data: StrategyData,
     construction_info: ConstructionInfo,
     combat_info: CombatInfo,
