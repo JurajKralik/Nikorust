@@ -121,6 +121,7 @@ pub fn debug_step(
     debug_print_full_construction_info(bot);
     debug_show_heatmaps(bot);
     debug_print_enemy_army_snapshot(bot);
+    debug_spawn_unit(bot);
 }
 // Debugging
 fn debug_show_bases(
@@ -585,6 +586,79 @@ fn debug_print_enemy_army_snapshot(bot: &mut Nikolaj) {
         println!("Type: {:?}, Tag: {}, Snapshot: {}, At: {}", unit.type_id, unit.id, unit.is_snapshot, unit.last_seen);
     }
     println!("---------------------------");
+}
+
+fn debug_spawn_unit(bot: &mut Nikolaj) {
+    let chat = bot.state.chat.clone();
+    if chat.is_empty() {
+        return;
+    }
+
+    let camera_pos = bot.state.observation.raw.camera;
+    let count = 1;
+    for chat_message in chat {
+        let owner_id = chat_message.player_id;
+        if let Some(unit_type) = get_unit_from_string(&chat_message.message.to_lowercase()) {
+            println!("[DEBUGGER] {} Spawning unit {:?} for player {}", bot.debugger.time, unit_type, owner_id);
+            bot.debug.create_units(&[(unit_type, Some(owner_id), camera_pos, count)]);
+        } else {
+            println!("[DEBUGGER] {} Unknown unit type requested: {}", bot.debugger.time, chat_message.message);
+        }
+    }
+}
+
+fn get_unit_from_string(name: &str) -> Option<UnitTypeId> {
+    match name {
+        // Bio units
+        "marine" | "marines" => Some(UnitTypeId::Marine),
+        "marauder" | "marauders" => Some(UnitTypeId::Marauder),
+        "reaper" | "reapers" => Some(UnitTypeId::Reaper),
+        "ghost" | "ghosts" => Some(UnitTypeId::Ghost),
+        
+        // Factory units
+        "hellion" | "hellions" => Some(UnitTypeId::Hellion),
+        "hellbat" | "hellbats" => Some(UnitTypeId::HellionTank),
+        "tank" | "tanks" | "siegetank" => Some(UnitTypeId::SiegeTank),
+        "cyclone" | "cyclones" => Some(UnitTypeId::Cyclone),
+        "thor" | "thors" => Some(UnitTypeId::Thor),
+        "widowmine" | "mine" | "mines" => Some(UnitTypeId::WidowMine),
+        
+        // Air units
+        "medivac" | "medivacs" => Some(UnitTypeId::Medivac),
+        "viking" | "vikings" => Some(UnitTypeId::VikingFighter),
+        "banshee" | "banshees" => Some(UnitTypeId::Banshee),
+        "raven" | "ravens" => Some(UnitTypeId::Raven),
+        "battlecruiser" | "bc" | "bcs" => Some(UnitTypeId::Battlecruiser),
+        "liberator" | "liberators" | "lib" => Some(UnitTypeId::Liberator),
+        
+        // Workers & Structures
+        "scv" | "scvs" => Some(UnitTypeId::SCV),
+        "mule" | "mules" => Some(UnitTypeId::MULE),
+        "cc" | "commandcenter" => Some(UnitTypeId::CommandCenter),
+        "barracks" | "rax" => Some(UnitTypeId::Barracks),
+        "factory" | "fact" => Some(UnitTypeId::Factory),
+        "starport" | "port" => Some(UnitTypeId::Starport),
+        "bunker" | "bunkers" => Some(UnitTypeId::Bunker),
+        "turret" | "turrets" | "missileturret" => Some(UnitTypeId::MissileTurret),
+        
+        // Enemy units (common requests)
+        "zergling" | "ling" | "zerglings" | "lings" => Some(UnitTypeId::Zergling),
+        "roach" | "roaches" => Some(UnitTypeId::Roach),
+        "hydra" | "hydras" | "hydralisk" => Some(UnitTypeId::Hydralisk),
+        "mutalisk" | "muta" | "mutas" => Some(UnitTypeId::Mutalisk),
+        "ultralisk" | "ultra" | "ultras" => Some(UnitTypeId::Ultralisk),
+        "baneling" | "banelings" | "bane" => Some(UnitTypeId::Baneling),
+        
+        "zealot" | "zealots" => Some(UnitTypeId::Zealot),
+        "stalker" | "stalkers" => Some(UnitTypeId::Stalker),
+        "immortal" | "immortals" => Some(UnitTypeId::Immortal),
+        "colossus" | "colossi" => Some(UnitTypeId::Colossus),
+        "voidray" | "void" | "voidrays" => Some(UnitTypeId::VoidRay),
+        "carrier" | "carriers" => Some(UnitTypeId::Carrier),
+        "tempest" => Some(UnitTypeId::Tempest),
+        
+        _ => None,
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

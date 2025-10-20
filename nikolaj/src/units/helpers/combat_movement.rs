@@ -276,12 +276,25 @@ pub fn get_closest_repair_point(bot: &Nikolaj, unit: &Unit) -> Point2 {
         return idle_point;
     }
 }
-pub fn kd8_charge(unit: &Unit, surroundings: &SurroundingsInfo) -> bool {
+pub fn kd8_charge(bot: &Nikolaj, unit: &Unit, surroundings: &SurroundingsInfo) -> bool {
     if let Some(threat) = surroundings.clone().closest_threat {
         if let Some(abilities) = unit.abilities() {
             if !abilities.contains(&AbilityId::KD8ChargeKD8Charge) {
                 return false;
             }
+            // KD8 Charge pathfinding
+            if let Some(path) = bot.get_path(threat.position(), unit.position(), PathfindingUnitType::Ground, false, false) {
+                if let Some(target_point) = path.0.iter().nth(3) {
+                    let target_position = *target_point;
+                    unit.command(
+                        AbilityId::KD8ChargeKD8Charge,
+                        Target::Pos(target_position),
+                        false,
+                    );
+                    return true;
+                }
+            }
+            // Direct KD8 Charge
             let target_position = threat.position().towards(unit.position(), 4.0);
             unit.command(
                 AbilityId::KD8ChargeKD8Charge,

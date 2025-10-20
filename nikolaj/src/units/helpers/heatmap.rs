@@ -255,6 +255,9 @@ fn blur_heatmap(heatmap: &mut Heatmap) {
                 (p.position.x - neighbor_pos.x).abs() < 0.1 && 
                 (p.position.y - neighbor_pos.y).abs() < 0.1
             }) {
+                if neighbor.intensity >= 0.0 {
+                    continue;
+                }
                 total_intensity += neighbor.intensity;
                 count += 1;
             }

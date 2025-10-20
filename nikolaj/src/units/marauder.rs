@@ -28,7 +28,9 @@ pub fn marauder_control(bot: &mut Nikolaj, unit: &Unit) {
             let defend_point = bot.strategy_data.defense_point;
             attack_no_spam(unit, Target::Pos(defend_point));
         } else if bot.strategy_data.attack {
-            if unit.distance(bot.strategy_data.army_center) > 8.0 {
+            let close_tanks = bot.units.my.units.of_type_including_alias(UnitTypeId::SiegeTank).closer(10.0, unit.position());
+            let distanced_tanks = bot.units.my.units.of_type_including_alias(UnitTypeId::SiegeTank).closer(20.0, unit.position());
+            if close_tanks.is_empty() && !distanced_tanks.is_empty() || unit.distance(bot.strategy_data.army_center) > 8.0 {
                 attack_no_spam(unit, Target::Pos(bot.strategy_data.army_center));
             } else {
                 let attack_point = bot.strategy_data.attack_point;
@@ -70,8 +72,14 @@ pub fn marauder_control(bot: &mut Nikolaj, unit: &Unit) {
             if unit.distance(bot.strategy_data.army_center) > 8.0 {
                 move_no_spam(unit, Target::Pos(bot.strategy_data.army_center));
             } else {
-                let attack_point = bot.strategy_data.attack_point;
-                move_no_spam(unit, Target::Pos(attack_point));
+                let close_tanks = bot.units.my.units.of_type_including_alias(UnitTypeId::SiegeTank).closer(10.0, unit.position());
+                let distanced_tanks = bot.units.my.units.of_type_including_alias(UnitTypeId::SiegeTank).closer(20.0, unit.position());
+                if close_tanks.is_empty() && !distanced_tanks.is_empty() {
+                    attack_no_spam(unit, Target::Pos(bot.strategy_data.army_center));
+                } else {
+                    let attack_point = bot.strategy_data.attack_point;
+                    move_no_spam(unit, Target::Pos(attack_point));
+                }
             }
         } else {
             let idle_point = bot.strategy_data.idle_point;
