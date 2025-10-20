@@ -19,7 +19,7 @@ pub fn reaper_control(bot: &mut Nikolaj, unit: &Unit) {
     let weapon_ready = unit.weapon_cooldown() < 0.2;
     let in_danger = surroundings.clone().threat_level > ThreatLevel::None;
 
-    if kd8_charge(unit, &surroundings) {
+    if kd8_charge(bot, unit, &surroundings) {
         return;
     }
 
