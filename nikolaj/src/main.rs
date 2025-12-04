@@ -30,7 +30,6 @@ struct Nikolaj {
     strategy_data: StrategyData,
     construction_info: ConstructionInfo,
     combat_info: CombatInfo,
-    chokes: Vec<Choke>
 }
 
 impl Player for Nikolaj {
@@ -39,7 +38,7 @@ impl Player for Nikolaj {
     }
     fn on_start(&mut self) -> SC2Result<()> {
         self.start_game_report();
-        self.chokes = self.get_chokes_lazy().clone();
+        self.map_manager.choke_points = self.get_chokes_lazy().clone();
         Ok(())
     }
     fn on_step(&mut self, _iteration: usize) -> SC2Result<()> {

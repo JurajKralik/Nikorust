@@ -380,7 +380,11 @@ lazy_static! {
     pub static ref UNITS_PRIORITY_IGNORE: Vec<UnitTypeId> = vec![
         UnitTypeId::AdeptPhaseShift,
         UnitTypeId::Egg,
-        UnitTypeId::Larva
+        UnitTypeId::Larva,
+        UnitTypeId::Changeling,
+        UnitTypeId::ChangelingMarine,
+        UnitTypeId::ChangelingZealot,
+        UnitTypeId::ChangelingZergling
     ];
     pub static ref UNITS_PRIORITY_LOW: Vec<UnitTypeId> = vec![
         UnitTypeId::Changeling,
