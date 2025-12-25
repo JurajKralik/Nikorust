@@ -122,7 +122,7 @@ fn detect_cloaking_enemy(bot: &mut Nikolaj) {
         UnitTypeId::LurkerMPEgg,
     ];
     for enemy in enemy_units.units {
-        let enemy_type = enemy.type_id;
+        let enemy_type = enemy.type_id();
         if cloaking_units.contains(&enemy_type) {
             if !bot.strategy_data.enemy_cloaking {
                 println!(
@@ -165,7 +165,7 @@ fn detect_flying_enemy(bot: &mut Nikolaj) {
 
     let enemy_units = bot.strategy_data.enemy_army.units.clone();
     for enemy in enemy_units {
-        let enemy_type = enemy.type_id;
+        let enemy_type = enemy.type_id();
         if FLYING_UNITS.contains(&enemy_type) {
             if !bot.strategy_data.enemy_flying_units {
                 println!(

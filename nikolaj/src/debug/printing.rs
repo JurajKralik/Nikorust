@@ -140,11 +140,11 @@ pub fn debug_print_enemy_army_snapshot(bot: &mut Nikolaj) {
     if enemy_army_snapshot.is_empty() {
         return;
     }
-    enemy_army_snapshot.sort_by_key(|u| u.type_id as u32);
+    enemy_army_snapshot.sort_by_key(|u| u.type_id() as u32);
 
     println!("--- Enemy Army Snapshot ---");
     for unit in enemy_army_snapshot {
-        println!("Type: {:?}, Tag: {}, Snapshot: {}, At: {}", unit.type_id, unit.id, unit.is_snapshot, unit.last_seen);
+        println!("Type: {:?}, Tag: {}, Snapshot: {}, At: {}", unit.type_id(), unit.id(), unit.is_snapshot, unit.last_seen);
     }
     println!("---------------------------");
 }

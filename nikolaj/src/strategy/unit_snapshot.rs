@@ -3,27 +3,33 @@ use rust_sc2::prelude::*;
 
 #[derive(Clone)]
 pub struct UnitSnapshot {
-    pub id: u64,
-    pub type_id: UnitTypeId,
-    pub position: Point2,
-    pub health: f32,
-    pub supply: usize,
+    pub unit: Unit,
     pub last_seen: f32,
     pub is_snapshot: bool,
 }
 
 impl UnitSnapshot {
-    pub fn from_unit(unit: &Unit) -> Self {
-        let health = (unit.health() + unit.shield()) as f32;
-        let supply = unit.supply_cost() as usize;
+    pub fn from_unit(unit: Unit, last_seen: f32) -> Self {
         UnitSnapshot {
-            id: unit.tag(),
-            type_id: unit.type_id(),
-            position: unit.position(),
-            health,
-            supply,
-            last_seen: 0.0,
+            unit,
+            last_seen,
             is_snapshot: false,
         }
+    }
+    
+    pub fn id(&self) -> u64 {
+        self.unit.tag()
+    }
+    
+    pub fn type_id(&self) -> UnitTypeId {
+        self.unit.type_id()
+    }
+        
+    pub fn health(&self) -> f32 {
+        (self.unit.health() + self.unit.shield()) as f32
+    }
+    
+    pub fn supply(&self) -> usize {
+        self.unit.supply_cost() as usize
     }
 }

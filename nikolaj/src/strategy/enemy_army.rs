@@ -10,10 +10,10 @@ pub struct EnemyArmySnapshot {
 
 impl EnemyArmySnapshot {
     pub fn get_supply_by_type(&self, unit_type: UnitTypeId) -> usize {
-        self.units.iter().filter(|unit| unit.type_id == unit_type).map(|unit| unit.supply).sum()
+        self.units.iter().filter(|unit| unit.type_id() == unit_type).map(|unit| unit.supply()).sum()
     }
     pub fn get_army_supply(&self) -> usize {
-        self.units.iter().map(|unit| unit.supply).sum()
+        self.units.iter().map(|unit| unit.supply()).sum()
     }
 }
 
@@ -32,17 +32,7 @@ fn get_visible_enemies(bot: &Nikolaj) -> Vec<UnitSnapshot> {
         if !enemy.can_attack() || enemy.type_id().is_worker() {
             continue;
         }
-        let health = (enemy.health() + enemy.shield()) as f32;
-        let supply = enemy.supply_cost() as usize;
-        let snapshot = UnitSnapshot {
-            id: enemy.tag(),
-            type_id: enemy.type_id(),
-            position: enemy.position(),
-            health: health,
-            supply: supply,
-            last_seen: bot.time,
-            is_snapshot: false,
-        };
+        let snapshot = UnitSnapshot::from_unit(enemy, bot.time);
         currently_visible_army.push(snapshot);
     }
     currently_visible_army
@@ -58,11 +48,10 @@ fn get_appended_enemy_army_snapshot(
     }
     // Update or add
     for visible in visible_enemies {
-        if let Some(existing) = current_snapshot.iter_mut().find(|e| e.id == visible.id) {
-            existing.position = visible.position;
-            existing.health = visible.health;
+        if let Some(existing) = current_snapshot.iter_mut().find(|e| e.id() == visible.id()) {
+            existing.unit = visible.unit.clone();
             existing.last_seen = bot.time;
-            existing.supply = visible.supply;
+            existing.is_snapshot = false;
         } else {
             current_snapshot.push(visible.clone());
         }
@@ -80,5 +69,5 @@ fn delete_dead_enemy_snapshots(bot: &mut Nikolaj, dead_units: Vec<u64>) {
     bot.strategy_data
         .enemy_army
         .units
-        .retain(|snapshot| !dead_units.contains(&snapshot.id));
+        .retain(|snapshot| !dead_units.contains(&snapshot.id()));
 }
