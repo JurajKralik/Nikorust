@@ -3,8 +3,6 @@ use crate::units::helpers::threat_detection::*;
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
 
-
-// TODO: Evaluate from snapshots
 #[derive(Clone)]
 pub struct SurroundingsInfo {
     pub best_target_in_range: Option<Unit>,
@@ -48,17 +46,23 @@ pub fn get_surroundings_info_with_options(bot: &mut Nikolaj, unit: &Unit, option
     let targeting_priorities = get_targeting_priorities(&unit.type_id());
     let threat_levels = get_threat_levels(&unit.type_id());
     let mut surroundings = SurroundingsInfo::default();
-    let enemies = bot.units.enemy.units.clone();
-    let sorted_enemies = enemies
+    
+    // Use enemy army snapshots instead of direct enemy units
+    let enemy_snapshots = bot.strategy_data.enemy_army.units.clone();
+    let sorted_snapshots: Vec<_> = enemy_snapshots
         .iter()
-        .sort_by_distance(unit.position())
-        .closer(unit.sight_range() + 2.0, unit.position());
+        .filter(|snapshot| unit.position().distance(snapshot.unit.position()) <= unit.sight_range() + 2.0)
+        .collect();
+    
     let enemy_structures = bot.units.enemy.structures.clone();
     let sorted_structures = enemy_structures
         .iter()
         .sort_by_distance(unit.position())
         .closer(unit.sight_range() + 2.0, unit.position());
-    for enemy in sorted_enemies {
+    
+    for snapshot in sorted_snapshots {
+        let enemy = &snapshot.unit;
+        
         // Check threat
         if can_attack(enemy, unit) {
             let harmless_worker =
@@ -74,8 +78,12 @@ pub fn get_surroundings_info_with_options(bot: &mut Nikolaj, unit: &Unit, option
                 }
             }
         }
+        
         // Targeting
         if can_attack(unit, enemy) {
+            if snapshot.is_snapshot {
+                continue;
+            }
             if in_range(unit, enemy) {
                 // Better target
                 if let Some(best_target) = &surroundings.best_target_in_range {
@@ -105,6 +113,7 @@ pub fn get_surroundings_info_with_options(bot: &mut Nikolaj, unit: &Unit, option
                 }
             }
         }
+        
         let higher_threat_level = threat_levels.compare_threat_levels(surroundings.closest_counter.clone(), enemy.clone());
         if let Some(higher_threat) = higher_threat_level {
             surroundings.closest_counter = Some(higher_threat);
@@ -131,7 +140,7 @@ pub fn get_surroundings_info_with_options(bot: &mut Nikolaj, unit: &Unit, option
             }
         }
         // Check threat
-        if can_attack(structure, unit) {
+        if structure_can_attack(structure, unit) {
             if surroundings.closest_threat.is_none() {
                 surroundings.closest_threat = Some(structure.clone());
             }
@@ -152,6 +161,18 @@ pub fn can_attack(attacker: &Unit, target: &Unit) -> bool {
         return true;
     }
     if !target.is_flying() && attacker.can_attack_ground() {
+        return true;
+    }
+    false
+}
+pub fn structure_can_attack(attacker: &Unit, target: &Unit) -> bool {
+    if attacker.type_id() == UnitTypeId::PhotonCannon || attacker.type_id() == UnitTypeId::Bunker {
+        return true;
+    }
+    if target.is_flying() && (attacker.type_id() == UnitTypeId::SporeCrawler || attacker.type_id() == UnitTypeId::MissileTurret) {
+        return true;
+    }
+    if !target.is_flying() && (attacker.type_id() == UnitTypeId::SpineCrawler || attacker.type_id() == UnitTypeId::PlanetaryFortress) {
         return true;
     }
     false

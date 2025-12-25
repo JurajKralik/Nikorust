@@ -7,7 +7,6 @@ const POINT_ATTACK_BONUS: f32 = 1000.0;
 const POINT_DETECTION_PENALTY: f32 = 2000.0;
 const POINT_ALLY_BONUS: f32 = 100.0;
 
-// TODO: Evaluate from snapshots
 #[derive(Clone, Debug)]
 pub struct Heatmap {
 	pub points: Vec<HeatPoint>,
@@ -69,13 +68,27 @@ fn create_heatmap_for_unit(bot: &mut Nikolaj, unit_tag: u64, options: HeatmapOpt
     
     if let Some(unit) = bot.units.my.units.get(unit_tag) {
         generate_heatmap_points(bot, &mut heatmap, unit);
-        let nearby_enemy_units = bot.units.enemy.units.closer(18.0, unit.position());
-        evaluate_enemy_units(&mut heatmap, unit, &nearby_enemy_units);
+        
+        // Use enemy army snapshots
+        let nearby_enemy_snapshots: Vec<_> = bot.strategy_data.enemy_army.units
+            .iter()
+            .filter(|snapshot| snapshot.unit.position().distance(unit.position()) <= 18.0)
+            .map(|snapshot| snapshot.unit.clone())
+            .collect();
+        evaluate_enemy_units_from_snapshots(&mut heatmap, unit, &nearby_enemy_snapshots);
+        
         let nearby_enemy_structures = bot.units.enemy.structures.closer(18.0, unit.position());
         evaluate_enemy_structures(&mut heatmap, unit, &nearby_enemy_structures);
         apply_damage_avoidance(&mut heatmap);
-        let nearby_enemy_all = bot.units.enemy.all.closer(18.0, unit.position());
-        apply_detection_evaluation(&mut heatmap, unit, &nearby_enemy_all, bot.combat_info.detected);
+        
+        // Detection evaluation from snapshots
+        let nearby_enemy_all: Vec<_> = bot.strategy_data.enemy_army.units
+            .iter()
+            .filter(|snapshot| snapshot.unit.position().distance(unit.position()) <= 18.0)
+            .map(|snapshot| snapshot.unit.clone())
+            .collect();
+        apply_detection_evaluation_from_snapshots(&mut heatmap, unit, &nearby_enemy_all, bot.combat_info.detected);
+        
         let nearby_ally_units = bot.units.my.units.closer(18.0, unit.position());
         apply_allies_influence(&mut heatmap, unit_tag, &nearby_ally_units);
         blur_heatmap(&mut heatmap);
@@ -116,7 +129,7 @@ fn generate_heatmap_points(bot: &Nikolaj, heatmap: &mut Heatmap, unit: &Unit) {
     }
 }
 
-fn evaluate_enemy_units(heatmap: &mut Heatmap, unit: &Unit, enemy_units: &Units) {
+fn evaluate_enemy_units_from_snapshots(heatmap: &mut Heatmap, unit: &Unit, enemy_units: &Vec<Unit>) {
     for enemy in enemy_units.iter() {
         evaluate_attack_opportunities(heatmap, unit, enemy);
         evaluate_incoming_damage(heatmap, unit, enemy);
@@ -178,7 +191,7 @@ fn apply_damage_avoidance(heatmap: &mut Heatmap) {
     }
 }
 
-fn apply_detection_evaluation(heatmap: &mut Heatmap, unit: &Unit, enemy_units: &Units, detected: bool) {
+fn apply_detection_evaluation_from_snapshots(heatmap: &mut Heatmap, unit: &Unit, enemy_units: &Vec<Unit>, detected: bool) {
     if !heatmap.options.evaluate_detection {
         return;
     }
@@ -237,30 +250,24 @@ fn blur_heatmap(heatmap: &mut Heatmap) {
         let mut total_intensity = heatpoint.intensity;
         let mut count = 1;
         
-        let directions = [
-            Point2::new(0.0, step),
-            Point2::new(0.0, -step),
-            Point2::new(step, 0.0),
-            Point2::new(-step, 0.0),
-        ];
+        // Check all points within 2 heatpoint range (2 * step distance)
+        let max_distance = 2.0 * step + 0.1; // Small epsilon for floating point comparison
         
-        for direction in &directions {
-            let neighbor_pos = Point2::new(
-                current_pos.x + direction.x,
-                current_pos.y + direction.y
-            );
+        for neighbor in &original_points {
+            let distance = current_pos.distance(neighbor.position);
             
-            // Find the neighbor point in the original heatmap
-            if let Some(neighbor) = original_points.iter().find(|p| {
-                (p.position.x - neighbor_pos.x).abs() < 0.1 && 
-                (p.position.y - neighbor_pos.y).abs() < 0.1
-            }) {
-                if neighbor.intensity >= 0.0 {
-                    continue;
-                }
-                total_intensity += neighbor.intensity;
-                count += 1;
+            // Skip self and points outside 2-step range
+            if distance < 0.1 || distance > max_distance {
+                continue;
             }
+            
+            // Only consider negative intensities for blurring
+            if neighbor.intensity >= 0.0 {
+                continue;
+            }
+            
+            total_intensity += neighbor.intensity;
+            count += 1;
         }
         
         heatpoint.intensity = total_intensity / count as f32;

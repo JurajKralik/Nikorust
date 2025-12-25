@@ -29,9 +29,6 @@ fn get_visible_enemies(bot: &Nikolaj) -> Vec<UnitSnapshot> {
     let enemies = bot.units.enemy.units.clone();
     let mut currently_visible_army: Vec<UnitSnapshot> = Vec::new();
     for enemy in enemies {
-        if !enemy.can_attack() || enemy.type_id().is_worker() {
-            continue;
-        }
         let snapshot = UnitSnapshot::from_unit(enemy, bot.time);
         currently_visible_army.push(snapshot);
     }
