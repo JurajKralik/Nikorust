@@ -27,7 +27,24 @@ impl Default for SurroundingsInfo {
     }
 }
 
-pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo {
+#[derive(Clone, Debug)]
+pub struct SurroundingsOptions {
+    pub extra_avoidance: f32,
+}
+
+impl Default for SurroundingsOptions {
+    fn default() -> Self {
+        SurroundingsOptions {
+            extra_avoidance: 0.0,
+        }
+    }
+}
+
+pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit, options: SurroundingsOptions) -> SurroundingsInfo {
+    get_surroundings_info_with_options(bot, unit, options)
+}
+
+pub fn get_surroundings_info_with_options(bot: &mut Nikolaj, unit: &Unit, options: SurroundingsOptions) -> SurroundingsInfo {
     let targeting_priorities = get_targeting_priorities(&unit.type_id());
     let threat_levels = get_threat_levels(&unit.type_id());
     let mut surroundings = SurroundingsInfo::default();
@@ -50,7 +67,7 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo
                 if surroundings.closest_threat.is_none() {
                     surroundings.closest_threat = Some(enemy.clone());
                 }
-                if in_range(enemy, unit) {
+                if in_range_with_avoidance(enemy, unit, options.extra_avoidance) {
                     if surroundings.threat_level == ThreatLevel::None {
                         surroundings.threat_level = ThreatLevel::Danger;
                     }
@@ -118,7 +135,7 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo
             if surroundings.closest_threat.is_none() {
                 surroundings.closest_threat = Some(structure.clone());
             }
-            if in_range(structure, unit) {
+            if in_range_with_avoidance(structure, unit, options.extra_avoidance) {
                 if surroundings.threat_level == ThreatLevel::None {
                     surroundings.threat_level = ThreatLevel::Danger;
                 }
@@ -128,6 +145,9 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit) -> SurroundingsInfo
     surroundings
 }
 pub fn can_attack(attacker: &Unit, target: &Unit) -> bool {
+    if attacker.type_id() == UnitTypeId::WidowMine || attacker.type_id() == UnitTypeId::WidowMineBurrowed {
+        return true;
+    }
     if target.is_flying() && attacker.can_attack_air() {
         return true;
     }
@@ -137,13 +157,17 @@ pub fn can_attack(attacker: &Unit, target: &Unit) -> bool {
     false
 }
 pub fn in_range(attacker: &Unit, target: &Unit) -> bool {
+    in_range_with_avoidance(attacker, target, 0.0)
+}
+
+pub fn in_range_with_avoidance(attacker: &Unit, target: &Unit, extra_avoidance: f32) -> bool {
     let distance = attacker.position().distance(target.position());
     if target.is_flying() {
-        if distance <= attacker.air_range() {
+        if distance <= attacker.air_range() + extra_avoidance {
             return true;
         }
     } else {
-        if distance <= attacker.ground_range() {
+        if distance <= attacker.ground_range() + extra_avoidance {
             return true;
         }
     }

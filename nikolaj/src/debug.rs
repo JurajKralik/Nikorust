@@ -47,7 +47,7 @@ impl Default for NikolajDebugger {
                 printing_combat_info: false,
                 printing_build_order: false,
                 printing_research: false,
-                printing_enemy_army_snapshot: true,
+                printing_enemy_army_snapshot: false,
                 displaying_worker_roles: false,
                 displaying_worker_mining_steps: false,
                 displaying_bases: false,
@@ -595,15 +595,158 @@ fn debug_spawn_unit(bot: &mut Nikolaj) {
     }
 
     let camera_pos = bot.state.observation.raw.camera;
-    let count = 1;
     for chat_message in chat {
-        let owner_id = chat_message.player_id;
-        if let Some(unit_type) = get_unit_from_string(&chat_message.message.to_lowercase()) {
-            println!("[DEBUGGER] {} Spawning unit {:?} for player {}", bot.debugger.time, unit_type, owner_id);
-            bot.debug.create_units(&[(unit_type, Some(owner_id), camera_pos, count)]);
+        let sender_id = chat_message.player_id;
+        let message = chat_message.message.to_lowercase();
+        
+        // Determine target player ID (enemy if message starts with "enemy", otherwise sender)
+        let is_enemy = message.starts_with("enemy ");
+        let target_player_id = if is_enemy {
+            // Toggle player ID: if sender is 0, enemy is 1, and vice versa
+            2
         } else {
-            println!("[DEBUGGER] {} Unknown unit type requested: {}", bot.debugger.time, chat_message.message);
+            sender_id
+        };
+        
+        // Check for army composition requests first
+        if let Some(army_comp) = get_army_composition(&message) {
+            println!("[DEBUGGER] {} Spawning army composition '{}' for player {}", 
+                bot.debugger.time, message, target_player_id);
+            bot.debug.create_units(&army_comp.iter()
+                .map(|(unit_type, count)| (*unit_type, Some(target_player_id), camera_pos, *count))
+                .collect::<Vec<_>>());
+        // Check for unit count requests (e.g., "enemy marines 5")
+        } else if is_enemy {
+            let parts: Vec<&str> = message.split_whitespace().collect();
+            if parts.len() >= 2 {
+                let unit_name = parts[1];
+                let count = if parts.len() >= 3 {
+                    parts[2].parse::<u32>().unwrap_or(5)
+                } else {
+                    5 // Default count
+                };
+                
+                if let Some(unit_type) = get_unit_from_string(unit_name) {
+                    println!("[DEBUGGER] {} Spawning {} {:?} for player {}", 
+                        bot.debugger.time, count, unit_type, target_player_id);
+                    bot.debug.create_units(&[(unit_type, Some(target_player_id), camera_pos, count)]);
+                } else {
+                    println!("[DEBUGGER] {} Unknown unit type: {}", bot.debugger.time, unit_name);
+                }
+            }
+        // Single unit spawn
+        } else if let Some(unit_type) = get_unit_from_string(&message) {
+            println!("[DEBUGGER] {} Spawning unit {:?} for player {}", 
+                bot.debugger.time, unit_type, target_player_id);
+            bot.debug.create_units(&[(unit_type, Some(target_player_id), camera_pos, 1)]);
+        } else {
+            println!("[DEBUGGER] {} Unknown request: {}", bot.debugger.time, chat_message.message);
         }
+    }
+}
+
+/// Get predefined army compositions from chat commands
+fn get_army_composition(message: &str) -> Option<Vec<(UnitTypeId, u32)>> {
+    match message {
+        // Terran compositions
+        "enemy basic army" | "enemy basic" => Some(vec![
+            (UnitTypeId::Marine, 4),
+            (UnitTypeId::Marauder, 2),
+            (UnitTypeId::SiegeTank, 1),
+            (UnitTypeId::Medivac, 1),
+        ]),
+        "enemy bio army" | "enemy bio" => Some(vec![
+            (UnitTypeId::Marine, 8),
+            (UnitTypeId::Marauder, 4),
+            (UnitTypeId::Medivac, 2),
+        ]),
+        "enemy mech army" | "enemy mech" => Some(vec![
+            (UnitTypeId::SiegeTank, 3),
+            (UnitTypeId::Thor, 2),
+            (UnitTypeId::Cyclone, 2),
+            (UnitTypeId::Hellion, 4),
+        ]),
+        "enemy marine push" | "enemy marines" => Some(vec![
+            (UnitTypeId::Marine, 12),
+            (UnitTypeId::Medivac, 1),
+        ]),
+        "enemy tank push" => Some(vec![
+            (UnitTypeId::SiegeTank, 3),
+            (UnitTypeId::Marine, 8),
+        ]),
+        
+        // Zerg compositions
+        "enemy ling flood" | "enemy zerglings" => Some(vec![
+            (UnitTypeId::Zergling, 24),
+        ]),
+        "enemy roach push" | "enemy roaches" => Some(vec![
+            (UnitTypeId::Roach, 12),
+        ]),
+        "enemy hydra push" | "enemy hydras" => Some(vec![
+            (UnitTypeId::Hydralisk, 8),
+        ]),
+        "enemy bane bust" | "enemy banelings" => Some(vec![
+            (UnitTypeId::Zergling, 12),
+            (UnitTypeId::Baneling, 8),
+        ]),
+        "enemy roach hydra" => Some(vec![
+            (UnitTypeId::Roach, 8),
+            (UnitTypeId::Hydralisk, 6),
+        ]),
+        "enemy muta harass" | "enemy mutas" => Some(vec![
+            (UnitTypeId::Mutalisk, 6),
+        ]),
+        "enemy zerg army" => Some(vec![
+            (UnitTypeId::Roach, 8),
+            (UnitTypeId::Hydralisk, 6),
+            (UnitTypeId::Zergling, 12),
+        ]),
+        
+        // Protoss compositions
+        "enemy zealot rush" | "enemy zealots" => Some(vec![
+            (UnitTypeId::Zealot, 8),
+        ]),
+        "enemy stalker push" | "enemy stalkers" => Some(vec![
+            (UnitTypeId::Stalker, 8),
+        ]),
+        "enemy protoss army" | "enemy toss army" => Some(vec![
+            (UnitTypeId::Stalker, 6),
+            (UnitTypeId::Zealot, 4),
+            (UnitTypeId::Immortal, 2),
+        ]),
+        "enemy carrier rush" | "enemy carriers" => Some(vec![
+            (UnitTypeId::Carrier, 3),
+        ]),
+        "enemy void rays" | "enemy voids" => Some(vec![
+            (UnitTypeId::VoidRay, 5),
+        ]),
+        "enemy colossus" => Some(vec![
+            (UnitTypeId::Colossus, 2),
+            (UnitTypeId::Stalker, 6),
+            (UnitTypeId::Zealot, 4),
+        ]),
+        "enemy dt rush" | "enemy dark templars" => Some(vec![
+            (UnitTypeId::DarkTemplar, 4),
+        ]),
+        
+        // Testing compositions
+        "enemy worker rush" | "enemy probes" => Some(vec![
+            (UnitTypeId::Probe, 12),
+        ]),
+        "enemy all in" => Some(vec![
+            (UnitTypeId::Marine, 10),
+            (UnitTypeId::Marauder, 6),
+            (UnitTypeId::SiegeTank, 2),
+            (UnitTypeId::Medivac, 2),
+        ]),
+        "enemy massive" => Some(vec![
+            (UnitTypeId::Marine, 20),
+            (UnitTypeId::Marauder, 10),
+            (UnitTypeId::SiegeTank, 4),
+            (UnitTypeId::Medivac, 3),
+        ]),
+        
+        _ => None,
     }
 }
 

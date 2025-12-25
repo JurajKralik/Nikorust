@@ -12,7 +12,7 @@ pub fn medivac_control(bot: &mut Nikolaj, unit: &Unit) {
         return;
     }
 
-    let surroundings = get_surroundings_info(bot, unit);
+    let surroundings = get_surroundings_info(bot, unit, SurroundingsOptions::default());
     let in_danger = surroundings.threat_level > ThreatLevel::None;
 
     if in_danger {

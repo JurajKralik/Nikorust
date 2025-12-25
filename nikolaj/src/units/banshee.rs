@@ -7,9 +7,14 @@ use rust_sc2::prelude::*;
 
 
 pub fn banshee_control(bot: &mut Nikolaj, unit: &Unit) {
-    let surroundings = get_surroundings_info(bot, unit);
+    let surroundings_options = SurroundingsOptions {
+        extra_avoidance : 2.0,
+        ..Default::default()
+    };
+    let surroundings = get_surroundings_info(bot, unit, surroundings_options);
     let heatmap_options = HeatmapOptions {
-        evaluate_detection: unit.has_buff(BuffId::BansheeCloak),
+        evaluate_detection: true,
+        avoid_damage: true,
         ..Default::default()
     };
     let heatmap = get_heatmap_for_unit(bot, unit.tag(), heatmap_options);

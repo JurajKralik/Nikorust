@@ -6,7 +6,7 @@ use crate::units::helpers::combat_movement::*;
 use crate::units::helpers::threat_detection::*;
 
 pub fn raven_control(bot: &mut Nikolaj, unit: &Unit) {
-    let surroundings = get_surroundings_info(bot, unit);
+    let surroundings = get_surroundings_info(bot, unit, SurroundingsOptions::default());
     let in_danger = surroundings.threat_level > ThreatLevel::None;
     
     if unit.energy() >= 50.0 as u32 {

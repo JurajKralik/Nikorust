@@ -232,7 +232,7 @@ pub fn siege_up(bot: &mut Nikolaj, unit: &Unit) {
     if unit.type_id() == UnitTypeId::SiegeTank {
         unit.use_ability(AbilityId::SiegeModeSiegeMode, false);
     } else if unit.type_id() == UnitTypeId::WidowMine {
-        unit.use_ability(AbilityId::BurrowDownWidowMine, false);
+        unit.command(AbilityId::BurrowDownWidowMine, Target::None, false);
     }
 }
 

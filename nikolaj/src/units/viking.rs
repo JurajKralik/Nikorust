@@ -7,7 +7,7 @@ use crate::units::helpers::combat_movement::*;
 
 pub fn viking_control(bot: &mut Nikolaj, unit: &Unit) {
     let avoid_damage = unit.weapon_cooldown() > 0.2;
-    let surroundings = get_surroundings_info(bot, unit);
+    let surroundings = get_surroundings_info(bot, unit, SurroundingsOptions::default());
     let heatmap_options = HeatmapOptions {
         step: 2.0,
         avoid_damage: avoid_damage,

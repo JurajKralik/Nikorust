@@ -6,7 +6,7 @@ use rust_sc2::prelude::*;
 
 
 pub fn tank_control(bot: &mut Nikolaj, unit: &Unit) {
-    let surroundings = get_surroundings_info(bot, unit);
+    let surroundings = get_surroundings_info(bot, unit, SurroundingsOptions::default());
     let in_danger = surroundings.clone().threat_level > ThreatLevel::None;
 
     if in_danger && surroundings.best_target_in_range.is_none() && surroundings.better_target_off_range.is_none() && surroundings.closest_structure.is_none() {

@@ -86,7 +86,7 @@ fn create_heatmap_for_unit(bot: &mut Nikolaj, unit_tag: u64, options: HeatmapOpt
 
 fn generate_heatmap_points(bot: &Nikolaj, heatmap: &mut Heatmap, unit: &Unit) {
     let unit_pos = unit.position();
-    let sight_range = unit.sight_range();
+    let sight_range = unit.sight_range() * 1.5;
     let step = heatmap.options.step;
     let grid_size = (sight_range / step).ceil() as i32;
 
@@ -152,7 +152,7 @@ fn evaluate_incoming_damage(heatmap: &mut Heatmap, unit: &Unit, enemy: &Unit) {
         return;
     }
 
-    let mut enemy_weapon_range = enemy.real_range_vs(unit);
+    let mut enemy_weapon_range = enemy.real_range_vs(unit) + 1.0;
     if enemy.is_worker() {
         enemy_weapon_range += 1.5;
     }

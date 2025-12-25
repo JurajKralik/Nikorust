@@ -6,7 +6,7 @@ use crate::units::helpers::combat_movement::*;
 
 
 pub fn cyclone_control(bot: &mut Nikolaj, unit: &Unit) {
-    let surroundings = get_surroundings_info(bot, unit);
+    let surroundings = get_surroundings_info(bot, unit, SurroundingsOptions::default());
     let heatmap_options = HeatmapOptions {
         step: 2.0,
         avoid_damage: true,
