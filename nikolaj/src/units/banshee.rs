@@ -9,6 +9,7 @@ use rust_sc2::prelude::*;
 pub fn banshee_control(bot: &mut Nikolaj, unit: &Unit) {
     let surroundings_options = SurroundingsOptions {
         extra_avoidance : 2.5,
+        advantage_only: true,
         ..Default::default()
     };
     let surroundings = get_surroundings_info(bot, unit, surroundings_options);

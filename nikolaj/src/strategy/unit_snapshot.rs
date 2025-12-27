@@ -29,6 +29,10 @@ impl UnitSnapshot {
         (self.unit.health() + self.unit.shield()) as f32
     }
     
+    pub fn position(&self) -> Point2 {
+        self.unit.position()
+    }
+
     pub fn supply(&self) -> usize {
         self.unit.supply_cost() as usize
     }

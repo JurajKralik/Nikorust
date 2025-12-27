@@ -164,46 +164,40 @@ pub fn use_stimpack(unit: &Unit, surroundings: &SurroundingsInfo) {
 }
 
 pub fn attack_no_spam(unit: &Unit, target: Target) {
-    if let Some(order) = &unit.order() {
-        if order.0 == AbilityId::Attack {
-            if order.1 == target {
+    if let Target::Pos(target_position) = target {
+        if unit.position().distance(target_position) < 1.0 {
+            return;
+        }
+        if let Some(ordered_position) = unit.target_pos() {
+            if ordered_position.distance(target_position) < 1.0 {
                 return;
-            } else if let Target::Pos(position) = order.1 {
-                if let Target::Pos(new_position) = target {
-                    if position.distance(new_position) < 2.0 {
-                        return;
-                    }
-                }
             }
         }
     }
-    if let Target::Pos(position) = target {
-        if unit.distance(position) < 4.0 {
-            return;
+
+    if let Some(ordered_target) = unit.target_tag() {
+        if let Target::Tag(target_tag) = target {
+            if ordered_target == target_tag {
+                return;
+            }
         }
     }
+
     unit.attack(target, false);
 }
 
 pub fn move_no_spam(unit: &Unit, target: Target) {
-    if let Some(order) = &unit.order() {
-        if order.0 == AbilityId::Move {
-            if order.1 == target {
+    if let Target::Pos(target_position) = target {
+        if unit.position().distance(target_position) < 3.0 {
+            return;
+        }
+        if let Some(ordered_position) = unit.target_pos() {
+            if ordered_position.distance(target_position) < 2.0 {
                 return;
-            } else if let Target::Pos(position) = order.1 {
-                if let Target::Pos(new_position) = target {
-                    if position.distance(new_position) < 2.0 {
-                        return;
-                    }
-                }
             }
         }
     }
-    if let Target::Pos(position) = target {
-        if unit.distance(position) < 4.0 {
-            return;
-        }
-    }
+    
     unit.move_to(target, false);
 }
 
@@ -261,6 +255,33 @@ pub fn get_closest_harass_point(bot: &Nikolaj, unit: &Unit) -> Point2 {
         return attack_point;
     }
 }
+
+/// Returns a point where either x or y is adjusted to the closest map border
+/// This creates an offset point for pathing along the map edge to reach harass points
+pub fn get_harass_point_border_offset(bot: &Nikolaj, point: Point2) -> Point2 {
+    let playable = &bot.game_info.playable_area;
+    
+    // Calculate distances to each border
+    let dist_to_left = point.x - playable.x0 as f32;
+    let dist_to_right = playable.x1 as f32 - point.x;
+    let dist_to_bottom = point.y - playable.y0 as f32;
+    let dist_to_top = playable.y1 as f32 - point.y;
+    
+    // Find the minimum distance
+    let min_dist = dist_to_left.min(dist_to_right).min(dist_to_bottom).min(dist_to_top);
+    
+    // Return point with the closest coordinate adjusted to that border
+    if min_dist == dist_to_left {
+        Point2::new(playable.x0 as f32, point.y)
+    } else if min_dist == dist_to_right {
+        Point2::new(playable.x1 as f32, point.y)
+    } else if min_dist == dist_to_bottom {
+        Point2::new(point.x, playable.y0 as f32)
+    } else {
+        Point2::new(point.x, playable.y1 as f32)
+    }
+}
+
 pub fn get_closest_repair_point(bot: &Nikolaj, unit: &Unit) -> Point2 {
     let repair_points = &bot.strategy_data.repair_points;
     let idle_point = bot.strategy_data.idle_point;

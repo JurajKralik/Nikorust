@@ -1,8 +1,8 @@
 [package]
 name = "nikolaj"
-version = "1.0.7"
+version = "1.2.1"
 edition = "2021"
-description = "A StarCraft II Terran bot. Last build: 25/12/2025"
+description = "A StarCraft II Terran bot. Last build: 27/12/2025"
 license = "MIT"
 authors = ["Juraj Kralik (DAX)"]
 

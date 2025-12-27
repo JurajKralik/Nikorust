@@ -700,6 +700,7 @@ impl WorkerAllocator {
     fn command_gather_mineral(&self, worker: Unit, worker_tag: u64, units: &AllUnits) -> WorkersMiningSteps{
         const CHECK_OFFSET: f32 = 0.5;
         const COMMAND_OFFSET: f32 = 0.0;
+        const COMMAND_OFFSET_ANTISPAM: f32 = 0.2;
         const MINIMUM_RANGE: f32 = 1.5;
 
         for alloc in self.resources.values() {
@@ -728,7 +729,7 @@ impl WorkerAllocator {
                                 let mining_step = WorkersMiningSteps::MineralOffsetWalk;
                                 // Antispam - already moving close
                                 if let Some(pos) = worker.target_pos() {
-                                    if pos.distance(mineral_offset_position) < COMMAND_OFFSET {
+                                    if pos.distance(mineral_offset_position) < COMMAND_OFFSET_ANTISPAM {
                                         return mining_step;
                                     }
                                 }
