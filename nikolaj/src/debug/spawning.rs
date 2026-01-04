@@ -48,7 +48,7 @@ pub fn debug_spawn_unit(bot: &mut Nikolaj) {
                 bot.debugger.time, unit_type, target_player_id);
             bot.debug.create_units(&[(unit_type, Some(target_player_id), camera_pos, 1)]);
         } else {
-            println!("[DEBUGGER] {} Unknown request: {}", bot.debugger.time, chat_message.message);
+            println!("[CHAT] {} by {}: {}", bot.debugger.time, chat_message.player_id,chat_message.message);
         }
     }
 }
@@ -197,6 +197,7 @@ fn get_unit_from_string(name: &str) -> Option<UnitTypeId> {
         "voidray" | "void" | "voidrays" => Some(UnitTypeId::VoidRay),
         "carrier" | "carriers" => Some(UnitTypeId::Carrier),
         "tempest" => Some(UnitTypeId::Tempest),
+        "observer" | "obs" => Some(UnitTypeId::Observer),
         
         _ => None,
     }

@@ -44,7 +44,7 @@ impl Default for NikolajDebugger {
                 printing_combat_info: false,
                 printing_build_order: false,
                 printing_research: false,
-                printing_enemy_army_snapshot: true,
+                printing_enemy_army_snapshot: false,
                 displaying_worker_roles: false,
                 displaying_worker_mining_steps: false,
                 displaying_bases: false,

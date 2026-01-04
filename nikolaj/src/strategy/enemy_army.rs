@@ -60,7 +60,7 @@ fn delete_outdated_enemy_snapshots(bot: &mut Nikolaj) {
     bot.strategy_data
         .enemy_army
         .units
-        .retain(|snapshot| current_time - snapshot.last_seen <= 120.0);
+        .retain(|snapshot| current_time - snapshot.last_seen <= 5.0);
 }
 fn delete_dead_enemy_snapshots(bot: &mut Nikolaj, dead_units: Vec<u64>) {
     bot.strategy_data

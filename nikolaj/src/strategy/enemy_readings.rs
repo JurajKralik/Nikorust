@@ -31,7 +31,7 @@ fn detect_enemy_worker_rush(bot: &mut Nikolaj) {
         bot.strategy_data.enemy_worker_rush_time = bot.time;
         if !bot.strategy_data.enemy_worker_rush {
             println!(
-                "Strategy: Detected enemy worker rush at time {:.1}",
+                "[STRATEGY] {:.1} Detected enemy worker rush",
                 bot.time
             );
         }
@@ -50,7 +50,7 @@ fn detect_enemy_ramp_blocking(bot: &mut Nikolaj) {
             bot.strategy_data.enemy_ramp_blocking = false;
             bot.strategy_data.enemy_ramp_blocking_steps = 0;
             println!(
-                "Strategy: Enemy ramp blocking ended at time {:.1}",
+                "[STRATEGY] {:.1} Enemy ramp blocking ended",
                 bot.time
             );
         }
@@ -74,7 +74,7 @@ fn detect_enemy_ramp_blocking(bot: &mut Nikolaj) {
     if bot.strategy_data.enemy_ramp_blocking_steps > 8 && !bot.strategy_data.enemy_ramp_blocking {
         bot.strategy_data.enemy_ramp_blocking = true;
         println!(
-            "Strategy: Detected enemy ramp blocking at time {:.1}",
+            "[STRATEGY] {:.1} Detected enemy ramp blocking",
             bot.time
         );
     }
@@ -98,7 +98,7 @@ fn detect_enemy_flooding(bot: &mut Nikolaj) {
         }
     }
     if offensive_units >= 5 && !bot.strategy_data.enemy_flooding {
-        println!("Strategy: Detected enemy flooding at time {:.1}", bot.time);
+        println!("[STRATEGY] {:.1} Detected enemy flooding", bot.time);
         bot.strategy_data.enemy_flooding = true;
     }
 }
@@ -126,9 +126,9 @@ fn detect_cloaking_enemy(bot: &mut Nikolaj) {
         if cloaking_units.contains(&enemy_type) {
             if !bot.strategy_data.enemy_cloaking {
                 println!(
-                    "Strategy: Detected enemy cloaking unit {:?} at time {:.1}",
-                    enemy_type,
-                    bot.time
+                    "[STRATEGY] {:.1} Detected enemy cloaking unit {:?}",
+                    bot.time,
+                    enemy_type
                 );
             }
             bot.strategy_data.enemy_cloaking = true;
@@ -147,9 +147,9 @@ fn detect_cloaking_enemy(bot: &mut Nikolaj) {
         if cloaking_structures.contains(&structure_type) {
             if !bot.strategy_data.enemy_cloaking {
                 println!(
-                    "Strategy: Detected enemy cloaking structure {:?} at time {:.1}",
-                    structure_type,
-                    bot.time
+                    "[STRATEGY] {:.1} Detected enemy cloaking structure {:?}",
+                    bot.time,
+                    structure_type
                 );
             }
             bot.strategy_data.enemy_cloaking = true;
@@ -169,9 +169,9 @@ fn detect_flying_enemy(bot: &mut Nikolaj) {
         if FLYING_UNITS.contains(&enemy_type) {
             if !bot.strategy_data.enemy_flying_units {
                 println!(
-                    "Strategy: Detected enemy flying unit {:?} at time {:.1}",
-                    enemy_type,
-                    bot.time
+                    "[STRATEGY] {:.1} Detected enemy flying unit {:?}",
+                    bot.time,
+                    enemy_type
                 );
             }
             bot.strategy_data.enemy_flying_units = true;

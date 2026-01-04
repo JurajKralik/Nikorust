@@ -49,10 +49,11 @@ pub fn banshee_control(bot: &mut Nikolaj, unit: &Unit) {
                 }
             }
         } else {
-            if let Some(best_position) = heatmap.get_best_position() {
-                move_no_spam(unit, Target::Pos(best_position));
-            } else if in_danger {
+            if in_danger {
                 flee_flying_unit(bot, unit, surroundings.clone());
+            } else if let Some(best_position) = heatmap.get_best_position() {
+                bot.debug_cube(best_position, 2.0, "blue");
+                move_no_spam(unit, Target::Pos(best_position));
             } else {
                 if let Some(target) = surroundings.better_target_off_range {
                     move_no_spam(unit, Target::Pos(target.position()));

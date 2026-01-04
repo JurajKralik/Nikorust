@@ -33,7 +33,7 @@ with open(bot_zip_file, "rb") as bot_zip:
         f"https://aiarena.net/api/bots/{bot_id}/",
         headers=auth,
         data={
-            "bot_zip_publicly_downloadable": False,
+            "bot_zip_publicly_downloadable": True,
             "bot_data_publicly_downloadable": False,
         },
         files={

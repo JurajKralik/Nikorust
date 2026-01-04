@@ -9,7 +9,7 @@ use rust_sc2::prelude::*;
 
 pub fn reaper_control(bot: &mut Nikolaj, unit: &Unit) {
     let surroundings_options = SurroundingsOptions {
-        extra_avoidance : 1.0,
+        extra_avoidance : 2.0,
         advantage_only: true,
         ..Default::default()
     };
@@ -49,19 +49,17 @@ pub fn reaper_control(bot: &mut Nikolaj, unit: &Unit) {
                 }
             }
         } else {
-            if let Some(best_position) = heatmap.get_best_position() {
+            if in_danger {
+                flee_bio(bot, unit, surroundings.clone());
+            } else if let Some(target) = surroundings.better_target_off_range {
+                move_no_spam(unit, Target::Pos(target.position()));
+            } else if let Some(target) = surroundings.best_target_in_range {
+                move_no_spam(unit, Target::Pos(target.position()));
+            } else if let Some(best_position) = heatmap.get_best_position() {
                 move_no_spam(unit, Target::Pos(best_position));
             } else {
-                if in_danger {
-                    flee_bio(bot, unit, surroundings.clone());
-                } else if let Some(target) = surroundings.better_target_off_range {
-                    move_no_spam(unit, Target::Pos(target.position()));
-                } else if let Some(target) = surroundings.best_target_in_range {
-                    move_no_spam(unit, Target::Pos(target.position()));
-                } else {
-                    let closest_harass_point = get_closest_harass_point(bot, unit);
-                    move_no_spam(unit, Target::Pos(closest_harass_point));
-                }
+                let closest_harass_point = get_closest_harass_point(bot, unit);
+                move_no_spam(unit, Target::Pos(closest_harass_point));
             }
         }
     }

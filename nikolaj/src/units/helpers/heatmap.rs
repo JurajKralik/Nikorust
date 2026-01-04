@@ -6,6 +6,7 @@ use rust_sc2::prelude::*;
 const POINT_ATTACK_BONUS: f32 = 1000.0;
 const POINT_DETECTION_PENALTY: f32 = 2000.0;
 const POINT_ALLY_BONUS: f32 = 100.0;
+const POINT_DISTANCE_BONUS_PER_UNIT: f32 = 0.2;  // Small bonus for distance from enemy
 
 #[derive(Clone, Debug)]
 pub struct Heatmap {
@@ -69,27 +70,27 @@ fn create_heatmap_for_unit(bot: &mut Nikolaj, unit_tag: u64, options: HeatmapOpt
     if let Some(unit) = bot.units.my.units.get(unit_tag) {
         generate_heatmap_points(bot, &mut heatmap, unit);
         
-        // Use enemy army snapshots
+        // Use enemy army snapshots - evaluate all enemies within 20.0 range
         let nearby_enemy_snapshots: Vec<_> = bot.strategy_data.enemy_army.units
             .iter()
-            .filter(|snapshot| snapshot.unit.position().distance(unit.position()) <= 18.0)
+            .filter(|snapshot| snapshot.position().distance(unit.position()) <= 20.0)
             .map(|snapshot| snapshot.unit.clone())
             .collect();
         evaluate_enemy_units_from_snapshots(&mut heatmap, unit, &nearby_enemy_snapshots);
         
-        let nearby_enemy_structures = bot.units.enemy.structures.closer(18.0, unit.position());
+        let nearby_enemy_structures = bot.units.enemy.structures.closer(20.0, unit.position());
         evaluate_enemy_structures(&mut heatmap, unit, &nearby_enemy_structures);
         apply_damage_avoidance(&mut heatmap);
         
         // Detection evaluation from snapshots
         let nearby_enemy_all: Vec<_> = bot.strategy_data.enemy_army.units
             .iter()
-            .filter(|snapshot| snapshot.unit.position().distance(unit.position()) <= 18.0)
+            .filter(|snapshot| snapshot.position().distance(unit.position()) <= 20.0)
             .map(|snapshot| snapshot.unit.clone())
             .collect();
         apply_detection_evaluation_from_snapshots(&mut heatmap, unit, &nearby_enemy_all, bot.combat_info.detected);
         
-        let nearby_ally_units = bot.units.my.units.closer(18.0, unit.position());
+        let nearby_ally_units = bot.units.my.units.closer(20.0, unit.position());
         apply_allies_influence(&mut heatmap, unit_tag, &nearby_ally_units);
         blur_heatmap(&mut heatmap);
     }
@@ -99,16 +100,16 @@ fn create_heatmap_for_unit(bot: &mut Nikolaj, unit_tag: u64, options: HeatmapOpt
 
 fn generate_heatmap_points(bot: &Nikolaj, heatmap: &mut Heatmap, unit: &Unit) {
     let unit_pos = unit.position();
-    let sight_range = unit.sight_range() * 1.5;
+    let heatmap_range = 4.0;  // Only 4 steps around unit for immediate movement decisions
     let step = heatmap.options.step;
-    let grid_size = (sight_range / step).ceil() as i32;
+    let grid_size = (heatmap_range / step).ceil() as i32;
 
     for dx in -grid_size..=grid_size {
         for dy in -grid_size..=grid_size {
             let pos = Point2::new(unit_pos.x + dx as f32 * step, unit_pos.y + dy as f32 * step);
 
             // Out of range
-            if unit_pos.distance(pos) > sight_range {
+            if unit_pos.distance(pos) > heatmap_range {
                 continue;
             }
 
@@ -176,6 +177,8 @@ fn evaluate_incoming_damage(heatmap: &mut Heatmap, unit: &Unit, enemy: &Unit) {
         if distance <= enemy_weapon_range {
             heatpoint.intensity -= damage;
         }
+        // Add small bonus based on distance from enemy (further = safer)
+        heatpoint.intensity -= distance * POINT_DISTANCE_BONUS_PER_UNIT;
     }
 }
 
