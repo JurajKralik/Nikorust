@@ -384,7 +384,8 @@ lazy_static! {
         UnitTypeId::Changeling,
         UnitTypeId::ChangelingMarine,
         UnitTypeId::ChangelingZealot,
-        UnitTypeId::ChangelingZergling
+        UnitTypeId::ChangelingZergling,
+        UnitTypeId::MULE
     ];
     pub static ref UNITS_PRIORITY_LOW: Vec<UnitTypeId> = vec![
         UnitTypeId::Changeling,
@@ -393,8 +394,7 @@ lazy_static! {
         UnitTypeId::ChangelingZergling,
         UnitTypeId::LocustMP,
         UnitTypeId::LocustMPFlying,
-        UnitTypeId::Overlord,
-        UnitTypeId::MULE
+        UnitTypeId::Overlord
     ];
 }
 

@@ -70,16 +70,21 @@ fn create_heatmap_for_unit(bot: &mut Nikolaj, unit_tag: u64, options: HeatmapOpt
     if let Some(unit) = bot.units.my.units.get(unit_tag) {
         generate_heatmap_points(bot, &mut heatmap, unit);
         
+        // Check if unit is cloaked and detected
+        let is_cloaked = unit.is_cloaked();
+        let is_detected = bot.combat_info.detected;
+        let vulnerable = !is_cloaked || is_detected;
+        
         // Use enemy army snapshots - evaluate all enemies within 20.0 range
         let nearby_enemy_snapshots: Vec<_> = bot.strategy_data.enemy_army.units
             .iter()
             .filter(|snapshot| snapshot.position().distance(unit.position()) <= 20.0)
             .map(|snapshot| snapshot.unit.clone())
             .collect();
-        evaluate_enemy_units_from_snapshots(&mut heatmap, unit, &nearby_enemy_snapshots);
+        evaluate_enemy_units_from_snapshots(&mut heatmap, unit, &nearby_enemy_snapshots, vulnerable);
         
         let nearby_enemy_structures = bot.units.enemy.structures.closer(20.0, unit.position());
-        evaluate_enemy_structures(&mut heatmap, unit, &nearby_enemy_structures);
+        evaluate_enemy_structures(&mut heatmap, unit, &nearby_enemy_structures, vulnerable);
         apply_damage_avoidance(&mut heatmap);
         
         // Detection evaluation from snapshots
@@ -130,16 +135,16 @@ fn generate_heatmap_points(bot: &Nikolaj, heatmap: &mut Heatmap, unit: &Unit) {
     }
 }
 
-fn evaluate_enemy_units_from_snapshots(heatmap: &mut Heatmap, unit: &Unit, enemy_units: &Vec<Unit>) {
+fn evaluate_enemy_units_from_snapshots(heatmap: &mut Heatmap, unit: &Unit, enemy_units: &Vec<Unit>, vulnerable: bool) {
     for enemy in enemy_units.iter() {
         evaluate_attack_opportunities(heatmap, unit, enemy);
-        evaluate_incoming_damage(heatmap, unit, enemy);
+        evaluate_incoming_damage(heatmap, unit, enemy, vulnerable);
     }
 }
 
-fn evaluate_enemy_structures(heatmap: &mut Heatmap, unit: &Unit, enemy_structures: &Units) {
+fn evaluate_enemy_structures(heatmap: &mut Heatmap, unit: &Unit, enemy_structures: &Units, vulnerable: bool) {
     for enemy in enemy_structures.iter() {
-        evaluate_incoming_damage(heatmap, unit, enemy);
+        evaluate_incoming_damage(heatmap, unit, enemy, vulnerable);
     }
 }
 
@@ -161,7 +166,7 @@ fn evaluate_attack_opportunities(heatmap: &mut Heatmap, unit: &Unit, enemy: &Uni
     }
 }
 
-fn evaluate_incoming_damage(heatmap: &mut Heatmap, unit: &Unit, enemy: &Unit) {
+fn evaluate_incoming_damage(heatmap: &mut Heatmap, unit: &Unit, enemy: &Unit, vulnerable: bool) {
     if !can_attack(enemy, unit) {
         return;
     }
@@ -174,11 +179,14 @@ fn evaluate_incoming_damage(heatmap: &mut Heatmap, unit: &Unit, enemy: &Unit) {
     
     for heatpoint in heatmap.points.iter_mut() {
         let distance = heatpoint.position.distance(enemy.position());
-        if distance <= enemy_weapon_range {
+        
+        // Only apply damage penalty if unit is vulnerable (not cloaked or detected)
+        if vulnerable && distance <= enemy_weapon_range {
             heatpoint.intensity -= damage;
         }
+        
         // Add small bonus based on distance from enemy (further = safer)
-        heatpoint.intensity -= distance * POINT_DISTANCE_BONUS_PER_UNIT;
+        heatpoint.intensity += distance * POINT_DISTANCE_BONUS_PER_UNIT;
     }
 }
 
