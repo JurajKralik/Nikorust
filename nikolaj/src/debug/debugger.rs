@@ -29,7 +29,7 @@ pub struct NikolajDebugger {
 
 impl Default for NikolajDebugger {
     fn default() -> Self {
-        #[cfg(feature = "wine_sc2")]
+        #[cfg(any(feature = "wine_sc2", feature = "headless"))]
         {
             Self {
                 time: 0.0,
@@ -57,7 +57,7 @@ impl Default for NikolajDebugger {
                 workers_current_mining_steps: vec![],
             }
         }
-        #[cfg(not(feature = "wine_sc2"))]
+        #[cfg(not(any(feature = "wine_sc2", feature = "headless")))]
         {
             Self {
                 time: 0.0,

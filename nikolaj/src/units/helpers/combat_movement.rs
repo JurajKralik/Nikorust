@@ -258,6 +258,7 @@ pub fn get_closest_harass_point(bot: &Nikolaj, unit: &Unit) -> Point2 {
 
 /// Returns a point where either x or y is adjusted to the closest map border
 /// This creates an offset point for pathing along the map edge to reach harass points
+#[allow(dead_code)]
 pub fn get_harass_point_border_offset(bot: &Nikolaj, point: Point2) -> Point2 {
     let playable = &bot.game_info.playable_area;
     

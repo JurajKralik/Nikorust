@@ -9,7 +9,7 @@ authors = ["Juraj Kralik (DAX)"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rust-sc2 = { git = "https://github.com/JurajKralik/rust-sc2" }
+rust-sc2 = { path = "../../rust-sc2_JK" }
 quote = "1.0.41"
 clap = {version = "4.5.4", features = ["derive", "cargo"] }
 lazy_static = "1.4.0"
@@ -21,4 +21,5 @@ path = "src/main.rs"
 
 [features]
 wine_sc2 = ["rust-sc2/wine_sc2"]
+headless = ["rust-sc2/headless"]
 ladder = []
