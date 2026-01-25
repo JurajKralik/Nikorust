@@ -23,6 +23,7 @@ pub struct NikolajDebugger {
     pub displaying_strategy_points: bool,
     pub displaying_selected: bool,
     pub displaying_heatmaps: bool,
+    pub displaying_strategy_monitor: bool,
     pub run_resource_assignments_checks: bool,
     pub workers_current_mining_steps: Vec<WorkersCurrentMiningStep>,
 }
@@ -47,12 +48,13 @@ impl Default for NikolajDebugger {
                 printing_enemy_army_snapshot: false,
                 displaying_worker_roles: false,
                 displaying_worker_mining_steps: false,
-                displaying_bases: false,
+                displaying_bases: true,
                 displaying_repair: false,
                 displaying_mining: true,
-                displaying_strategy_points: false,
+                displaying_strategy_points: true,
                 displaying_selected: true,
                 displaying_heatmaps: true,
+                displaying_strategy_monitor: true,
                 run_resource_assignments_checks: false,
                 workers_current_mining_steps: vec![],
             }
@@ -81,6 +83,7 @@ impl Default for NikolajDebugger {
                 displaying_strategy_points: false,
                 displaying_selected: true,
                 displaying_heatmaps: false,
+                displaying_strategy_monitor: false,
                 run_resource_assignments_checks: false,
                 workers_current_mining_steps: vec![],
             }

@@ -130,6 +130,14 @@ impl Nikolaj {
         let end = self.debug_translate_point(end_p2);
         self.debug.draw_line(start, end, debug_color);
     }
+    fn debug_line_offset(&mut self, start_p2: Point2, end_p2: Point2, color: &str, extra_height: f32) {
+        let debug_color = self.get_debug_color(color);
+        let mut start = self.debug_translate_point(start_p2);
+        let mut end = self.debug_translate_point(end_p2);
+        start.z += extra_height;
+        end.z += extra_height;
+        self.debug.draw_line(start, end, debug_color);
+    }
     fn debug_text(&mut self, text: &str, pos_p2: Point2, color: &str, size: Option<u32>) {
         let debug_color = self.get_debug_color(color);
         let pos = self.debug_translate_point(pos_p2);

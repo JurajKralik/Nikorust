@@ -9,7 +9,7 @@ if [ -f "$SCRIPT_DIR/.env" ]; then
 fi
 
 cd "$SCRIPT_DIR"
-cargo run --release --features headless -- \
+cargo run --release -- \
   --LadderServer 127.0.0.1 \
   --GamePort 5000 \
   --StartPort 5001    

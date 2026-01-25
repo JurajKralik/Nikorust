@@ -209,28 +209,47 @@ pub fn debug_show_strategy_points(bot: &mut Nikolaj) {
     if !bot.debugger.displaying_strategy_points {
         return;
     }
+
+    let start_point = bot.start_location;
     let idle_point = bot.strategy_data.idle_point;
+    
+    // Idle point - main hub
     bot.debug_sphere(idle_point, 0.5, "white");
     bot.debug_text("IDLE", idle_point, "white", Some(14));
+    bot.debug_line(start_point, idle_point, "white");
 
+    // Defense point - from idle
     let defense_point = bot.strategy_data.defense_point;
     bot.debug_sphere(defense_point, 0.5, "yellow");
     bot.debug_text("DEFENSE", defense_point, "yellow", Some(14));
+    bot.debug_line_offset(idle_point, defense_point, "yellow", 0.0);
 
+    // Attack point - from idle
     let attack_point = bot.strategy_data.attack_point;
     bot.debug_sphere(attack_point, 0.5, "red");
     bot.debug_text("ATTACK", attack_point, "red", Some(14));
+    bot.debug_line_offset(idle_point, attack_point, "red", 0.5);
 
+    // Harass points - from idle
     let harass_points = bot.strategy_data.harass_points.clone();
     for (i, point) in harass_points.iter().enumerate() {
         bot.debug_sphere(*point, 0.5, "blue");
         bot.debug_text(&format!("HARASS {}", i + 1), *point, "blue", Some(14));
+        bot.debug_line_offset(idle_point, *point, "blue", 1.0 + (i as f32 * 0.5));
     }
     
+    // Army center - from idle
+    let army_center = bot.strategy_data.army_center;
+    bot.debug_sphere(army_center, 0.5, "orange");
+    bot.debug_text("ARMY", army_center, "orange", Some(14));
+    bot.debug_line_offset(idle_point, army_center, "orange", 2.0);
+
+    // Repair points - standalone
     let repair_points = bot.strategy_data.repair_points.clone();
     for (i, point) in repair_points.iter().enumerate() {
         bot.debug_sphere(*point, 0.5, "green");
         bot.debug_text(&format!("REPAIR {}", i + 1), *point, "green", Some(14));
+        bot.debug_line_offset(start_point, *point, "green", 2.5 + (i as f32 * 0.5));
     }
 }
 
@@ -286,5 +305,45 @@ pub fn debug_show_heatmaps(bot: &mut Nikolaj) {
     }
     for (text, position, color, size) in debug_texts {
         bot.debug_text(&text, position, color, size);
+    }
+}
+
+pub fn debug_show_strategy_monitor(bot: &mut Nikolaj) {
+    if !bot.debugger.displaying_strategy_monitor {
+        return;
+    }
+    
+    let mut status_texts = Vec::new();
+    let mut y_offset = 0;
+    let letter_size = 16;
+    let offset = letter_size / 2;
+    
+    if bot.strategy_data.attack {
+        status_texts.push(("ATTACK MODE", "red", y_offset));
+        y_offset += offset;
+    }
+    
+    if bot.strategy_data.defend {
+        status_texts.push(("DEFEND MODE", "yellow", y_offset));
+        y_offset += offset;
+    }
+    
+    if bot.strategy_data.enemy_flooding {
+        status_texts.push(("ENEMY FLOODING", "orange", y_offset));
+        y_offset += offset;
+    }
+    
+    if bot.strategy_data.enemy_worker_rush {
+        status_texts.push(("ENEMY WORKER RUSH", "red", y_offset));
+        y_offset += offset;
+    }
+    
+    if bot.strategy_data.enemy_ramp_blocking {
+        status_texts.push(("ENEMY RAMP BLOCK", "blue", y_offset));
+    }
+    
+    for (text, color, offset) in status_texts {
+        let position = Point2::new(0.02, 0.1 + (offset as f32 * 0.03));
+        bot.debug_text_screen(text, position, color, Some(letter_size));
     }
 }
