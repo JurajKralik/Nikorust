@@ -30,14 +30,14 @@ pub fn reaper_control(bot: &mut Nikolaj, unit: &Unit) {
 
     if low_health {
         if surroundings.clone().closest_threat.is_some() || in_danger {
-            flee_bio(bot, unit, surroundings.clone());
+            bio_flee(bot, unit, surroundings.clone());
         } else {
             move_no_spam(unit, Target::Pos(bot.strategy_data.idle_point));
         }
     } else {
         if weapon_ready {
             if in_danger {
-                flee_bio(bot, unit, surroundings.clone());
+                bio_flee(bot, unit, surroundings.clone());
             } else {
                 if let Some(target) = surroundings.best_target_in_range {
                     attack_no_spam(unit, Target::Tag(target.tag()));
@@ -50,7 +50,7 @@ pub fn reaper_control(bot: &mut Nikolaj, unit: &Unit) {
             }
         } else {
             if in_danger {
-                flee_bio(bot, unit, surroundings.clone());
+                bio_flee(bot, unit, surroundings.clone());
             } else if let Some(target) = surroundings.better_target_off_range {
                 move_no_spam(unit, Target::Pos(target.position()));
             } else if let Some(target) = surroundings.best_target_in_range {

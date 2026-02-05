@@ -607,6 +607,7 @@ checksum = "adad44e29e4c806119491a7f06f03de4d1af22c3a680dd47f1e6e179439d1f56"
 [[package]]
 name = "rust-sc2"
 version = "1.2.0"
+source = "git+https://github.com/JurajKralik/rust-sc2#47bb210d5670df15c3bbc697765e0d0d34119d6a"
 dependencies = [
  "dirs",
  "indexmap 1.9.3",
@@ -644,6 +645,7 @@ checksum = "357703d41365b4b27c590e3ed91eabb1b663f07c4c084095e60cbed4362dff0d"
 [[package]]
 name = "sc2-macro"
 version = "1.0.0"
+source = "git+https://github.com/JurajKralik/rust-sc2#47bb210d5670df15c3bbc697765e0d0d34119d6a"
 dependencies = [
  "sc2-proc-macro",
 ]
@@ -651,6 +653,7 @@ dependencies = [
 [[package]]
 name = "sc2-pathfinding"
 version = "1.0.0"
+source = "git+https://github.com/JurajKralik/rust-sc2#47bb210d5670df15c3bbc697765e0d0d34119d6a"
 dependencies = [
  "arrayvec",
  "pathfinding",
@@ -660,6 +663,7 @@ dependencies = [
 [[package]]
 name = "sc2-proc-macro"
 version = "1.0.0"
+source = "git+https://github.com/JurajKralik/rust-sc2#47bb210d5670df15c3bbc697765e0d0d34119d6a"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -670,6 +674,7 @@ dependencies = [
 [[package]]
 name = "sc2-proto"
 version = "0.2.4"
+source = "git+https://github.com/JurajKralik/rust-sc2#47bb210d5670df15c3bbc697765e0d0d34119d6a"
 dependencies = [
  "protobuf",
 ]

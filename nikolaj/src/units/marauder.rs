@@ -21,7 +21,7 @@ pub fn marauder_control(bot: &mut Nikolaj, unit: &Unit) {
             if !low_health || surroundings.clone().closest_threat.is_none() {
                 attack_no_spam(unit, Target::Tag(target.tag()));
             } else {
-                flee_bio(bot, unit, surroundings.clone());
+                bio_flee(bot, unit, surroundings.clone());
             }
         // Join defense or attack
         } else if bot.strategy_data.defend {
@@ -64,7 +64,7 @@ pub fn marauder_control(bot: &mut Nikolaj, unit: &Unit) {
             }
         // Threats, flee
         } else if in_danger || low_health {
-            flee_bio(bot, unit, surroundings.clone());
+            bio_flee(bot, unit, surroundings.clone());
         } else if bot.strategy_data.defend {
             let defend_point = bot.strategy_data.defense_point;
             move_no_spam(unit, Target::Pos(defend_point));

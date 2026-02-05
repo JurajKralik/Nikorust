@@ -6,6 +6,7 @@ pub struct UnitSnapshot {
     pub unit: Unit,
     pub last_seen: f32,
     pub is_snapshot: bool,
+    pub combat_relevant: bool,
 }
 
 impl UnitSnapshot {
@@ -14,6 +15,7 @@ impl UnitSnapshot {
             unit,
             last_seen,
             is_snapshot: false,
+            combat_relevant: true,
         }
     }
     

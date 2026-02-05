@@ -3,7 +3,7 @@ use crate::units::helpers::surroundings::*;
 use crate::Nikolaj;
 use rust_sc2::{prelude::*, units::AllUnits};
 
-pub fn flee_bio(bot: &mut Nikolaj, unit: &Unit, surroundings: SurroundingsInfo) {
+pub fn bio_flee(bot: &mut Nikolaj, unit: &Unit, surroundings: SurroundingsInfo) {
     let units = bot.units.clone();
     if flee_to_bunker(units.clone(), unit) {
         return;

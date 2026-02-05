@@ -3,6 +3,10 @@ use rust_sc2::prelude::*;
 
 use crate::strategy::unit_snapshot::UnitSnapshot;
 
+
+const FADE_OUT_TIME: f32 = 45.0;
+const COMBAT_RELEVANT_TIME: f32 = 8.0;
+
 #[derive(Default, Clone)]
 pub struct EnemyArmySnapshot {
     pub units: Vec<UnitSnapshot>
@@ -24,7 +28,9 @@ pub fn refresh_enemy_army_snapshot(bot: &mut Nikolaj) {
     delete_outdated_enemy_snapshots(bot);
     let dead_units = bot.state.observation.raw.dead_units.clone();
     delete_dead_enemy_snapshots(bot, dead_units);
+    check_combat_relevance(bot);
 }
+
 fn get_visible_enemies(bot: &Nikolaj) -> Vec<UnitSnapshot> {
     let enemies = bot.units.enemy.units.clone();
     let mut currently_visible_army: Vec<UnitSnapshot> = Vec::new();
@@ -34,6 +40,7 @@ fn get_visible_enemies(bot: &Nikolaj) -> Vec<UnitSnapshot> {
     }
     currently_visible_army
 }
+
 fn get_appended_enemy_army_snapshot(
     bot: &mut Nikolaj,
     visible_enemies: Vec<UnitSnapshot>,
@@ -55,16 +62,27 @@ fn get_appended_enemy_army_snapshot(
     }
     current_snapshot
 }
+
 fn delete_outdated_enemy_snapshots(bot: &mut Nikolaj) {
     let current_time = bot.time;
     bot.strategy_data
         .enemy_army
         .units
-        .retain(|snapshot| current_time - snapshot.last_seen <= 5.0);
+        .retain(|snapshot| current_time - snapshot.last_seen <= FADE_OUT_TIME);
 }
+
 fn delete_dead_enemy_snapshots(bot: &mut Nikolaj, dead_units: Vec<u64>) {
     bot.strategy_data
         .enemy_army
         .units
         .retain(|snapshot| !dead_units.contains(&snapshot.id()));
+}
+
+fn check_combat_relevance(bot: &mut Nikolaj) {
+    let current_time = bot.time;
+    for snapshot in bot.strategy_data.enemy_army.units.iter_mut() {
+        if snapshot.is_snapshot && (current_time - snapshot.last_seen) > COMBAT_RELEVANT_TIME {
+            snapshot.combat_relevant = false;
+        }
+    }
 }
