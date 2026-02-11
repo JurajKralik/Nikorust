@@ -53,6 +53,9 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit, options: Surroundin
     let sorted_structures = get_sorted_structures(&enemy_structures, unit.position(), unit.sight_range() + 2.0);
     
     for snapshot in sorted_snapshots {
+        if !snapshot.is_combat_relevant {
+            continue;
+        }
         let enemy = &snapshot.unit;
         let mut unit_in_advantage = true;
         
@@ -75,9 +78,6 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit, options: Surroundin
         
         // Targeting
         if can_attack(unit, enemy) {
-            if !snapshot.combat_relevant {
-                continue;
-            }
             if in_range(unit, enemy.clone()) {
                 // Better target
                 if let Some(best_target) = &surroundings.best_target_in_range {

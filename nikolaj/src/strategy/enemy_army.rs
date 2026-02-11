@@ -17,7 +17,7 @@ impl EnemyArmySnapshot {
         self.units.iter().filter(|unit| unit.type_id() == unit_type).map(|unit| unit.supply()).sum()
     }
     pub fn get_army_supply(&self) -> usize {
-        self.units.iter().map(|unit| unit.supply()).sum()
+        self.units.iter().filter(|unit| unit.is_combat_unit).map(|unit| unit.supply()).sum()
     }
 }
 
@@ -82,7 +82,7 @@ fn check_combat_relevance(bot: &mut Nikolaj) {
     let current_time = bot.time;
     for snapshot in bot.strategy_data.enemy_army.units.iter_mut() {
         if snapshot.is_snapshot && (current_time - snapshot.last_seen) > COMBAT_RELEVANT_TIME {
-            snapshot.combat_relevant = false;
+            snapshot.is_combat_relevant = false;
         }
     }
 }
