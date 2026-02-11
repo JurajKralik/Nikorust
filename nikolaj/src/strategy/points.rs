@@ -13,43 +13,38 @@ pub fn refresh_points(bot: &mut Nikolaj) {
 
 
 fn refresh_idle_point(bot: &mut Nikolaj) {
-    let bases_amount = bot.units.my.townhalls.ready().len();
-    if bases_amount == 1 {
-        if let Some(base) = bot.units.my.townhalls.ready().first() {
-            if base.position() == bot.start_location {
-                let ramp = bot
-                    .ramps
-                    .my
-                    .barracks_in_middle()
-                    .unwrap_or(Point2 { x: 0.0, y: 0.0 });
-                bot.strategy_data.idle_point = ramp.towards(bot.start_location, 8.0);
-                return;
+    let ready_townhalls = bot.units.my.townhalls.ready();
+
+    let mut closest_base: Option<Unit> = None;
+    let mut shortest_path_distance = i32::MAX;
+    let mut shortest_path: Option<Vec<Point2>> = None;
+    
+    for base in ready_townhalls {
+        if let Some(path) = bot.get_path(base.position(), bot.enemy_start, PathfindingUnitType::Ground, false, false) {
+            let path_distance = path.0.len() as i32;
+            if path_distance < shortest_path_distance {
+                shortest_path_distance = path_distance;
+                closest_base = Some(base);
+                shortest_path = Some(path.0);
             }
         }
     }
-    if bases_amount > 0 {
-        let ready_townhalls = bot.units.my.townhalls.ready();
-        let mut bases: Vec<_> = ready_townhalls.iter().collect();
-        bases.sort_unstable_by(|a, b| b.tag().cmp(&a.tag()));
-        let mut frontal_base: Option<&Unit> = None;
-        for base in bases {
-            if let Some(frontal) = frontal_base {
-                let distance_to_enemy = base.position().distance(bot.enemy_start) + 5.0;
-                let frontal_distance_to_enemy = frontal.position().distance(bot.enemy_start);
-                if distance_to_enemy < frontal_distance_to_enemy {
-                    frontal_base = Some(base);
-                }
+    
+    if let Some(base) = closest_base {
+        if let Some(path) = shortest_path {
+            if let Some(target_point) = path.iter().nth(5) {
+                bot.strategy_data.idle_point = *target_point;
+            } else if let Some(last_point) = path.last() {
+                bot.strategy_data.idle_point = *last_point;
             } else {
-                frontal_base = Some(base);
+                bot.strategy_data.idle_point = base.position().towards(bot.enemy_start, 5.0);
             }
         }
-        if let Some(frontal) = frontal_base {
-            bot.strategy_data.idle_point = frontal.position().towards(bot.enemy_start, 5.0);
-            return;
-        }
+    } else {
+        bot.strategy_data.idle_point = bot.start_location;
     }
-    bot.strategy_data.idle_point = bot.start_location;
 }
+
 fn refresh_defense_point(bot: &mut Nikolaj) {
     let enemies = bot.units.enemy.units.clone();
     bot.strategy_data.defend = false;
@@ -104,6 +99,7 @@ fn refresh_defense_point(bot: &mut Nikolaj) {
         }
     }
 }
+
 fn refresh_attack_point(bot: &mut Nikolaj) {
     let enemy_structures = bot.units.enemy.structures.clone();
     enemy_structures.iter().sort_by_distance(bot.start_location);
