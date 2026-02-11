@@ -157,7 +157,7 @@ fn main() -> SC2Result<()> {
         return run_vs_computer(
             &mut bot,
             Computer::new(Race::Terran, Difficulty::VeryHard, Some(AIBuild::RandomBuild)),
-            "BerlingradAIE",
+            "PylonAIE_v4",
             LaunchOptions {
                 realtime: false,
                 ..Default::default()

@@ -176,7 +176,13 @@ fn refresh_army_center(bot: &mut Nikolaj) {
         if frontal_units.len() >= 6 {
             break;
         }
-        if unit.can_attack() && !unit.type_id().is_worker() && unit.type_id() != UnitTypeId::Banshee && unit.type_id() != UnitTypeId::Reaper {
+        if unit.can_attack() 
+            && !unit.type_id().is_worker() 
+            && unit.type_id() != UnitTypeId::Banshee 
+            && unit.type_id() != UnitTypeId::Reaper 
+            && unit.type_id() != UnitTypeId::VikingAssault 
+            && unit.type_id() != UnitTypeId::VikingFighter 
+        {
             frontal_units.push(unit.clone());
         }
     }
