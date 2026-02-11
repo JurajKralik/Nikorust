@@ -118,6 +118,13 @@ pub fn flee_flying_unit(bot: &mut Nikolaj, unit: &Unit, surroundings: Surroundin
     let idle_point = bot.strategy_data.idle_point;
     move_no_spam(unit, Target::Pos(idle_point));
 }
+
+pub fn should_wait_for_tanks(bot: &Nikolaj, unit: &Unit) -> bool {
+    let close_tanks = bot.units.my.units.of_type_including_alias(UnitTypeId::SiegeTank).closer(6.0, unit.position());
+    let distanced_tanks = bot.units.my.units.of_type_including_alias(UnitTypeId::SiegeTank).closer(20.0, unit.position());
+    close_tanks.is_empty() && !distanced_tanks.is_empty()
+}
+
 fn combat_grid4(position: Point2, distance: f32) -> Vec<Point2> {
     let x = position.x;
     let y = position.y;
@@ -184,6 +191,13 @@ pub fn attack_no_spam(unit: &Unit, target: Target) {
     }
 
     unit.attack(target, false);
+}
+
+pub fn move_into_range(unit: &Unit, target: &Unit) {
+    let target_weapon_range = target.real_range_vs(unit);
+    let target_position = target.position();
+    let desired_position = target_position.towards(unit.position(), target_weapon_range + 2.0);
+    move_no_spam(unit, Target::Pos(desired_position));
 }
 
 pub fn move_no_spam(unit: &Unit, target: Target) {
