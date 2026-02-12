@@ -212,6 +212,9 @@ pub fn debug_show_strategy_points(bot: &mut Nikolaj) {
 
     let start_point = bot.start_location;
     let idle_point = bot.strategy_data.idle_point;
+    let defense_point = bot.strategy_data.defense_point;
+    let defense_active = bot.strategy_data.defend;
+    let attack_point = bot.strategy_data.attack_point;
     
     // Idle point - main hub
     bot.debug_sphere(idle_point, 0.5, "white");
@@ -219,13 +222,13 @@ pub fn debug_show_strategy_points(bot: &mut Nikolaj) {
     bot.debug_line(start_point, idle_point, "white");
 
     // Defense point - from idle
-    let defense_point = bot.strategy_data.defense_point;
-    bot.debug_sphere(defense_point, 0.5, "yellow");
-    bot.debug_text("DEFENSE", defense_point, "yellow", Some(14));
-    bot.debug_line_offset(idle_point, defense_point, "yellow", 0.0);
+    if defense_active{
+        bot.debug_sphere(defense_point, 0.5, "yellow");
+        bot.debug_text("DEFENSE", defense_point, "yellow", Some(14));
+        bot.debug_line_offset(idle_point, defense_point, "yellow", 0.0);
+    }
 
     // Attack point - from idle
-    let attack_point = bot.strategy_data.attack_point;
     bot.debug_sphere(attack_point, 0.5, "red");
     bot.debug_text("ATTACK", attack_point, "red", Some(14));
     bot.debug_line_offset(idle_point, attack_point, "red", 0.5);
