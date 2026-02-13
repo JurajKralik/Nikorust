@@ -2,6 +2,13 @@
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null || echo "$(pwd)")"
 cd "$REPO_ROOT"
 
+if [ -f "$HOME/.cargo/env" ]; then
+    # Ensure Cargo/rustup bin is on PATH for non-interactive shells
+    # (this file is created by rustup-init)
+    # shellcheck source=/dev/null
+    source "$HOME/.cargo/env"
+fi
+
 echo "Repo root: $REPO_ROOT"
 
 if [[ -f "utils/version_control.py" ]]; then
