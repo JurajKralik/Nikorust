@@ -1,8 +1,7 @@
-use crate::Nikolaj;
-use crate::helpers::construction::*;
-use rust_sc2::prelude::*;
 use crate::consts::*;
-
+use crate::helpers::construction::*;
+use crate::Nikolaj;
+use rust_sc2::prelude::*;
 
 const CLOAK_AND_BURROW: &'static [UnitTypeId] = &[
     UnitTypeId::DarkTemplar,
@@ -17,60 +16,59 @@ const CLOAK_AND_BURROW: &'static [UnitTypeId] = &[
 ];
 
 pub fn construct_command_center(bot: &mut Nikolaj) {
-    // One at a time
-    if bot.already_pending(UnitTypeId::CommandCenter) > 0 {
+    if !should_build_command_center(bot) {
         return;
     }
-
-    // Don't expand if enemy is flooding
-    if bot.strategy_data.enemy_flooding || bot.strategy_data.enemy_worker_rush{
-        return;
-    }
-
-    // Under construction
-    for under_construction in bot.construction_info.under_construction.iter() {
-        if under_construction.structure == UnitTypeId::CommandCenter {
-            return;
-        }
-    }
-
-    // Resources
-    if !bot.can_afford(UnitTypeId::CommandCenter, false) {
-        return;
-    }
-
-    // Saturation check
-    if bot.supply_workers < (bot.units.my.townhalls.len() * 20) as u32 {
-        return;
-    }
-
-    // Position check
+    
     let position = bot.get_expansion();
     let position = match position {
         None => return,
         Some(pos) => pos.loc,
     };
 
-    // Safety check
     let enemies_nearby = bot.units.enemy.units.closer(20.0, position);
     for unit in enemies_nearby {
-        if unit.can_attack_ground() {
+        if unit.can_attack_ground() && !UNITS_PRIORITY_IGNORE.contains(&unit.type_id().clone()){
             return;
         }
     }
-    
-    // Expand
+
     let structure = UnitTypeId::CommandCenter;
     build(bot, position, structure);
+}
+
+fn should_build_command_center(bot: &Nikolaj) -> bool {
+    let already_ordered = bot
+        .construction_info
+        .under_construction
+        .iter()
+        .any(|c| c.structure == UnitTypeId::CommandCenter);
+    let already_pending = bot.already_pending(UnitTypeId::CommandCenter) > 0;
+    let enemy_flooding = bot.strategy_data.enemy_flooding;
+    let enemy_worker_rush = bot.strategy_data.enemy_worker_rush;
+    let can_afford = bot.can_afford(UnitTypeId::CommandCenter, false);
+    let undersaturated = bot.supply_workers < (bot.units.my.townhalls.len() * 20) as u32;
+
+    if already_ordered
+        || already_pending
+        || enemy_flooding
+        || enemy_worker_rush
+        || !can_afford
+        || undersaturated
+    {
+        return false;
+    }
+
+    true
 }
 
 pub fn control_command_center(bot: &mut Nikolaj) {
     for base in &bot.units.my.townhalls.ready() {
         if base.is_flying() {
-             flying_base_control(bot, base);
-             continue;
+            flying_base_control(bot, base);
+            continue;
         }
-             
+
         //Lift
         if base.is_idle()
             && !bot
@@ -138,9 +136,7 @@ pub fn control_command_center(bot: &mut Nikolaj) {
             }
             if energy >= energy_needed {
                 let close_minerals = bot.units.mineral_fields.closer(10.0, base);
-                if let Some(max_contents_minerals) =
-                    close_minerals.max(|u| u.mineral_contents())
-                {
+                if let Some(max_contents_minerals) = close_minerals.max(|u| u.mineral_contents()) {
                     base.command(
                         AbilityId::CalldownMULECalldownMULE,
                         Target::Tag(max_contents_minerals.tag()),
@@ -148,10 +144,8 @@ pub fn control_command_center(bot: &mut Nikolaj) {
                     );
                     continue;
                 } else {
-                    for other_base in bot.units.my.townhalls.clone()
-                    {
-                        let close_minerals =
-                            bot.units.mineral_fields.closer(10.0, &other_base);
+                    for other_base in bot.units.my.townhalls.clone() {
+                        let close_minerals = bot.units.mineral_fields.closer(10.0, &other_base);
 
                         if let Some(max_contents_minerals) =
                             close_minerals.max(|u| u.mineral_contents())
@@ -170,7 +164,6 @@ pub fn control_command_center(bot: &mut Nikolaj) {
                     continue;
                 }
             }
-            
         }
         if base.is_idle() {
             //Morph to Planetary
@@ -230,7 +223,8 @@ pub fn control_command_center(bot: &mut Nikolaj) {
             }
 
             let ideal_saturation = bot.supply_workers >= get_ideal_scv_count(bot);
-            let scv_capped = bot.supply_workers + (bot.already_pending(UnitTypeId::SCV) as u32) >= 70;
+            let scv_capped =
+                bot.supply_workers + (bot.already_pending(UnitTypeId::SCV) as u32) >= 70;
 
             if !ideal_saturation && !scv_capped && bot.can_afford(UnitTypeId::SCV, true) {
                 base.train(UnitTypeId::SCV, false);
@@ -242,7 +236,12 @@ pub fn control_command_center(bot: &mut Nikolaj) {
 }
 
 fn flying_base_control(bot: &mut Nikolaj, base: &Unit) {
-    let enemies = bot.units.enemy.units.closer(15.0, base).exclude_types(&UNITS_PRIORITY_IGNORE.to_vec());
+    let enemies = bot
+        .units
+        .enemy
+        .units
+        .closer(15.0, base)
+        .exclude_types(&UNITS_PRIORITY_IGNORE.to_vec());
     let mut ground_threat: Option<Unit> = None;
 
     //Flee
@@ -276,7 +275,12 @@ fn get_ideal_scv_count(bot: &Nikolaj) -> u32 {
     for base in &bot.units.my.townhalls.ready() {
         ideal_scv_count += base.ideal_harvesters();
     }
-    for refinery in bot.units.my.structures.of_type_including_alias(UnitTypeId::Refinery) {
+    for refinery in bot
+        .units
+        .my
+        .structures
+        .of_type_including_alias(UnitTypeId::Refinery)
+    {
         ideal_scv_count += refinery.ideal_harvesters();
     }
     ideal_scv_count
