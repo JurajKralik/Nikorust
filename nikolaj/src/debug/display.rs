@@ -343,8 +343,13 @@ pub fn debug_show_strategy_monitor(bot: &mut Nikolaj) {
     
     if bot.strategy_data.enemy_ramp_blocking {
         status_texts.push(("ENEMY RAMP BLOCK", "blue", y_offset));
+        y_offset += offset;
     }
     
+    if bot.combat_info.detected {
+        status_texts.push(("DETECTED", "magenta", y_offset));
+    }
+
     for (text, color, offset) in status_texts {
         let position = Point2::new(0.02, 0.1 + (offset as f32 * 0.03));
         bot.debug_text_screen(text, position, color, Some(letter_size));

@@ -11,6 +11,33 @@ pub fn debug_spawn_unit(bot: &mut Nikolaj) {
     for chat_message in chat {
         let sender_id = chat_message.player_id;
         let message = chat_message.message.to_lowercase();
+
+        let parts: Vec<&str> = message.split_whitespace().collect();
+        if parts.first() == Some(&"step") {
+            if let Some(step_raw) = parts.get(1) {
+                match step_raw.parse::<u32>() {
+                    Ok(step) if step >= 1 => {
+                        bot.set_game_step(step);
+                        println!(
+                            "[DEBUGGER] {} Set game step to {} by player {}",
+                            bot.debugger.time, step, sender_id
+                        );
+                    }
+                    _ => {
+                        println!(
+                            "[DEBUGGER] {} Invalid game step '{}'. Use STEP X where X >= 1",
+                            bot.debugger.time, step_raw
+                        );
+                    }
+                }
+            } else {
+                println!(
+                    "[DEBUGGER] {} Missing game step value. Use STEP X where X >= 1",
+                    bot.debugger.time
+                );
+            }
+            continue;
+        }
         
         let is_enemy = message.starts_with("enemy ");
         let target_player_id = if is_enemy {
@@ -26,7 +53,6 @@ pub fn debug_spawn_unit(bot: &mut Nikolaj) {
                 .map(|(unit_type, count)| (*unit_type, Some(target_player_id), camera_pos, *count))
                 .collect::<Vec<_>>());
         } else if is_enemy {
-            let parts: Vec<&str> = message.split_whitespace().collect();
             if parts.len() >= 2 {
                 let unit_name = parts[1];
                 let count = if parts.len() >= 3 {

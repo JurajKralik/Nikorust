@@ -22,8 +22,11 @@ pub fn construct_refinery(bot: &mut Nikolaj) {
     }
 
     let mut geyser_tag = None;
-
     for base in bot.units.my.townhalls.ready() {
+        let nearby_geysers = bot.units.vespene_geysers.closer(10.0, base.position());
+        if nearby_geysers.is_empty() {
+            continue;
+        }
         if let Some(geyser) = bot.find_gas_placement(base.position()) {
             let vespene_contents = geyser.vespene_contents();
             if vespene_contents > 0 {
