@@ -3,6 +3,7 @@ use crate::units::helpers::surroundings::*;
 use crate::Nikolaj;
 use rust_sc2::{prelude::*, units::AllUnits};
 
+
 pub fn bio_flee(bot: &mut Nikolaj, unit: &Unit, surroundings: SurroundingsInfo) {
     let units = bot.units.clone();
     if flee_to_bunker(units.clone(), unit) {
@@ -119,6 +120,7 @@ pub fn flee_flying_unit(bot: &mut Nikolaj, unit: &Unit, surroundings: Surroundin
     move_no_spam(unit, Target::Pos(idle_point));
 }
 
+#[allow(unused)]
 pub fn should_wait_for_tanks(bot: &Nikolaj, unit: &Unit) -> bool {
     let close_tanks = bot.units.my.units.of_type_including_alias(UnitTypeId::SiegeTank).closer(6.0, unit.position());
     let distanced_tanks = bot.units.my.units.of_type_including_alias(UnitTypeId::SiegeTank).closer(20.0, unit.position());
@@ -193,6 +195,7 @@ pub fn attack_no_spam(unit: &Unit, target: Target) {
     unit.attack(target, false);
 }
 
+#[allow(unused)]
 pub fn move_into_range(unit: &Unit, target: &Unit) {
     let target_weapon_range = target.real_range_vs(unit);
     let target_position = target.position();

@@ -1,8 +1,7 @@
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
 use rust_sc2::units::AllUnits;
-use crate::units::marine::*;
-use crate::units::marauder::*;
+use crate::units::bio::*;
 use crate::units::reaper::*;
 use crate::units::ghost::*;
 use crate::units::hellion::*;
@@ -21,8 +20,8 @@ pub fn army_step(bot: &mut Nikolaj) {
     let units = get_combat_units(&bot.units.clone());
     for unit in &units {
         match unit.type_id() {
-            UnitTypeId::Marine => marine_control(bot, unit),
-            UnitTypeId::Marauder => marauder_control(bot, unit),
+            UnitTypeId::Marine => bio_control(bot, unit),
+            UnitTypeId::Marauder => bio_control(bot, unit),
             UnitTypeId::Reaper => reaper_control(bot, unit),
             UnitTypeId::Ghost => ghost_control(bot, unit),
             UnitTypeId::Hellion | UnitTypeId::HellionTank => hellion_control(bot, unit),
