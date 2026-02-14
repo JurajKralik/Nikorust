@@ -166,7 +166,11 @@ fn refresh_army_center(bot: &mut Nikolaj) {
             bio_units.push(unit.clone());
         }
         if let Some(center) = bio_units.center() {
-            bot.strategy_data.army_center = center;
+            if let Some(closest_unit) = bio_units.closest(center) {
+                bot.strategy_data.army_center = closest_unit.position();
+            } else {
+                bot.strategy_data.army_center = center;
+            }
             return;
         }
     }
@@ -187,7 +191,11 @@ fn refresh_army_center(bot: &mut Nikolaj) {
         }
     }
     if let Some(center) = frontal_units.center() {
-        bot.strategy_data.army_center = center;
+        if let Some(closest_unit) = frontal_units.closest(center) {
+            bot.strategy_data.army_center = closest_unit.position();
+        } else {
+            bot.strategy_data.army_center = center;
+        }
     } else {
         bot.strategy_data.army_center = attack_point;
     }
