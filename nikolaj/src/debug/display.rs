@@ -355,3 +355,17 @@ pub fn debug_show_strategy_monitor(bot: &mut Nikolaj) {
         bot.debug_text_screen(text, position, color, Some(letter_size));
     }
 }
+
+pub fn debug_show_main_path(bot: &mut Nikolaj) {
+    if !bot.debugger.displaying_main_path {
+        return;
+    }
+    let main_path = bot.map_manager.main_path.clone();
+    let mut last_point: Option<Point2> = None;
+    for point in main_path {
+        if let Some(last) = last_point {
+            bot.debug_line(last, point, "cyan");
+        }
+        last_point = Some(point);
+    }
+}

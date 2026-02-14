@@ -19,6 +19,7 @@ pub fn debug_step(bot: &mut Nikolaj) {
     display::debug_display_selected(bot);
     display::debug_show_heatmaps(bot);
     display::debug_show_strategy_monitor(bot);
+    display::debug_show_main_path(bot);
     
     printing::debug_print_repair(bot);
     printing::debug_print_resource_assignments(bot);
