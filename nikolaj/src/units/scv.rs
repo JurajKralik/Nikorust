@@ -49,7 +49,7 @@ pub fn scv_step(bot: &mut Nikolaj) {
     bot.worker_allocator.workers_movement(&bot.units.clone());
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct WorkerAllocator {
     pub debugger: NikolajDebugger,
     pub bases: Vec<u64>,

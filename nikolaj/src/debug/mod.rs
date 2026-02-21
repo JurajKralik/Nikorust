@@ -16,8 +16,9 @@ pub fn debug_step(bot: &mut Nikolaj) {
     display::debug_show_worker_roles(bot);
     display::debug_show_strategy_points(bot);
     display::debug_show_worker_mining_steps(bot);
-    display::debug_display_selected(bot);
-    display::debug_show_heatmaps(bot);
+    display::debug_display_details_selected(bot);
+    display::debug_show_heatmaps_selected(bot);
+    display::debug_show_surroundings_selected(bot);
     display::debug_show_strategy_monitor(bot);
     display::debug_show_main_path(bot);
     

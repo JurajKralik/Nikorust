@@ -2,6 +2,7 @@ use crate::Nikolaj;
 use crate::consts::UNITS_PRIORITY_LOW;
 use crate::units::helpers::combat_movement::*;
 use crate::units::helpers::surroundings::*;
+use crate::units::helpers::nearby_utilities::*;
 use rust_sc2::prelude::*;
 
 
@@ -12,59 +13,19 @@ pub fn bio_control(bot: &mut Nikolaj, unit: &Unit) {
     let closest = surroundings.closest_threat.clone();
     let fear = surroundings.closest_counter.clone();
 
-    let weapon_ready = unit.weapon_cooldown() < 0.2;
     let offensive = bot.strategy_data.attack;
     let defensive = bot.strategy_data.defend;
     let army_center = bot.strategy_data.army_center;
     let attack_point = bot.strategy_data.attack_point;
     let defense_point = bot.strategy_data.defense_point;
 
-    let mut bunker: Option<Unit> = None;
-    let bunkers = bot
-        .units
-        .my
-        .structures
-        .of_type(UnitTypeId::Bunker)
-        .ready()
-        .closer(20.0, unit.position());
-    if !bunkers.is_empty() {
-        bunker = bunkers.closest(unit.position()).cloned();
-    }
+    let bunker = get_closest_bunker(bot, unit);
+    let medivac = get_closest_medivac(bot, unit);
+    let tank_cover = get_closest_tank_cover(bot, unit);
+    #[allow(unused)]
+    let standing_on_depot = get_standing_on_depot(bot, unit);
 
-    let mut medivac: Option<Unit> = None;
-    for potential_medivac in bot
-        .units
-        .my
-        .units
-        .of_type(UnitTypeId::Medivac)
-        .closer(10.0, unit.position())
-    {
-        if potential_medivac.cargo_left() > 1 && potential_medivac.health_percentage() > 0.5 {
-            medivac = Some(potential_medivac.clone());
-            break;
-        }
-    }
-
-    let mut tank_cover: Option<Unit> = None;
-    for possible_tank in bot
-        .units
-        .my
-        .units
-        .of_type(UnitTypeId::SiegeTankSieged)
-        .closer(15.0, unit.position())
-        .iter()
-        .sort_by_distance(unit.position())
-    {
-        if let Some(closest_enemy) = &closest {
-            if closest_enemy.distance(possible_tank.position()) >= unit.distance(possible_tank.position()) {
-                tank_cover = Some(possible_tank.clone());
-                break;
-            }
-        } else {
-            tank_cover = Some(possible_tank.clone());
-            break;
-        }
-    }
+    let weapon_ready = unit.weapon_cooldown() < 0.2;
 
     if let Some(target_unit) = &target {
         if unit.health() > 30 && !UNITS_PRIORITY_LOW.contains(&target_unit.type_id()) {

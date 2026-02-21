@@ -6,6 +6,7 @@ use rust_sc2::prelude::*;
 
 #[derive(Clone)]
 pub struct SurroundingsInfo {
+    pub unit_tag: u64,
     pub best_target_in_range: Option<Unit>,
     pub better_target_off_range: Option<Unit>,
     pub closest_threat: Option<Unit>,
@@ -16,6 +17,7 @@ pub struct SurroundingsInfo {
 impl Default for SurroundingsInfo {
     fn default() -> Self {
         SurroundingsInfo {
+            unit_tag: 0,
             best_target_in_range: None,
             better_target_off_range: None,
             closest_threat: None,
@@ -52,6 +54,8 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit, options: Surroundin
     let enemy_structures = bot.units.enemy.structures.clone();
     let sorted_structures = get_sorted_structures(&enemy_structures, unit.position(), unit.sight_range() + 2.0);
     
+    surroundings.unit_tag = unit.tag();
+
     for snapshot in sorted_snapshots {
         if !snapshot.is_combat_relevant {
             continue;
@@ -149,6 +153,7 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit, options: Surroundin
             }
         }
     }
+    bot.debugger.add_surroundings(surroundings.clone());
     surroundings
 }
 

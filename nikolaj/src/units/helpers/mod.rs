@@ -6,3 +6,4 @@ pub mod combat_info;
 pub mod targeting;
 pub mod threat_detection;
 pub mod heatmap;
+pub mod nearby_utilities;

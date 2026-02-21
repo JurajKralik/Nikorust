@@ -1,6 +1,6 @@
-use crate::debug::types::*;
+use crate::{debug::types::*, units::helpers::surroundings::SurroundingsInfo};
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct NikolajDebugger {
     pub time: f32,
     pub printing_full_resource_assignments: bool,
@@ -21,12 +21,14 @@ pub struct NikolajDebugger {
     pub displaying_repair: bool,
     pub displaying_mining: bool,
     pub displaying_strategy_points: bool,
-    pub displaying_selected: bool,
-    pub displaying_heatmaps: bool,
+    pub displaying_details_selected: bool,
+    pub displaying_heatmaps_selected: bool,
+    pub displaying_surroundings_selected: bool,
     pub displaying_strategy_monitor: bool,
     pub displaying_main_path: bool,
     pub run_resource_assignments_checks: bool,
     pub workers_current_mining_steps: Vec<WorkersCurrentMiningStep>,
+    pub unit_surroundings: Vec<SurroundingsInfo>
 }
 
 impl Default for NikolajDebugger {
@@ -53,12 +55,14 @@ impl Default for NikolajDebugger {
                 displaying_repair: false,
                 displaying_mining: true,
                 displaying_strategy_points: true,
-                displaying_selected: true,
-                displaying_heatmaps: true,
+                displaying_details_selected: true,
+                displaying_heatmaps_selected: true,
+                displaying_surroundings_selected: true,
                 displaying_strategy_monitor: true,
                 displaying_main_path: true,
                 run_resource_assignments_checks: false,
                 workers_current_mining_steps: vec![],
+                unit_surroundings: vec![]
             }
         }
         #[cfg(not(any(feature = "wine_sc2", feature = "headless")))]
@@ -83,12 +87,14 @@ impl Default for NikolajDebugger {
                 displaying_repair: false,
                 displaying_mining: false,
                 displaying_strategy_points: false,
-                displaying_selected: true,
-                displaying_heatmaps: false,
+                displaying_details_selected: true,
+                displaying_heatmaps_selected: false,
+                displaying_surroundings_selected: false,
                 displaying_strategy_monitor: false,
                 displaying_main_path: false,
                 run_resource_assignments_checks: false,
                 workers_current_mining_steps: vec![],
+                unit_surroundings: vec![]
             }
         }
     }
@@ -104,5 +110,9 @@ impl NikolajDebugger {
                 step,
             });
         }
+    }
+
+    pub fn add_surroundings(&mut self, surroundings: SurroundingsInfo) {
+        self.unit_surroundings.push(surroundings)
     }
 }

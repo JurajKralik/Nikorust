@@ -256,17 +256,17 @@ pub fn debug_show_strategy_points(bot: &mut Nikolaj) {
     }
 }
 
-pub fn debug_display_selected(bot: &mut Nikolaj) {
-    if !bot.debugger.displaying_selected {
+pub fn debug_display_details_selected(bot: &mut Nikolaj) {
+    if !bot.debugger.displaying_details_selected {
         return;
     }
-    let mut selected_units: Vec<Unit> = vec![];
-    for unit in bot.units.my.all.iter().filter(|u| u.is_selected()) {
-        selected_units.push(unit.clone());
-    }
+
+    let selected_units = get_selected_units(bot);
+
     for unit in selected_units {
         let position = unit.position();
         let text = format!("Tag: {}\nType: {:?}", unit.tag(), unit.type_id());
+
         if let Some(worker_role) = bot.worker_allocator.worker_roles.get(&unit.tag()) {
             let role_text = format!("\nRole: {:?}", worker_role);
             let full_text = format!("{}{}", text, role_text);
@@ -277,14 +277,13 @@ pub fn debug_display_selected(bot: &mut Nikolaj) {
     }
 }
 
-pub fn debug_show_heatmaps(bot: &mut Nikolaj) {
-    if !bot.debugger.displaying_heatmaps {
+pub fn debug_show_heatmaps_selected(bot: &mut Nikolaj) {
+    if !bot.debugger.displaying_heatmaps_selected {
         return;
     }
-    let mut selected_units: Vec<Unit> = vec![];
-    for unit in bot.units.my.all.iter().filter(|u| u.is_selected()) {
-        selected_units.push(unit.clone());
-    }
+
+    let selected_units = get_selected_units(bot);
+
     let mut debug_texts: Vec<(String, Point2, &str, Option<u32>)> = vec![];
     for unit in selected_units {
         if let Some(heatmap) = bot.combat_info.heatmaps.get(&unit.tag()) {
@@ -309,6 +308,44 @@ pub fn debug_show_heatmaps(bot: &mut Nikolaj) {
     for (text, position, color, size) in debug_texts {
         bot.debug_text(&text, position, color, size);
     }
+}
+
+pub fn debug_show_surroundings_selected(bot: &mut Nikolaj) {
+    if !bot.debugger.displaying_surroundings_selected {
+        return;
+    }
+
+    let selected_units = get_selected_units(bot);
+    for unit in selected_units {
+        for surroundings in bot.debugger.unit_surroundings.clone() {
+            if surroundings.unit_tag != unit.tag() {
+                continue;
+            }
+            if let Some(target) = surroundings.best_target_in_range {
+                bot.debug_line(unit.position(), target.position(), "green");
+            }
+            if let Some(distanced) = surroundings.better_target_off_range {
+                bot.debug_line(unit.position(), distanced.position(), "blue");
+            }
+            if let Some(structure) = surroundings.closest_structure {
+                bot.debug_line(unit.position(), structure.position(), "yellow");
+            }
+            if let Some(threat) = surroundings.closest_threat {
+                bot.debug_line(unit.position(), threat.position(), "orange");
+            }
+            if let Some(counter) = surroundings.closest_counter {
+                bot.debug_line(unit.position(), counter.position(), "red");
+            }
+        }
+    }
+}
+
+fn get_selected_units(bot: &mut Nikolaj) -> Vec<Unit> {
+    let mut selected_units: Vec<Unit> = vec![];
+    for unit in bot.units.my.all.iter().filter(|u| u.is_selected()) {
+        selected_units.push(unit.clone());
+    }
+    selected_units
 }
 
 pub fn debug_show_strategy_monitor(bot: &mut Nikolaj) {
