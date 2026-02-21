@@ -10,6 +10,8 @@ pub use types::*;
 use crate::Nikolaj;
 
 pub fn debug_step(bot: &mut Nikolaj) {
+    empty_surroundings_cache(bot);
+
     display::debug_show_bases(bot);
     display::debug_show_mining(bot);
     display::debug_show_repair(bot);
@@ -35,4 +37,8 @@ pub fn debug_step(bot: &mut Nikolaj) {
 
 pub fn print_new_bases_assignments(old_bases: &Vec<u64>, new_bases: &Vec<u64>, time: f32) {
     printing::print_new_bases_assignments(old_bases, new_bases, time);
+}
+
+fn empty_surroundings_cache(bot: &mut Nikolaj) {
+    bot.debugger.unit_surroundings = Vec::new();
 }
