@@ -3,6 +3,7 @@ use crate::Nikolaj;
 use crate::strategy::unit_snapshot::UnitSnapshot;
 
 
+// Purpose : Checking health changes for detection of cloaked units
 #[derive(Default, Clone)]
 pub struct MyArmySnapshot {
     pub units: Vec<UnitSnapshot>

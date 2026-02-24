@@ -100,6 +100,13 @@ fn refresh_defense_point(bot: &mut Nikolaj) {
     }
 }
 
+fn refresh_army_center(bot: &mut Nikolaj) {
+    if let Some(army_leader) = bot.units.my.units.get(bot.strategy_data.army_leader_tag) {
+        bot.strategy_data.army_center = army_leader.position();
+        return;
+    }
+}
+
 fn refresh_attack_point(bot: &mut Nikolaj) {
     let enemy_structures = bot.units.enemy.structures.clone();
     enemy_structures.iter().sort_by_distance(bot.start_location);
@@ -148,56 +155,6 @@ fn refresh_attack_point(bot: &mut Nikolaj) {
         }
     } else {
         bot.strategy_data.attack_point = ramp;
-    }
-}
-fn refresh_army_center(bot: &mut Nikolaj) {
-    let attack_point = bot.strategy_data.attack_point;
-    let my_units = bot.units.my.units.clone();
-    // Prefer bio units for center
-    if bot.unit_count(UnitTypeId::Marine) + bot.unit_count(UnitTypeId::Marauder) > 6 {
-        let mut bio_units = Units::new();
-        for unit in my_units.iter().sort_by_distance(attack_point) {
-            if unit.type_id() != UnitTypeId::Marine && unit.type_id() != UnitTypeId::Marauder {
-                continue;
-            }
-            if bio_units.len() >= 6 {
-                break;
-            }
-            bio_units.push(unit.clone());
-        }
-        if let Some(center) = bio_units.center() {
-            if let Some(closest_unit) = bio_units.closest(center) {
-                bot.strategy_data.army_center = closest_unit.position();
-            } else {
-                bot.strategy_data.army_center = center;
-            }
-            return;
-        }
-    }
-    // Any combat units
-    let mut frontal_units = Units::new();
-    for unit in my_units.iter().sort_by_distance(attack_point) {
-        if frontal_units.len() >= 6 {
-            break;
-        }
-        if unit.can_attack() 
-            && !unit.type_id().is_worker() 
-            && unit.type_id() != UnitTypeId::Banshee 
-            && unit.type_id() != UnitTypeId::Reaper 
-            && unit.type_id() != UnitTypeId::VikingAssault 
-            && unit.type_id() != UnitTypeId::VikingFighter 
-        {
-            frontal_units.push(unit.clone());
-        }
-    }
-    if let Some(center) = frontal_units.center() {
-        if let Some(closest_unit) = frontal_units.closest(center) {
-            bot.strategy_data.army_center = closest_unit.position();
-        } else {
-            bot.strategy_data.army_center = center;
-        }
-    } else {
-        bot.strategy_data.army_center = attack_point;
     }
 }
 fn refresh_harass_points(bot: &mut Nikolaj) {
