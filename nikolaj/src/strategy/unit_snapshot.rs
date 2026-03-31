@@ -8,7 +8,7 @@ pub struct UnitSnapshot {
     pub unit: Unit,
     pub last_seen: f32,
     pub is_snapshot: bool,
-    pub is_combat_relevant: bool,
+    pub is_combat_relevant_position: bool,
     pub is_combat_unit: bool,
 }
 
@@ -19,7 +19,7 @@ impl UnitSnapshot {
             unit,
             last_seen,
             is_snapshot: false,
-            is_combat_relevant: true,
+            is_combat_relevant_position: true,
             is_combat_unit
         }
     }

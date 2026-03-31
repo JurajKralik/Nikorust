@@ -22,7 +22,6 @@ pub fn bio_control(bot: &mut Nikolaj, unit: &Unit) {
     let bunker = get_closest_bunker(bot, unit);
     let medivac = get_closest_medivac(bot, unit);
     let tank_cover = get_closest_tank_cover(bot, unit);
-    #[allow(unused)]
     let standing_on_depot = get_standing_on_depot(bot, unit);
 
     let weapon_ready = unit.weapon_cooldown() < 0.2;

@@ -57,7 +57,7 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit, options: Surroundin
     surroundings.unit_tag = unit.tag();
 
     for snapshot in sorted_snapshots {
-        if !snapshot.is_combat_relevant {
+        if !snapshot.is_combat_relevant_position {
             continue;
         }
         let enemy = &snapshot.unit;
