@@ -1,5 +1,6 @@
-# Build 
-./build.sh
+# Deploy directly to ladder
+./deploy.sh
+# Just build
 cargo build --release --target=x86_64-unknown-linux-musl
 # Run locally on Linux
 ./run.sh

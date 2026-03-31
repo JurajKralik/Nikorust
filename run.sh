@@ -16,4 +16,11 @@ if [ -f "$HOME/.cargo/env" ]; then
     source "$HOME/.cargo/env"
 fi
 
-cargo run --features wine_sc2
+# Create logs directory if it doesn't exist
+mkdir -p logs
+
+# Generate timestamp for unique log file
+LOG_FILE="logs/bot_$(date +%Y%m%d_%H%M%S).log"
+
+echo "Starting bot... Log file: $LOG_FILE"
+cargo run --features wine_sc2 2>&1 | tee "$LOG_FILE"
