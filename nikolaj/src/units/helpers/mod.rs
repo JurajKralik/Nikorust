@@ -1,4 +1,4 @@
-pub mod combat_units;
+pub mod army_micro_control;
 pub mod combat_movement;
 pub mod surroundings;
 pub mod workers_assignments;
@@ -6,4 +6,4 @@ pub mod combat_info;
 pub mod targeting;
 pub mod threat_detection;
 pub mod heatmap;
-pub mod nearby_utilities;
+pub mod nearby_utilities_reading;

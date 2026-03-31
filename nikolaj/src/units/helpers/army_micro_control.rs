@@ -42,7 +42,7 @@ fn get_combat_units(units: &AllUnits) -> Units {
     let mut combat_units: Units = Units::new();
 
     for unit in &units.my.units {
-        if !unit.type_id().is_worker() {
+        if !unit.type_id().is_worker() && unit.type_id() != UnitTypeId::MULE {
             combat_units.push(unit.clone());
         }
     }

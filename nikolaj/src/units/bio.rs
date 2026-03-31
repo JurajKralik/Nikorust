@@ -2,7 +2,7 @@ use crate::Nikolaj;
 use crate::consts::UNITS_PRIORITY_LOW;
 use crate::units::helpers::combat_movement::*;
 use crate::units::helpers::surroundings::*;
-use crate::units::helpers::nearby_utilities::*;
+use crate::units::helpers::nearby_utilities_reading::*;
 use rust_sc2::prelude::*;
 
 

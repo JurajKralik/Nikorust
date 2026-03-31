@@ -15,7 +15,7 @@ use crate::helpers::macro_manager::*;
 use crate::helpers::map_manager::*;
 use crate::strategy::*;
 use crate::units::scv::*;
-use crate::units::helpers::combat_units::*;
+use crate::units::helpers::army_micro_control::*;
 use crate::units::helpers::combat_info::*;
 
 
