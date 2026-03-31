@@ -144,7 +144,7 @@ pub fn debug_print_enemy_army_snapshot(bot: &mut Nikolaj) {
 
     println!("--- Enemy Army Snapshot ---");
     for unit in enemy_army_snapshot {
-        println!("Type: {:?}, Tag: {}, Snapshot: {}, At: {}", unit.type_id(), unit.id(), unit.is_snapshot, unit.last_seen);
+        println!("Type: {:?}, Tag: {}, Snapshot: {}, At: {}", unit.type_id(), unit.tag(), unit.is_snapshot, unit.last_seen);
     }
     println!("---------------------------");
 }

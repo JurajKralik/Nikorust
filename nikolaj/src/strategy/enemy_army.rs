@@ -30,7 +30,7 @@ impl EnemyArmySnapshot {
 
     fn append_snapshot(&mut self, enemies: Vec<UnitSnapshot>) {
         for unit in enemies {
-            if let Some(existing) = self.units.iter_mut().find(|e| e.id() == unit.id()) {
+            if let Some(existing) = self.units.iter_mut().find(|e| e.tag() == unit.tag()) {
                 existing.unit = unit.unit.clone();
                 existing.last_seen = unit.last_seen;
                 existing.is_snapshot = false;
@@ -52,9 +52,9 @@ impl EnemyArmySnapshot {
             if self.debugging {
                 println!("Enemy unit faded out: {:?}", snapshot.unit.type_id());
             }
-            outdated_units.push(snapshot.id());
+            outdated_units.push(snapshot.tag());
         }
-        self.units.retain(|snapshot| !outdated_units.contains(&snapshot.id()));
+        self.units.retain(|snapshot| !outdated_units.contains(&snapshot.tag()));
     }
 
     fn delete_dead_enemy_snapshots(&mut self, dead_units: Vec<u64>) {
@@ -63,7 +63,7 @@ impl EnemyArmySnapshot {
                 println!("Enemy unit died: {:?}", dead_unit);
             }
         }
-        self.units.retain(|snapshot| !dead_units.contains(&snapshot.id()));
+        self.units.retain(|snapshot| !dead_units.contains(&snapshot.tag()));
     }
 
     fn update_combat_relevance(&mut self, current_time: f32) {

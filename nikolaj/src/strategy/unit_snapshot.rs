@@ -24,7 +24,7 @@ impl UnitSnapshot {
         }
     }
     
-    pub fn id(&self) -> u64 {
+    pub fn tag(&self) -> u64 {
         self.unit.tag()
     }
     
