@@ -19,7 +19,7 @@ impl EnemyArmySnapshot {
     }
 
     pub fn get_army_supply(&self) -> usize {
-        self.units.iter().filter(|unit| unit.is_ignored_unit).map(|unit| unit.supply()).sum()
+        self.units.iter().filter(|unit| !unit.is_ignored_unit).map(|unit| unit.supply()).sum()
     }
 
     fn mark_all_as_snapshot(&mut self) {

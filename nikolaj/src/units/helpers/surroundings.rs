@@ -69,7 +69,7 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit, options: Surroundin
         compare_closest_structure(&mut surroundings, &structure);
         compare_threat_structure(&mut surroundings, &structure);
     }
-    
+
     bot.debugger.add_surroundings(surroundings.clone());
     surroundings
 }
@@ -82,7 +82,7 @@ fn get_sorted_valid_snapshots(enemy_snapshots: &Vec<UnitSnapshot>, position: Poi
         .cloned()
         .collect();
     valid_snapshots.retain(|snapshot| snapshot.is_position_still_relevant);
-    valid_snapshots.retain(|snapshot| snapshot.is_ignored_unit);
+    valid_snapshots.retain(|snapshot| !snapshot.is_ignored_unit);
     valid_snapshots.sort_by(|a, b| {
         let dist_a = position.distance(a.position());
         let dist_b = position.distance(b.position());

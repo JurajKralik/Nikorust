@@ -14,7 +14,7 @@ pub struct UnitSnapshot {
 
 impl UnitSnapshot {
     pub fn from_unit(unit: Unit, last_seen: f32) -> Self {
-        let is_ignored_unit = !UNITS_PRIORITY_IGNORE.contains(&unit.type_id());
+        let is_ignored_unit = UNITS_PRIORITY_IGNORE.contains(&unit.type_id());
         UnitSnapshot {
             unit,
             last_seen,
