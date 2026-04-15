@@ -44,15 +44,15 @@ impl Default for SurroundingsOptions {
 }
 
 pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit, options: SurroundingsOptions) -> SurroundingsInfo {
+    let mut surroundings = SurroundingsInfo::default();
     let targeting_priorities = get_targeting_priorities(&unit.type_id());
     let threat_levels = get_threat_levels(&unit.type_id());
-    let mut surroundings = SurroundingsInfo::default();
     
-    // Use enemy army snapshots instead of direct enemy units
+    let valid_range = unit.sight_range() + 2.0;
     let enemy_snapshots = bot.strategy_data.enemy_army.units.clone();
-    let sorted_snapshots: Vec<_> = get_sorted_snapshots(&enemy_snapshots, unit.position(), unit.sight_range() + 2.0);
+    let sorted_snapshots = get_sorted_valid_snapshots(&enemy_snapshots, unit.position(), valid_range);
     let enemy_structures = bot.units.enemy.structures.clone();
-    let sorted_structures = get_sorted_structures(&enemy_structures, unit.position(), unit.sight_range() + 2.0);
+    let sorted_structures = get_sorted_valid_structures(&enemy_structures, unit.position(), valid_range);
     
     surroundings.unit_tag = unit.tag();
 
@@ -158,21 +158,37 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit, options: Surroundin
 }
 
 
-fn get_sorted_snapshots(enemy_snapshots: &Vec<UnitSnapshot>, position: Point2, range: f32) -> Vec<UnitSnapshot> {
-    enemy_snapshots
+fn get_sorted_valid_snapshots(enemy_snapshots: &Vec<UnitSnapshot>, position: Point2, range: f32) -> Vec<UnitSnapshot> {
+    let mut valid_snapshots: Vec<_> = enemy_snapshots
         .iter()
         .filter(|snapshot| position.distance(snapshot.position()) <= range)
         .cloned()
-        .collect()
+        .collect();
+    
+    valid_snapshots.sort_by(|a, b| {
+        let dist_a = position.distance(a.position());
+        let dist_b = position.distance(b.position());
+        dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
+    });
+    
+    valid_snapshots
 }
 
 
-fn get_sorted_structures(enemy_structures: &Units, position: Point2, range: f32) -> Vec<Unit> {
-    enemy_structures
+fn get_sorted_valid_structures(enemy_structures: &Units, position: Point2, range: f32) -> Vec<Unit> {
+    let mut valid_structures: Vec<_> = enemy_structures
         .iter()
         .filter(|structure| position.distance(structure.position()) <= range)
         .cloned()
-        .collect()
+        .collect();
+    
+    valid_structures.sort_by(|a, b| {
+        let dist_a = position.distance(a.position());
+        let dist_b = position.distance(b.position());
+        dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
+    });
+    
+    valid_structures
 }
 
 
@@ -226,13 +242,11 @@ pub fn in_range_with_avoidance(attacker: Unit, target: Unit, extra_avoidance: f3
 
 fn better_of_targets(attacker: &Unit, current_target: &Unit, new_target: &Unit, targeting_priorities: TargetingPriorities) -> Unit {
     let current_target_damage = attacker.real_weapon_vs(current_target).damage as f32;
-    let current_target_health =
-        (current_target.health() + current_target.shield()) as f32;
+    let current_target_health = (current_target.health() + current_target.shield()) as f32;
     let current_target_dies = current_target_health - current_target_damage <= 0.0;
 
     let new_target_damage = attacker.real_weapon_vs(new_target).damage as f32;
-    let new_target_health =
-        (new_target.health() + new_target.shield()) as f32;
+    let new_target_health = (new_target.health() + new_target.shield()) as f32;
     let new_target_dies = new_target_health - new_target_damage <= 0.0;
     
     let higher_damage_target = if current_target_damage >= new_target_damage {current_target} else {new_target};
