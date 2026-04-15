@@ -19,171 +19,48 @@ pub fn bio_control(bot: &mut Nikolaj, unit: &Unit) {
     let attack_point = bot.strategy_data.attack_point;
     let defense_point = bot.strategy_data.defense_point;
 
-    let bunker = get_closest_bunker(bot, unit);
+    let bunker_request = bot.combat_info.get_bunker_by_unit(unit.tag());
     let medivac = get_closest_medivac(bot, unit);
     let tank_cover = get_closest_tank_cover(bot, unit);
-    let _standing_on_depot = get_standing_on_depot(bot, unit);
+    let standing_on_depot = get_standing_on_depot(bot, unit);
 
     let weapon_ready = unit.weapon_cooldown() < 0.2;
 
-    if let Some(target_unit) = &target {
-        if unit.health() > 30 && !UNITS_PRIORITY_LOW.contains(&target_unit.type_id()) {
-            use_stimpack(unit, &surroundings);
-        }
+    if should_stimpack(unit, &surroundings) {
+        use_stimpack(unit);
+        return;
+    }
 
-        if let Some(bunker_unit) = &bunker {
-            if defensive && bunker_unit.cargo_left() >= unit.cargo_size() {
-                let safe_to_load = if let Some(closest_enemy) = &closest {
-                    closest_enemy.distance(bunker_unit.position()) > unit.distance(bunker_unit.position())
-                } else {
-                    true
-                };
-                if safe_to_load {
-                    unit.smart(Target::Tag(bunker_unit.tag()), false);
-                    return;
-                }
-            }
-        }
-
-        if unit.health() < 20 && !weapon_ready {
-            if let (Some(medivac_unit), Some(closest_enemy)) = (&medivac, &closest) {
-                if in_range(closest_enemy, unit) {
-                    unit.smart(Target::Tag(medivac_unit.tag()), false);
-                    return;
-                }
-            }
-        }
-
-        let lowered_depots = bot
-            .units
-            .my
-            .structures
-            .of_type(UnitTypeId::SupplyDepotLowered);
-        if let Some(closest_enemy) = &closest {
-            if let Some(closest_depot) = lowered_depots.closest(unit.position()) {
-                if unit.distance(closest_depot.position()) < 1.0 && closest_enemy.distance(unit.position()) < 7.0 {
-                    let retreat_position = unit.position().towards(closest_enemy.position(), -2.0);
-                    move_no_spam(unit, Target::Pos(retreat_position));
-                    return;
-                }
-            }
-        }
-
-        if let Some(fear_unit) = &fear {
-            if in_range_with_avoidance(fear_unit, unit, 1.0) {
-                if let Some(tank) = &tank_cover {
-                    attack_no_spam(unit, Target::Pos(tank.position()));
-                } else {
-                    bio_flee(bot, unit, surroundings.clone());
-                }
-                return;
-            }
-        }
-
+    if let Some(target) = target {
         if weapon_ready {
-            attack_no_spam(unit, Target::Tag(target_unit.tag()));
+            unit.attack(Target::Tag(target.tag()), false);
             return;
         }
+    }
 
-        if let Some(tank) = &tank_cover {
-            if let Some(distanced_unit) = &distanced {
-                if unit.health() > 40 && offensive {
-                    move_no_spam(unit, Target::Pos(distanced_unit.position()));
-                    return;
-                }
-            }
-
-            if unit.health() < 20 {
-                if let Some(closest_enemy) = &closest {
-                    if in_range(closest_enemy, unit) {
-                        bio_flee(bot, unit, surroundings.clone());
-                        return;
-                    }
-                }
-            }
-
-            attack_no_spam(unit, Target::Pos(tank.position()));
-            return;
-        }
-
-        if let Some(distanced_unit) = &distanced {
-            if unit.health() > 40 && offensive {
-                move_no_spam(unit, Target::Pos(distanced_unit.position()));
-                return;
-            }
-        }
-
-        bio_flee(bot, unit, surroundings.clone());
+    if let Some(bunker) = bunker_request.and_then(|bunker_tag| bot.units.my.structures.iter().find_tag(bunker_tag)) {
+        unit.smart(Target::Tag(bunker.tag()), false);
         return;
     }
 
-    if let Some(distanced_unit) = &distanced {
-        if fear.is_none() && (offensive || tank_cover.is_some()) {
-            if unit.distance(army_center) < 25.0 || tank_cover.is_some() {
-                attack_no_spam(unit, Target::Tag(distanced_unit.tag()));
-            } else {
-                move_no_spam(unit, Target::Pos(army_center));
-            }
+    if let Some(tank) = tank_cover {
+        if unit.distance(&tank) > 6.0 {
+            move_no_spam(unit, Target::Pos(tank.position()));
             return;
         }
+    }
 
-        if let Some(tank) = &tank_cover {
-            attack_no_spam(unit, Target::Pos(tank.position()));
-            return;
-        }
-
-        if fear.is_some() {
-            bio_flee(bot, unit, surroundings.clone());
-            return;
-        }
-
-        if offensive {
-            move_no_spam(unit, Target::Pos(attack_point));
-        } else if defensive {
-            move_no_spam(unit, Target::Pos(defense_point));
-        } else {
-            move_no_spam(unit, Target::Pos(army_center));
-        }
+    if let Some(depot) = standing_on_depot {
+        let anti_depot_position = Target::Pos(unit.position().towards(depot.position(), -0.5));
+        unit.move_to(anti_depot_position, false);
         return;
     }
 
-    if defensive {
-        attack_no_spam(unit, Target::Pos(defense_point));
-        return;
-    }
-
-    if offensive {
-        if unit.distance(army_center) < 25.0 {
-            let tanks_35 = bot
-                .units
-                .my
-                .units
-                .of_type(UnitTypeId::SiegeTank)
-                .closer(35.0, unit.position());
-            let tanks_20 = bot
-                .units
-                .my
-                .units
-                .of_type(UnitTypeId::SiegeTank)
-                .closer(20.0, unit.position());
-
-            if !tanks_35.is_empty() && tanks_20.is_empty() {
-                if let Some(closest_tank) = tanks_35.closest(unit.position()) {
-                    attack_no_spam(unit, Target::Pos(closest_tank.position()));
-                    return;
-                }
-            }
-
-            attack_no_spam(unit, Target::Pos(attack_point));
-        } else {
-            attack_no_spam(unit, Target::Pos(army_center));
+    if let Some(medivac) = medivac {
+        if unit.health_percentage() < 0.5 && unit.distance(&medivac) > 4.0 {
+            move_no_spam(unit, Target::Pos(medivac.position()));
+            return;
         }
-        return;
     }
 
-    if unit.distance(defense_point) > 6.0 {
-        attack_no_spam(unit, Target::Pos(defense_point));
-    } else {
-        move_no_spam(unit, Target::Pos(bot.strategy_data.idle_point));
-    }
 }

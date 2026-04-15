@@ -241,6 +241,17 @@ impl Default for ConstructionInfo {
     }
 }
 
+impl ConstructionInfo {
+    pub fn is_under_construction(&self, structure: UnitTypeId) -> bool {
+        for under_construction in self.under_construction.iter() {
+            if under_construction.structure == structure {
+                return true;
+            }
+        }
+        false
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct UnderConstruction {
     pub worker_tag: u64,

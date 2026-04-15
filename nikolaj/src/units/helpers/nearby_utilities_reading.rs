@@ -1,19 +1,6 @@
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
 
-pub fn get_closest_bunker(bot: &Nikolaj, unit: &Unit) -> Option<Unit> {
-    let bunkers = bot
-        .units
-        .my
-        .structures
-        .of_type(UnitTypeId::Bunker)
-        .ready()
-        .closer(20.0, unit.position());
-    if !bunkers.is_empty() {
-        return bunkers.closest(unit.position()).cloned();
-    }
-    None
-}
 
 pub fn get_closest_medivac(bot: &Nikolaj, unit: &Unit) -> Option<Unit> {
     let medivacs = bot
@@ -29,13 +16,15 @@ pub fn get_closest_medivac(bot: &Nikolaj, unit: &Unit) -> Option<Unit> {
     None
 }
 
+const MINIMAL_TANK_DISTANCE: f32 = 15.0;
+
 pub fn get_closest_tank_cover(bot: &Nikolaj, unit: &Unit) -> Option<Unit> {
     for possible_tank in bot
         .units
         .my
         .units
         .of_type(UnitTypeId::SiegeTankSieged)
-        .closer(15.0, unit.position())
+        .closer(MINIMAL_TANK_DISTANCE, unit.position())
         .iter()
         .sort_by_distance(unit.position())
     {
@@ -44,7 +33,7 @@ pub fn get_closest_tank_cover(bot: &Nikolaj, unit: &Unit) -> Option<Unit> {
     None
 }
 
-pub fn get_standing_on_depot(bot: &Nikolaj, unit: &Unit) -> bool {
+pub fn get_standing_on_depot(bot: &Nikolaj, unit: &Unit) -> Option<Unit> {
     let depots = bot
         .units
         .my
@@ -52,7 +41,7 @@ pub fn get_standing_on_depot(bot: &Nikolaj, unit: &Unit) -> bool {
         .of_type(UnitTypeId::SupplyDepotLowered)
         .closer(1.5, unit.position());
     if !depots.is_empty() {
-        return true;
+        return depots.closest(unit.position()).cloned();
     }
-    false
+    None
 }

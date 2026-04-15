@@ -1,5 +1,6 @@
 use crate::units::helpers::threat_detection::*;
 use crate::units::helpers::surroundings::*;
+use crate::units::helpers::combat_info::*;
 use crate::Nikolaj;
 use rust_sc2::{prelude::*, units::AllUnits};
 
@@ -158,18 +159,6 @@ fn combat_grid8(position: Point2, distance: f32) -> Vec<Point2> {
 fn combat_grid8_pathable(bot: &mut Nikolaj, position: Point2, distance: f32) -> Vec<Point2> {
     let grid = combat_grid8(position, distance);
     grid.into_iter().filter(|p| bot.is_pathable(*p)).collect()
-}
-
-pub fn use_stimpack(unit: &Unit, surroundings: &SurroundingsInfo) {
-    if (surroundings.best_target_in_range.is_some()
-        || surroundings.better_target_off_range.is_some())
-        && !unit.has_buff(BuffId::Stimpack)
-        && !unit.has_buff(BuffId::StimpackMarauder)
-        && unit.health_percentage() > 0.5
-    {
-        unit.use_ability(AbilityId::EffectStimMarine, false);
-        unit.use_ability(AbilityId::EffectStimMarauder, false);
-    }
 }
 
 pub fn attack_no_spam(unit: &Unit, target: Target) {
@@ -357,4 +346,67 @@ pub fn banshee_cloak(unit: &Unit, surroundings: &SurroundingsInfo) -> bool {
         }
     }
     false
+}
+
+
+pub fn should_stimpack(unit: &Unit, surroundings: &SurroundingsInfo) -> bool {
+    (surroundings.best_target_in_range.is_some()
+        || surroundings.better_target_off_range.is_some())
+        && !unit.has_buff(BuffId::Stimpack)
+        && !unit.has_buff(BuffId::StimpackMarauder)
+        && unit.health_percentage() > 0.5
+        && (unit.abilities().map_or(false, |a| a.contains(&AbilityId::EffectStimMarine))
+        || unit.abilities().map_or(false, |a| a.contains(&AbilityId::EffectStimMarauder)))
+}
+
+pub fn use_stimpack(unit: &Unit) {
+    match unit.type_id() {
+        UnitTypeId::Marine => unit.use_ability(AbilityId::EffectStimMarine, false),
+        UnitTypeId::Marauder => unit.use_ability(AbilityId::EffectStimMarauder, false),
+        _ => {}
+    }
+}
+
+
+/// Assigns `unit` to the nearest open formation slot, creating a new formation if needed.
+///
+/// Returns the claimed position so the caller can decide what order to issue.
+pub fn join_formation(bot: &mut Nikolaj, unit: &Unit) -> Option<CombatFormationAssignment> {
+    let attack_point = bot.strategy_data.attack_point;
+    let facing_angle = {
+        let dx = attack_point.x - unit.position().x;
+        let dy = attack_point.y - unit.position().y;
+        dy.atan2(dx)
+    };
+
+    // Try to find a close slot in an existing formation
+    for formation in bot.combat_info.formations.iter_mut() {
+        if let Some(pos) = formation.closest_position(unit.position()) {
+            if unit.position().distance(pos) < 10.0 {
+                formation.claim_position(pos);
+                return Some(CombatFormationAssignment {
+                    position: pos,
+                    formation_leader: formation.leader
+                });
+            }
+        }
+    }
+
+    // No nearby formation — create a new one
+    let new_formation = CombatFormation::new(unit.tag(), unit.position(), facing_angle, 2.0, 5, 20);
+    let pos = new_formation.closest_position(unit.position());
+    bot.combat_info.formations.push(new_formation.clone());
+
+    if let Some(pos) = pos {
+        // Claim from the just-pushed formation
+        if let Some(formation) = bot.combat_info.formations.last_mut() {
+            formation.claim_position(pos);
+        }
+        Some(CombatFormationAssignment {
+            position: pos,
+            formation_leader: new_formation.leader
+        })
+    } else {
+        None
+    }
 }
