@@ -66,23 +66,10 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit, options: Surroundin
     validate_better_off_range_target(&mut surroundings, &targeting_priorities);
 
     for structure in sorted_structures {
-        if surroundings.closest_structure.is_none() {
-            if in_range(unit, &structure) {
-                surroundings.closest_structure = Some(structure.clone());
-            }
-        }
-        // Check threat
-        if structure_can_attack(&structure, unit) {
-            if surroundings.closest_threat.is_none() {
-                surroundings.closest_threat = Some(structure.clone());
-            }
-            if in_range_with_avoidance(&structure, unit, surroundings.options.extra_avoidance) {
-                if surroundings.threat_level == ThreatLevel::None {
-                    surroundings.threat_level = ThreatLevel::Danger;
-                }
-            }
-        }
+        compare_closest_structure(&mut surroundings, &structure);
+        compare_threat_structure(&mut surroundings, &structure);
     }
+    
     bot.debugger.add_surroundings(surroundings.clone());
     surroundings
 }
@@ -184,6 +171,37 @@ fn validate_better_off_range_target(surroundings: &mut SurroundingsInfo, targeti
             }
         }
         _ => {}
+    }
+}
+
+
+fn compare_closest_structure(surroundings: &mut SurroundingsInfo, structure: &Unit) {
+    let unit = &surroundings.unit;
+    if surroundings.closest_structure.is_none() {
+        if in_range(unit, &structure) {
+            surroundings.closest_structure = Some(structure.clone());
+        }
+    }
+}
+
+
+fn compare_threat_structure(surroundings: &mut SurroundingsInfo, structure: &Unit) {
+    let unit = &surroundings.unit;
+    if !structure_can_attack(&structure, unit) {
+        return;
+    }
+
+    if let Some(closest_threat) = &surroundings.closest_threat {
+        if closest_threat.distance(unit) < structure.distance(unit) {
+            return;
+        }
+    }
+
+    surroundings.closest_threat = Some(structure.clone());
+
+    if in_range_with_avoidance(&structure, unit, surroundings.options.extra_avoidance) 
+        && surroundings.threat_level == ThreatLevel::None {
+        surroundings.threat_level = ThreatLevel::Danger;
     }
 }
 
