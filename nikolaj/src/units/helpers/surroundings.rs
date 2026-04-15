@@ -38,7 +38,7 @@ impl Default for SurroundingsOptions {
 pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit, options: SurroundingsOptions) -> SurroundingsInfo {
     let mut surroundings = SurroundingsInfo {
         unit: unit.clone(),
-        options: options.clone(),
+        options,
         best_target_in_range: None,
         better_target_off_range: None,
         closest_threat: None,
@@ -58,25 +58,25 @@ pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit, options: Surroundin
     for snapshot in sorted_snapshots {
         let enemy = &snapshot.unit;
         
-        compare_closest_threat(&mut surroundings, enemy.clone());
-        compare_targeting(&mut surroundings, enemy.clone(), &targeting_priorities);
-        compare_closest_counter(&mut surroundings, enemy.clone(), &threat_levels);
+        compare_closest_threat(&mut surroundings, enemy);
+        compare_targeting(&mut surroundings, enemy, &targeting_priorities);
+        compare_closest_counter(&mut surroundings, enemy, &threat_levels);
     }
 
     validate_better_off_range_target(&mut surroundings, &targeting_priorities);
 
     for structure in sorted_structures {
         if surroundings.closest_structure.is_none() {
-            if in_range(unit, structure.clone()) {
+            if in_range(unit, &structure) {
                 surroundings.closest_structure = Some(structure.clone());
             }
         }
         // Check threat
-        if structure_can_attack(structure.clone(), unit) {
+        if structure_can_attack(&structure, unit) {
             if surroundings.closest_threat.is_none() {
                 surroundings.closest_threat = Some(structure.clone());
             }
-            if in_range_with_avoidance(structure.clone(), unit.clone(), options.extra_avoidance) {
+            if in_range_with_avoidance(&structure, unit, surroundings.options.extra_avoidance) {
                 if surroundings.threat_level == ThreatLevel::None {
                     surroundings.threat_level = ThreatLevel::Danger;
                 }
@@ -123,9 +123,9 @@ fn get_sorted_valid_structures(enemy_structures: &Units, position: Point2, range
 }
 
 
-fn compare_closest_threat(surroundings: &mut SurroundingsInfo, enemy: Unit) {
+fn compare_closest_threat(surroundings: &mut SurroundingsInfo, enemy: &Unit) {
     let unit = &surroundings.unit;
-    if !can_attack(&enemy, &unit) {
+    if !can_attack(enemy, unit) {
         return;
     }
 
@@ -134,34 +134,34 @@ fn compare_closest_threat(surroundings: &mut SurroundingsInfo, enemy: Unit) {
     }
 
     let extra_avoidance = surroundings.options.extra_avoidance;
-    if in_range_with_avoidance(enemy.clone(), unit.clone(), extra_avoidance) {
+    if in_range_with_avoidance(enemy, unit, extra_avoidance) {
         surroundings.threat_level = ThreatLevel::Danger;
     }
 }
 
 
-fn compare_targeting(surroundings: &mut SurroundingsInfo, enemy: Unit, targeting_priorities: &TargetingPriorities) {
+fn compare_targeting(surroundings: &mut SurroundingsInfo, enemy: &Unit, targeting_priorities: &TargetingPriorities) {
     let unit = &surroundings.unit;
-    if !can_attack(&unit, &enemy) {
+    if !can_attack(unit, enemy) {
         return;
     }
 
-    if in_range(unit, enemy.clone()) {
+    if in_range(unit, enemy) {
         surroundings.best_target_in_range = match &surroundings.best_target_in_range {
             None => Some(enemy.clone()),
-            Some(current_best) => Some(better_of_targets(unit, current_best, &enemy, &targeting_priorities)),
+            Some(current_best) => Some(better_of_targets(unit, current_best, enemy, targeting_priorities)),
         };
     } else {
         surroundings.better_target_off_range = match &surroundings.better_target_off_range {
-            None => Some(enemy),
-            Some(current_off_range_target) => {Some(better_of_targets(unit, current_off_range_target, &enemy, &targeting_priorities))},
+            None => Some(enemy.clone()),
+            Some(current_off_range_target) => {Some(better_of_targets(unit, current_off_range_target, enemy, targeting_priorities))},
             // Off range target will be cleaned up if worse than in range target after looping
         };
     }
 }
 
 
-fn compare_closest_counter(surroundings: &mut SurroundingsInfo, enemy: Unit, threat_levels: &ThreatLevels) {
+fn compare_closest_counter(surroundings: &mut SurroundingsInfo, enemy: &Unit, threat_levels: &ThreatLevels) {
     surroundings.closest_counter = threat_levels.get_higher_threat_unit(surroundings.closest_counter.clone(), enemy.clone());
 }
 
@@ -202,7 +202,7 @@ pub fn can_attack(attacker: &Unit, target: &Unit) -> bool {
 }
 
 
-pub fn structure_can_attack(attacker: Unit, target: &Unit) -> bool {
+pub fn structure_can_attack(attacker: &Unit, target: &Unit) -> bool {
     if attacker.type_id() == UnitTypeId::PhotonCannon || attacker.type_id() == UnitTypeId::Bunker {
         return true;
     }
@@ -216,12 +216,12 @@ pub fn structure_can_attack(attacker: Unit, target: &Unit) -> bool {
 }
 
 
-pub fn in_range(attacker: &Unit, target: Unit) -> bool {
-    in_range_with_avoidance(attacker.clone(), target, 0.0)
+pub fn in_range(attacker: &Unit, target: &Unit) -> bool {
+    in_range_with_avoidance(attacker, target, 0.0)
 }
 
 
-pub fn in_range_with_avoidance(attacker: Unit, target: Unit, extra_avoidance: f32) -> bool {
+pub fn in_range_with_avoidance(attacker: &Unit, target: &Unit, extra_avoidance: f32) -> bool {
     let distance = attacker.position().distance(target.position());
     if target.is_flying() {
         if distance <= attacker.air_range() + extra_avoidance {

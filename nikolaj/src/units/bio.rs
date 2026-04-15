@@ -47,7 +47,7 @@ pub fn bio_control(bot: &mut Nikolaj, unit: &Unit) {
 
         if unit.health() < 20 && !weapon_ready {
             if let (Some(medivac_unit), Some(closest_enemy)) = (&medivac, &closest) {
-                if in_range(closest_enemy, unit.clone()) {
+                if in_range(closest_enemy, unit) {
                     unit.smart(Target::Tag(medivac_unit.tag()), false);
                     return;
                 }
@@ -70,7 +70,7 @@ pub fn bio_control(bot: &mut Nikolaj, unit: &Unit) {
         }
 
         if let Some(fear_unit) = &fear {
-            if in_range_with_avoidance(fear_unit.clone(), unit.clone(), 1.0) {
+            if in_range_with_avoidance(fear_unit, unit, 1.0) {
                 if let Some(tank) = &tank_cover {
                     attack_no_spam(unit, Target::Pos(tank.position()));
                 } else {
@@ -95,7 +95,7 @@ pub fn bio_control(bot: &mut Nikolaj, unit: &Unit) {
 
             if unit.health() < 20 {
                 if let Some(closest_enemy) = &closest {
-                    if in_range(closest_enemy, unit.clone()) {
+                    if in_range(closest_enemy, unit) {
                         bio_flee(bot, unit, surroundings.clone());
                         return;
                     }
