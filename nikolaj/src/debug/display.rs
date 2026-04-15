@@ -318,7 +318,7 @@ pub fn debug_show_surroundings_selected(bot: &mut Nikolaj) {
     let selected_units = get_selected_units(bot);
     for unit in selected_units {
         for surroundings in bot.debugger.unit_surroundings.clone() {
-            if surroundings.unit_tag != unit.tag() {
+            if surroundings.unit.tag() != unit.tag() {
                 continue;
             }
             if let Some(target) = surroundings.best_target_in_range {

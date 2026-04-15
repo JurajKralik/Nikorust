@@ -19,7 +19,7 @@ impl EnemyArmySnapshot {
     }
 
     pub fn get_army_supply(&self) -> usize {
-        self.units.iter().filter(|unit| unit.is_combat_unit).map(|unit| unit.supply()).sum()
+        self.units.iter().filter(|unit| unit.is_ignored_unit).map(|unit| unit.supply()).sum()
     }
 
     fn mark_all_as_snapshot(&mut self) {
@@ -69,7 +69,7 @@ impl EnemyArmySnapshot {
     fn update_combat_relevance(&mut self, current_time: f32) {
         for snapshot in self.units.iter_mut() {
             if snapshot.is_snapshot && (current_time - snapshot.last_seen) > COMBAT_RELEVANT_TIME {
-                snapshot.is_combat_relevant_position = false;
+                snapshot.is_position_still_relevant = false;
             }
         }
     }

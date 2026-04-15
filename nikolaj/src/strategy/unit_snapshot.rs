@@ -8,19 +8,19 @@ pub struct UnitSnapshot {
     pub unit: Unit,
     pub last_seen: f32,
     pub is_snapshot: bool,
-    pub is_combat_relevant_position: bool,
-    pub is_combat_unit: bool,
+    pub is_position_still_relevant: bool,
+    pub is_ignored_unit: bool,
 }
 
 impl UnitSnapshot {
     pub fn from_unit(unit: Unit, last_seen: f32) -> Self {
-        let is_combat_unit = !UNITS_PRIORITY_IGNORE.contains(&unit.type_id());
+        let is_ignored_unit = !UNITS_PRIORITY_IGNORE.contains(&unit.type_id());
         UnitSnapshot {
             unit,
             last_seen,
             is_snapshot: false,
-            is_combat_relevant_position: true,
-            is_combat_unit
+            is_position_still_relevant: true,
+            is_ignored_unit
         }
     }
     

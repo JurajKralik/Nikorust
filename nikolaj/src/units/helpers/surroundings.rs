@@ -4,9 +4,11 @@ use crate::strategy::unit_snapshot::UnitSnapshot;
 use crate::Nikolaj;
 use rust_sc2::prelude::*;
 
+
 #[derive(Clone)]
 pub struct SurroundingsInfo {
-    pub unit_tag: u64,
+    pub unit: Unit,
+    pub options: SurroundingsOptions,
     pub best_target_in_range: Option<Unit>,
     pub better_target_off_range: Option<Unit>,
     pub closest_threat: Option<Unit>,
@@ -14,25 +16,14 @@ pub struct SurroundingsInfo {
     pub closest_structure: Option<Unit>,
     pub threat_level: ThreatLevel,
 }
-impl Default for SurroundingsInfo {
-    fn default() -> Self {
-        SurroundingsInfo {
-            unit_tag: 0,
-            best_target_in_range: None,
-            better_target_off_range: None,
-            closest_threat: None,
-            closest_counter: None,
-            closest_structure: None,
-            threat_level: ThreatLevel::None,
-        }
-    }
-}
+
 
 #[derive(Clone, Debug)]
 pub struct SurroundingsOptions {
     pub extra_avoidance: f32,
     pub advantage_only: bool,
 }
+
 
 impl Default for SurroundingsOptions {
     fn default() -> Self {
@@ -43,97 +34,36 @@ impl Default for SurroundingsOptions {
     }
 }
 
+
 pub fn get_surroundings_info(bot: &mut Nikolaj, unit: &Unit, options: SurroundingsOptions) -> SurroundingsInfo {
-    let mut surroundings = SurroundingsInfo::default();
+    let mut surroundings = SurroundingsInfo {
+        unit: unit.clone(),
+        options: options.clone(),
+        best_target_in_range: None,
+        better_target_off_range: None,
+        closest_threat: None,
+        closest_counter: None,
+        closest_structure: None,
+        threat_level: ThreatLevel::None,
+    };
+
     let targeting_priorities = get_targeting_priorities(&unit.type_id());
     let threat_levels = get_threat_levels(&unit.type_id());
-    
     let valid_range = unit.sight_range() + 2.0;
     let enemy_snapshots = bot.strategy_data.enemy_army.units.clone();
     let sorted_snapshots = get_sorted_valid_snapshots(&enemy_snapshots, unit.position(), valid_range);
     let enemy_structures = bot.units.enemy.structures.clone();
     let sorted_structures = get_sorted_valid_structures(&enemy_structures, unit.position(), valid_range);
-    
-    surroundings.unit_tag = unit.tag();
 
     for snapshot in sorted_snapshots {
-        if !snapshot.is_combat_relevant_position {
-            continue;
-        }
         let enemy = &snapshot.unit;
-        let mut unit_in_advantage = true;
         
-        // Check threat
-        if can_attack(enemy, unit) {
-            unit_in_advantage = false;
-            let is_harmless_worker =
-                enemy.type_id().is_worker() && enemy.distance(unit.position()) > 3.5;
-            if !is_harmless_worker {
-                if surroundings.closest_threat.is_none() {
-                    surroundings.closest_threat = Some(enemy.clone());
-                }
-                if in_range_with_avoidance(enemy.clone(), unit.clone(), options.extra_avoidance) {
-                    if surroundings.threat_level == ThreatLevel::None {
-                        surroundings.threat_level = ThreatLevel::Danger;
-                    }
-                }
-            }
-        }
-        
-        // Targeting
-        if can_attack(unit, enemy) {
-            if in_range(unit, enemy.clone()) {
-                // Better target
-                if let Some(best_target) = &surroundings.best_target_in_range {
-                    surroundings.best_target_in_range =
-                        Some(better_of_targets(unit, &best_target, enemy, targeting_priorities.clone()));
-                // First
-                } else {
-                    surroundings.best_target_in_range = Some(enemy.clone());
-                }
-            } else {
-                // Check advantage only
-                if options.advantage_only && !unit_in_advantage {
-                    continue;
-                }
-                // First
-                if surroundings.best_target_in_range.is_none()
-                    && surroundings.better_target_off_range.is_none()
-                {
-                    surroundings.better_target_off_range = Some(enemy.clone());
-                // Better from off range
-                } else if let Some(better_target_off_range) = &surroundings.better_target_off_range
-                {
-                    surroundings.better_target_off_range =
-                        Some(better_of_targets(unit, &better_target_off_range, enemy, targeting_priorities.clone()));
-                // Better than in range
-                } else if let Some(best_target_in_range) = &surroundings.best_target_in_range {
-                    let better_target = better_of_targets(unit, &best_target_in_range, enemy, targeting_priorities.clone());
-                    if better_target.tag() != best_target_in_range.tag() {
-                        surroundings.better_target_off_range = Some(better_target);
-                    }
-                }
-            }
-        }
-        
-        let higher_threat_level = threat_levels.compare_threat_levels(surroundings.closest_counter.clone(), enemy.clone());
-        if let Some(higher_threat) = higher_threat_level {
-            surroundings.closest_counter = Some(higher_threat);
-        }
+        compare_closest_threat(&mut surroundings, enemy.clone());
+        compare_targeting(&mut surroundings, enemy.clone(), &targeting_priorities);
+        compare_closest_counter(&mut surroundings, enemy.clone(), &threat_levels);
     }
 
-    // Avoid fake better target
-    match (
-        &surroundings.better_target_off_range,
-        &surroundings.best_target_in_range,
-    ) {
-        (Some(better), Some(best)) => {
-            if best.tag() == better_of_targets(unit, better, best, targeting_priorities).tag() {
-                surroundings.better_target_off_range = None;
-            }
-        }
-        _ => {}
-    }
+    validate_better_off_range_target(&mut surroundings, &targeting_priorities);
 
     for structure in sorted_structures {
         if surroundings.closest_structure.is_none() {
@@ -164,7 +94,8 @@ fn get_sorted_valid_snapshots(enemy_snapshots: &Vec<UnitSnapshot>, position: Poi
         .filter(|snapshot| position.distance(snapshot.position()) <= range)
         .cloned()
         .collect();
-    
+    valid_snapshots.retain(|snapshot| snapshot.is_position_still_relevant);
+    valid_snapshots.retain(|snapshot| snapshot.is_ignored_unit);
     valid_snapshots.sort_by(|a, b| {
         let dist_a = position.distance(a.position());
         let dist_b = position.distance(b.position());
@@ -189,6 +120,71 @@ fn get_sorted_valid_structures(enemy_structures: &Units, position: Point2, range
     });
     
     valid_structures
+}
+
+
+fn compare_closest_threat(surroundings: &mut SurroundingsInfo, enemy: Unit) {
+    let unit = &surroundings.unit;
+    if !can_attack(&enemy, &unit) {
+        return;
+    }
+
+    if surroundings.closest_threat.is_none() {
+        surroundings.closest_threat = Some(enemy.clone());
+    }
+
+    let extra_avoidance = surroundings.options.extra_avoidance;
+    if in_range_with_avoidance(enemy.clone(), unit.clone(), extra_avoidance) {
+        surroundings.threat_level = ThreatLevel::Danger;
+    }
+}
+
+
+fn compare_targeting(surroundings: &mut SurroundingsInfo, enemy: Unit, targeting_priorities: &TargetingPriorities) {
+    let unit = &surroundings.unit;
+    if !can_attack(&unit, &enemy) {
+        return;
+    }
+
+    if in_range(unit, enemy.clone()) {
+        surroundings.best_target_in_range = match &surroundings.best_target_in_range {
+            None => Some(enemy.clone()),
+            Some(current_best) => Some(better_of_targets(unit, current_best, &enemy, &targeting_priorities)),
+        };
+    } else {
+        surroundings.better_target_off_range = match &surroundings.better_target_off_range {
+            None => Some(enemy),
+            Some(current_off_range_target) => {Some(better_of_targets(unit, current_off_range_target, &enemy, &targeting_priorities))},
+            // Off range target will be cleaned up if worse than in range target after looping
+        };
+    }
+}
+
+
+fn compare_closest_counter(surroundings: &mut SurroundingsInfo, enemy: Unit, threat_levels: &ThreatLevels) {
+    surroundings.closest_counter = threat_levels.get_higher_threat_unit(surroundings.closest_counter.clone(), enemy.clone());
+}
+
+
+fn validate_better_off_range_target(surroundings: &mut SurroundingsInfo, targeting_priorities: &TargetingPriorities) {
+    if let Some(off_range_target) = &surroundings.better_target_off_range {
+        if can_attack(off_range_target, &surroundings.unit) && surroundings.options.advantage_only {
+            surroundings.better_target_off_range = None;
+            return;
+        }
+    }
+
+    match (
+        &surroundings.better_target_off_range,
+        &surroundings.best_target_in_range,
+    ) {
+        (Some(better), Some(best)) => {
+            if best.tag() == better_of_targets(&surroundings.unit, better, best, &targeting_priorities).tag() {
+                surroundings.better_target_off_range = None;
+            }
+        }
+        _ => {}
+    }
 }
 
 
@@ -240,7 +236,7 @@ pub fn in_range_with_avoidance(attacker: Unit, target: Unit, extra_avoidance: f3
 }
 
 
-fn better_of_targets(attacker: &Unit, current_target: &Unit, new_target: &Unit, targeting_priorities: TargetingPriorities) -> Unit {
+fn better_of_targets(attacker: &Unit, current_target: &Unit, new_target: &Unit, targeting_priorities: &TargetingPriorities) -> Unit {
     let current_target_damage = attacker.real_weapon_vs(current_target).damage as f32;
     let current_target_health = (current_target.health() + current_target.shield()) as f32;
     let current_target_dies = current_target_health - current_target_damage <= 0.0;

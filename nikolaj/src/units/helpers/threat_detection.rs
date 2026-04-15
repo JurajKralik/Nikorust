@@ -45,29 +45,34 @@ impl Default for ThreatLevels {
 
 impl ThreatLevels {
     pub fn get_threat_level(&self, unit_type: &UnitTypeId) -> ThreatLevel {
+        let mut max_threat = ThreatLevel::None;
+        
         for threat_info in &self.threats {
             if &threat_info.unit_type == unit_type {
-                return threat_info.threat_level;
+                if threat_info.threat_level > max_threat {
+                    max_threat = threat_info.threat_level;
+                }
             }
         }
 
-        ThreatLevel::None
+        max_threat
     }
-    pub fn compare_threat_levels(&self, unit_a: Option<Unit>, unit_b: Unit) -> Option<Unit> {
-        let threat_level_b = self.get_threat_level(&unit_b.type_id());
-        if threat_level_b == ThreatLevel::None {
-            return unit_a;
+
+    pub fn get_higher_threat_unit(&self, current_unit: Option<Unit>, new_unit: Unit) -> Option<Unit> {
+        let new_threat_level = self.get_threat_level(&new_unit.type_id());
+
+        if new_threat_level == ThreatLevel::None {
+            return current_unit;
         }
-        if let Some(unit_a) = unit_a {
-            let threat_level_a = self.get_threat_level(&unit_a.type_id());
-            if threat_level_a == threat_level_b {
-                return None;
-            } else if threat_level_a > threat_level_b {
-                return Some(unit_a);
+
+        if let Some(current_unit) = current_unit {
+            let current_threat_level = self.get_threat_level(&current_unit.type_id());
+            if new_threat_level > current_threat_level {
+                return Some(new_unit);
             }
-            return Some(unit_a);
+            return Some(current_unit);
         }
-        None
+        Some(new_unit)
     }
 }
 

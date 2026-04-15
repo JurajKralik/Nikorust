@@ -298,10 +298,7 @@ lazy_static! {
         let mut list: HashMap<UnitTypeId, ThreatLevels> = HashMap::new();
 
         // === BANSHEE
-        add_threats(&mut list, UnitTypeId::Banshee, ThreatLevel::Flee, &[
-            UnitTypeId::MissileTurret,
-            UnitTypeId::SporeCrawler,
-            UnitTypeId::PhotonCannon,
+        add_threats(&mut list, UnitTypeId::Banshee, ThreatLevel::Countered, &[
             UnitTypeId::Thor,
             UnitTypeId::ThorAALance,
             UnitTypeId::ThorAAWeapon,
@@ -312,6 +309,17 @@ lazy_static! {
             UnitTypeId::Infestor,
             UnitTypeId::InfestorBurrowed,
             UnitTypeId::Viper,
+        ]);
+
+        add_threats(&mut list, UnitTypeId::Banshee, ThreatLevel::Flee, &[
+            UnitTypeId::MissileTurret,
+            UnitTypeId::SporeCrawler,
+            UnitTypeId::PhotonCannon,
+            UnitTypeId::Observer,
+            UnitTypeId::ObserverSiegeMode,
+            UnitTypeId::Overseer,
+            UnitTypeId::OverseerSiegeMode,
+            UnitTypeId::Raven,
         ]);
 
         // === BATTLECRUISER

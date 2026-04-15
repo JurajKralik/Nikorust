@@ -21,14 +21,14 @@ pub fn banshee_control(bot: &mut Nikolaj, unit: &Unit) {
     let heatmap = get_heatmap_for_unit(bot, unit.tag(), heatmap_options);
     let weapon_ready = unit.weapon_cooldown() < 0.2;
     let in_repair_list = bot.worker_allocator.repair.contains_key(&unit.tag());
-    let in_danger = surroundings.clone().threat_level > ThreatLevel::None;
+    let in_danger = surroundings.threat_level > ThreatLevel::None;
 
     if banshee_cloak(unit, &surroundings) {
         return;
     }
 
     if in_repair_list {
-        if surroundings.clone().closest_threat.is_some() || in_danger {
+        if surroundings.closest_threat.is_some() || in_danger {
             flee_flying_unit(bot, unit, surroundings.clone());
         } else {
             let closest_repair_point = get_closest_repair_point(bot, unit);
@@ -52,7 +52,6 @@ pub fn banshee_control(bot: &mut Nikolaj, unit: &Unit) {
             if in_danger {
                 flee_flying_unit(bot, unit, surroundings.clone());
             } else if let Some(best_position) = heatmap.get_best_position() {
-                bot.debug_cube(best_position, 2.0, "blue");
                 move_no_spam(unit, Target::Pos(best_position));
             } else {
                 if let Some(target) = surroundings.better_target_off_range {
