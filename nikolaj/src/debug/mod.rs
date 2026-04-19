@@ -10,8 +10,6 @@ use crate::Nikolaj;
 use crate::units::helpers::surroundings::SurroundingsInfo;
 
 pub fn debug_step(bot: &mut Nikolaj) {
-    empty_surroundings_cache(bot);
-
     display::debug_show_bases(bot);
     display::debug_show_mining(bot);
     display::debug_show_repair(bot);
@@ -33,6 +31,8 @@ pub fn debug_step(bot: &mut Nikolaj) {
     printing::debug_resource_assignments_checks(bot);
     
     spawning::debug_spawn_unit(bot);
+
+    empty_surroundings_cache(bot);
 }
 
 pub fn print_new_bases_assignments(old_bases: &Vec<u64>, new_bases: &Vec<u64>, time: f32) {
@@ -139,7 +139,7 @@ impl Default for NikolajDebugger {
                 displaying_strategy_points: false,
                 displaying_details_selected: true,
                 displaying_heatmaps_selected: false,
-                displaying_surroundings_selected: false,
+                displaying_surroundings_selected: true,
                 displaying_strategy_monitor: false,
                 displaying_main_path: false,
                 run_resource_assignments_checks: false,
