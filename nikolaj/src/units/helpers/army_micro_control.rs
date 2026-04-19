@@ -46,5 +46,6 @@ fn get_combat_units(units: &AllUnits) -> Units {
             combat_units.push(unit.clone());
         }
     }
+    combat_units.sort(|a| a.tag());
     combat_units
 }

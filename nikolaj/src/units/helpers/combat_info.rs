@@ -105,60 +105,31 @@ impl CombatFormation {
     ///
     /// Columns run along the facing direction (front-to-back),
     /// rows are perpendicular (left-to-right).
-    /// Each row produces 5 slots: center, left, right, far-left, far-right.
     pub fn new(leader: u64, origin: Point2, facing_angle: f32, spacing: f32, rows: i32, columns: i32) -> Self {
         let back_angle = facing_angle + PI;
         let dx = back_angle.cos();
         let dy = back_angle.sin();
 
         let perp_left_angle = facing_angle + 0.5 * PI;
-        let perp_right_angle = facing_angle + 1.5 * PI;
         let px_l = perp_left_angle.cos();
         let py_l = perp_left_angle.sin();
-        let px_r = perp_right_angle.cos();
-        let py_r = perp_right_angle.sin();
-
-        let col_start = -(columns / 2);
-        let col_end = columns / 2;
-        let row_start = -(rows / 2);
-        let row_end = rows / 2;
 
         let mut positions = Vec::new();
 
-        for c in col_start..col_end {
+        for c in 0..columns {
             let cx = origin.x + dx * spacing * c as f32;
             let cy = origin.y + dy * spacing * c as f32;
 
-            for r in row_start..row_end {
+            let row_offset = (rows - 1) as f32 / 2.0;
+            for r in 0..rows {
+                let r_centered = r as f32 - row_offset;
                 let slot = Point2::new(
-                    cx + px_l * spacing * r as f32,
-                    cy + py_l * spacing * r as f32,
+                    cx + px_l * spacing * r_centered,
+                    cy + py_l * spacing * r_centered,
                 );
-                // Center
                 positions.push(slot);
-                // Left offset
-                positions.push(Point2::new(
-                    slot.x + px_l * spacing,
-                    slot.y + py_l * spacing,
-                ));
-                // Right offset
-                positions.push(Point2::new(
-                    slot.x + px_r * spacing,
-                    slot.y + py_r * spacing,
-                ));
-                // Far left
-                positions.push(Point2::new(
-                    slot.x + px_l * spacing * 2.0,
-                    slot.y + py_l * spacing * 2.0,
-                ));
-                // Far right
-                positions.push(Point2::new(
-                    slot.x + px_r * spacing * 2.0,
-                    slot.y + py_r * spacing * 2.0,
-                ));
             }
         }
-
         CombatFormation { positions, leader }
     }
 

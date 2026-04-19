@@ -406,3 +406,15 @@ pub fn debug_show_main_path(bot: &mut Nikolaj) {
         last_point = Some(point);
     }
 }
+
+pub fn debug_show_combat_formations(bot: &mut Nikolaj) {
+    if !bot.debugger.displaying_combat_formations {
+        return;
+    }
+    println!("[DEBUG] Displaying combat formations: {}", bot.combat_info.formations.len());
+    for formation in bot.combat_info.formations.clone() {
+        for point in formation.positions {
+            bot.debug_sphere(point, 0.1, "blue");
+        }
+    }
+}

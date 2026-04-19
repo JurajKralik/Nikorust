@@ -29,5 +29,5 @@ pub fn tank_control(bot: &mut Nikolaj, unit: &Unit) {
         return;
     }
 
-    attack_no_spam(unit, Target::Pos(bot.strategy_data.army_center));
+    join_strategy(bot, unit);
 }

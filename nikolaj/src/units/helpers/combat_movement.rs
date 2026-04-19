@@ -162,12 +162,13 @@ fn combat_grid8_pathable(bot: &mut Nikolaj, position: Point2, distance: f32) -> 
 }
 
 pub fn attack_no_spam(unit: &Unit, target: Target) {
+    const DISTANCE_THRESHOLD: f32 = 4.0;
     if let Target::Pos(target_position) = target {
-        if unit.position().distance(target_position) < 1.0 {
+        if unit.position().distance(target_position) < DISTANCE_THRESHOLD {
             return;
         }
         if let Some(ordered_position) = unit.target_pos() {
-            if ordered_position.distance(target_position) < 1.0 {
+            if ordered_position.distance(target_position) < DISTANCE_THRESHOLD {
                 return;
             }
         }
@@ -349,29 +350,50 @@ pub fn banshee_cloak(unit: &Unit, surroundings: &SurroundingsInfo) -> bool {
 }
 
 
-pub fn should_stimpack(unit: &Unit, surroundings: &SurroundingsInfo) -> bool {
-    (surroundings.best_target_in_range.is_some()
-        || surroundings.better_target_off_range.is_some())
-        && !unit.has_buff(BuffId::Stimpack)
-        && !unit.has_buff(BuffId::StimpackMarauder)
-        && unit.health_percentage() > 0.5
-        && (unit.abilities().map_or(false, |a| a.contains(&AbilityId::EffectStimMarine))
-        || unit.abilities().map_or(false, |a| a.contains(&AbilityId::EffectStimMarauder)))
-}
+pub fn join_strategy(bot: &mut Nikolaj, unit: &Unit) {
+    let offensive = bot.strategy_data.attack;
+    let defensive = bot.strategy_data.defend;
+    let attack_point = bot.strategy_data.attack_point;
+    let defense_point = bot.strategy_data.defense_point;
+    let idle_point = bot.strategy_data.idle_point;
 
-pub fn use_stimpack(unit: &Unit) {
-    match unit.type_id() {
-        UnitTypeId::Marine => unit.use_ability(AbilityId::EffectStimMarine, false),
-        UnitTypeId::Marauder => unit.use_ability(AbilityId::EffectStimMarauder, false),
-        _ => {}
+    if defensive {
+        join_army_to_point(bot, unit, defense_point);
+    } else if offensive {
+        join_army_to_point(bot, unit, attack_point);
+    } else {
+        move_no_spam(unit, Target::Pos(idle_point));
     }
 }
 
+
+fn join_army_to_point(bot: &mut Nikolaj, unit: &Unit, point: Point2) {
+    let army_leader_tag = bot.strategy_data.army_leader_tag;
+    let army_center = bot.strategy_data.army_center;
+    if unit.tag() == army_leader_tag {
+        join_formation(bot, unit);
+        attack_no_spam(unit, Target::Pos(point));
+    } else {
+        let formation_assignment = join_formation(bot, unit);
+        if let Some(assignment) = formation_assignment {
+            if assignment.formation_leader != unit.tag() {
+                unit.move_to(Target::Pos(assignment.position), false);
+                return;
+            }
+        }
+        if unit.position().distance(army_center) > 15.0 {
+            attack_no_spam(unit, Target::Pos(army_center));
+        }
+        attack_no_spam(unit, Target::Pos(point));
+    }
+}
 
 /// Assigns `unit` to the nearest open formation slot, creating a new formation if needed.
 ///
 /// Returns the claimed position so the caller can decide what order to issue.
 pub fn join_formation(bot: &mut Nikolaj, unit: &Unit) -> Option<CombatFormationAssignment> {
+    // TODO: Walkable only
+    // TODO: no standing on my depots
     let attack_point = bot.strategy_data.attack_point;
     let facing_angle = {
         let dx = attack_point.x - unit.position().x;
@@ -393,7 +415,7 @@ pub fn join_formation(bot: &mut Nikolaj, unit: &Unit) -> Option<CombatFormationA
     }
 
     // No nearby formation — create a new one
-    let new_formation = CombatFormation::new(unit.tag(), unit.position(), facing_angle, 2.0, 5, 20);
+    let new_formation = CombatFormation::new(unit.tag(), unit.position(), facing_angle, 2.0, 5, 8);
     let pos = new_formation.closest_position(unit.position());
     bot.combat_info.formations.push(new_formation.clone());
 
