@@ -106,7 +106,7 @@ impl Nikolaj {
             "yellow" => Some((255, 255, 0)),
             "magenta" => Some((255, 0, 255)),
             "white" => Some((255, 255, 255)),
-            "orange" => Some((255, 165, 0)),
+            "orange" => Some((255, 100, 0)),
             "black" => Some((0, 0, 0)),
             _ => self.get_debug_color("white"),
         }

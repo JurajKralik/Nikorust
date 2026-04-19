@@ -105,6 +105,7 @@ fn refresh_army_center(bot: &mut Nikolaj) {
         bot.strategy_data.army_center = army_leader.position();
         return;
     }
+    bot.strategy_data.army_center = bot.strategy_data.idle_point;
 }
 
 fn refresh_attack_point(bot: &mut Nikolaj) {

@@ -20,7 +20,7 @@ fn should_try_build_bunker(bot: &Nikolaj) -> bool {
     let cannot_afford = !bot.can_afford(UnitTypeId::Bunker, false);
     let no_barracks = bot.units.my.structures.of_type_including_alias(UnitTypeId::Barracks).ready().is_empty();
     let already_have_bunker = bot.structure_count(UnitTypeId::Bunker) + bot.already_pending(UnitTypeId::Bunker) > 0;
-    let not_needed_for_one_base = bot.units.my.townhalls.ready().len() > 1 || bot.strategy_data.enemy_flooding;
+    let needed_for_defense = bot.units.my.townhalls.ready().len() > 1 || bot.strategy_data.enemy_flooding;
 
     if already_pending 
         || under_construction
@@ -28,7 +28,7 @@ fn should_try_build_bunker(bot: &Nikolaj) -> bool {
         || cannot_afford
         || no_barracks
         || already_have_bunker
-        || not_needed_for_one_base
+        || !needed_for_defense
     {
         return false;
     }
