@@ -23,7 +23,7 @@ pub fn bio_control(bot: &mut Nikolaj, unit: &Unit) {
         }
     }
 
-    if react_to_area(bot, unit) {
+    if react_to_area(bot, unit, &surroundings) {
         return;
     }
 
@@ -51,7 +51,7 @@ fn use_stimpack(unit: &Unit) {
 }
 
 
-fn react_to_area(bot: &mut Nikolaj, unit: &Unit) -> bool {
+fn react_to_area(bot: &mut Nikolaj, unit: &Unit, surroundings: &SurroundingsInfo) -> bool {
     let bunker_request = bot.combat_info.get_bunker_by_unit(unit.tag());
     let medivac = get_closest_medivac(bot, unit);
     let tank_cover = get_closest_tank_cover(bot, unit);
@@ -60,6 +60,10 @@ fn react_to_area(bot: &mut Nikolaj, unit: &Unit) -> bool {
     if let Some(bunker) = bunker_request.and_then(|bunker_tag| bot.units.my.structures.iter().find_tag(bunker_tag)) {
         unit.smart(Target::Tag(bunker.tag()), false);
         return true;
+    }
+
+    if surroundings.closest_counter.is_none() && surroundings.closest_threat.is_none() {
+        return false;
     }
 
     if let Some(tank) = tank_cover {
