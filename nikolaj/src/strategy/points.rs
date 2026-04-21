@@ -54,7 +54,7 @@ fn refresh_defense_point(bot: &mut Nikolaj) {
     let mut closest_enemy: Option<Unit> = None;
     let mut closest_distance = f32::MAX;
     for enemy in enemies {
-        if !enemy.can_attack() {
+        if !enemy.can_attack() || enemy.type_id().is_worker() {
             continue;
         }
         if enemy.position().distance(bot.enemy_start) < bot.enemy_start.distance(bot.start_location)/2.0 {
