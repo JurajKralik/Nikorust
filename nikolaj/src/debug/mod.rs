@@ -22,6 +22,7 @@ pub fn debug_step(bot: &mut Nikolaj) {
     display::debug_show_strategy_monitor(bot);
     display::debug_show_main_path(bot);
     display::debug_show_combat_formations(bot);
+    display::debug_show_chokepoints(bot);
     
     printing::debug_print_repair(bot);
     printing::debug_print_resource_assignments(bot);
@@ -74,6 +75,7 @@ pub struct NikolajDebugger {
     pub displaying_strategy_monitor: bool,
     pub displaying_main_path: bool,
     pub displaying_combat_formations: bool,
+    pub displaying_chokepoints: bool,
     pub run_resource_assignments_checks: bool,
     pub workers_current_mining_steps: Vec<WorkersCurrentMiningStep>,
     pub unit_surroundings: Vec<SurroundingsInfo>
@@ -111,6 +113,7 @@ impl Default for NikolajDebugger {
                 displaying_strategy_monitor: true,
                 displaying_main_path: true,
                 displaying_combat_formations: true,
+                displaying_chokepoints: true,
                 run_resource_assignments_checks: false,
                 workers_current_mining_steps: vec![],
                 unit_surroundings: vec![]
@@ -146,6 +149,7 @@ impl Default for NikolajDebugger {
                 displaying_strategy_monitor: false,
                 displaying_main_path: false,
                 displaying_combat_formations: false,
+                displaying_chokepoints: false,
                 run_resource_assignments_checks: false,
                 workers_current_mining_steps: vec![],
                 unit_surroundings: vec![]

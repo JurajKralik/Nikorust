@@ -411,10 +411,21 @@ pub fn debug_show_combat_formations(bot: &mut Nikolaj) {
     if !bot.debugger.displaying_combat_formations {
         return;
     }
-    println!("[DEBUG] Displaying combat formations: {}", bot.combat_info.formations.len());
     for formation in bot.combat_info.formations.clone() {
         for point in formation.positions {
             bot.debug_sphere(point, 0.1, "blue");
         }
+    }
+}
+
+
+pub fn debug_show_chokepoints(bot: &mut Nikolaj) {
+    if !bot.debugger.displaying_chokepoints {
+        return;
+    }
+    let chokepoints = bot.map_manager.choke_points.clone();
+    for chokepoint in chokepoints {
+        let chokepoint_center: Point2 = chokepoint.center_p2();
+        bot.debug_sphere(chokepoint_center, 1.0, "red");
     }
 }
