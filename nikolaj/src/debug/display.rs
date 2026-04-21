@@ -425,7 +425,13 @@ pub fn debug_show_chokepoints(bot: &mut Nikolaj) {
     }
     let chokepoints = bot.map_manager.choke_points.clone();
     for chokepoint in chokepoints {
-        let chokepoint_center: Point2 = chokepoint.center_p2();
-        bot.debug_sphere(chokepoint_center, 1.0, "red");
+        bot.debug_sphere(chokepoint, 1.0, "red");
+    }
+    let base_choke_points = bot.map_manager.base_choke_points.clone();
+    for (base_tag, base_choke) in base_choke_points.iter() {
+        if let Some(base) = bot.units.my.structures.iter().find_tag(*base_tag) {
+            let base_pos = base.position();
+            bot.debug_line(base_pos, *base_choke, "red");
+        }
     }
 }

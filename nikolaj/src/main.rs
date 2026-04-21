@@ -38,12 +38,13 @@ impl Player for Nikolaj {
     }
     fn on_start(&mut self) -> SC2Result<()> {
         self.start_game_report();
-        self.map_manager.choke_points = self.get_chokes_lazy().clone();
+        init_choke_points(self);
         init_main_path(self);
         Ok(())
     }
     fn on_step(&mut self, _iteration: usize) -> SC2Result<()> {
         self.time_step();
+        map_manager_step(self);
         scv_step(self);
         macro_manager_step(self);
         strategy_step(self);
