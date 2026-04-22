@@ -38,8 +38,7 @@ impl Player for Nikolaj {
     }
     fn on_start(&mut self) -> SC2Result<()> {
         self.start_game_report();
-        init_choke_points(self);
-        init_main_path(self);
+        init_map_manager(self);
         Ok(())
     }
     fn on_step(&mut self, _iteration: usize) -> SC2Result<()> {
