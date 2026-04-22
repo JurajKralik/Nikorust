@@ -427,17 +427,17 @@ pub fn debug_show_chokepoints(bot: &mut Nikolaj) {
     for chokepoint in chokepoints {
         bot.debug_sphere(chokepoint.position, 1.0, "red");
         bot.debug_line(chokepoint.main_line.0, chokepoint.main_line.1, "red");
-        
+
         for base_pos in chokepoint.base_positions {
             bot.debug_line(chokepoint.position, base_pos, "green");
         }
         for tank_pos in chokepoint.tank_positions {
-            bot.debug_line(chokepoint.position, tank_pos, "orange");
-            bot.debug_sphere(tank_pos, 0.5, "orange");
+            bot.debug_line(chokepoint.position, tank_pos.position, "orange");
+            bot.debug_sphere(tank_pos.position, 0.5, "orange");
         }
         for bio_pos in chokepoint.bio_positions {
-            bot.debug_line(chokepoint.position, bio_pos, "cyan");
-            bot.debug_sphere(bio_pos, 0.25, "cyan");
+            bot.debug_line(chokepoint.position, bio_pos.position, "cyan");
+            bot.debug_sphere(bio_pos.position, 0.25, "cyan");
         }
     }
 }

@@ -322,20 +322,20 @@ pub fn get_closest_repair_point(bot: &Nikolaj, unit: &Unit) -> Point2 {
 }
 
 
-pub fn join_strategy(bot: &mut Nikolaj, unit: &Unit) {
+pub fn join_strategy(bot: &mut Nikolaj, unit: &Unit) -> bool{
     let offensive = bot.strategy_data.attack;
     let defensive = bot.strategy_data.defend;
     let attack_point = bot.strategy_data.attack_point;
     let defense_point = bot.strategy_data.defense_point;
-    let idle_point = bot.strategy_data.idle_point;
 
     if defensive {
         join_army_to_point(bot, unit, defense_point);
+        return true;
     } else if offensive {
         join_army_to_point(bot, unit, attack_point);
-    } else {
-        move_no_spam(unit, Target::Pos(idle_point));
+        return true;
     }
+    false
 }
 
 

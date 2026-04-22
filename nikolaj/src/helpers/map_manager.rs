@@ -23,6 +23,32 @@ impl MapManager {
                     .unwrap_or(std::cmp::Ordering::Equal)
             })
     }
+    pub fn get_tank_positions_for_base(&self, base_position: Point2) -> Vec<TacticalPosition> {
+        self.choke_points.iter()
+            .find(|choke| choke.base_positions.contains(&base_position))
+            .map(|choke| choke.tank_positions.clone())
+            .unwrap_or_default()
+    }
+    pub fn get_tank_position_by_tag(&self, unit_tag: u64) -> Option<Point2> {
+        for choke in &self.choke_points {
+            for tank_pos in &choke.tank_positions {
+                if tank_pos.occupied_by == Some(unit_tag) {
+                    return Some(tank_pos.position);
+                }
+            }
+        }
+        None
+    }
+    pub fn mark_position_occupied(&mut self, position: Point2, unit_tag: u64) {
+        for choke in &mut self.choke_points {
+            for tank_pos in &mut choke.tank_positions {
+                if tank_pos.position == position {
+                    tank_pos.occupied_by = Some(unit_tag);
+                    return;
+                }
+            }
+        }
+    }
 }
 
 #[derive(Default, Clone)]
@@ -30,9 +56,8 @@ pub struct ChokePoint {
     pub position: Point2,
     pub main_line: (Point2, Point2),
     pub base_positions: Vec<Point2>,
-    pub tank_positions: Vec<Point2>,
-    pub bio_positions: Vec<Point2>,
-    pub pathable_only: bool
+    pub tank_positions: Vec<TacticalPosition>,
+    pub bio_positions: Vec<TacticalPosition>
 }
 
 impl ChokePoint {
@@ -42,11 +67,24 @@ impl ChokePoint {
             main_line: (Point2::new(main_line_raw.0 .0, main_line_raw.0 .1), Point2::new(main_line_raw.1 .0, main_line_raw.1 .1)),
             base_positions: Vec::new(),
             tank_positions: Vec::new(),
-            bio_positions: Vec::new(),
-            pathable_only: true
+            bio_positions: Vec::new()
         }
     }
 }
+
+#[derive(Default, Clone)]
+pub struct TacticalPosition {
+    pub position: Point2,
+    pub occupied_by: Option<u64>,
+    pub crowd_level: f32,
+}
+
+impl From<TacticalPosition> for Point2 {
+    fn from(tp: TacticalPosition) -> Point2 {
+        tp.position
+    }
+}
+
 
 pub fn init_map_manager(bot: &mut Nikolaj) {
     init_choke_points(bot);
@@ -65,6 +103,7 @@ pub fn init_main_path(bot: &mut Nikolaj) {
     println!("Failed to find main path between start and enemy locations.");
 }
 
+
 pub fn init_choke_points(bot: &mut Nikolaj) {
     let chokes_raw = bot.get_chokes_lazy().clone();
     for choke in chokes_raw {
@@ -78,7 +117,10 @@ pub fn init_choke_points(bot: &mut Nikolaj) {
 pub fn map_manager_step(bot: &mut Nikolaj) {
     check_base_choke_points(bot);
     check_tank_positions(bot);
+    compute_crowd_levels(bot);
+    cleanup_dead_units(bot);
 }
+
 
 fn check_base_choke_points(bot: &mut Nikolaj) {
     let base_positions: Vec<Point2> = bot.units.my.townhalls.ready()
@@ -118,9 +160,10 @@ fn check_tank_positions(bot: &mut Nikolaj) {
         }
         if bot.map_manager.choke_points[i].tank_positions.is_empty() {
             let new_positions = compute_positions_for_choke(&bot.map_manager.choke_points[i], 12.5);
-            let pathable_positions: Vec<Point2> = new_positions
+            let pathable_positions: Vec<TacticalPosition> = new_positions
                 .into_iter()
                 .filter(|&pos| bot.is_pathable(pos))
+                .map(|pos| TacticalPosition { position: pos, occupied_by: None, crowd_level: 0.0 })
                 .collect();
             bot.map_manager.choke_points[i].tank_positions = pathable_positions;
         }
@@ -151,4 +194,51 @@ fn compute_positions_for_choke(choke: &ChokePoint, range: f32) -> Vec<Point2> {
         angle += angle_step;
     }
     positions
+}
+
+
+pub fn compute_crowd_levels(bot: &mut Nikolaj) {
+    for choke in &mut bot.map_manager.choke_points {
+        compute_crowd_levels_for_group(&mut choke.tank_positions);
+        compute_crowd_levels_for_group(&mut choke.bio_positions);
+    }
+}
+
+
+fn compute_crowd_levels_for_group(positions: &mut Vec<TacticalPosition>) {
+    let occupied: Vec<Point2> = positions.iter()
+        .filter(|p| p.occupied_by.is_some())
+        .map(|p| p.position)
+        .collect();
+
+    for pos in positions.iter_mut() {
+        pos.crowd_level = occupied.iter()
+            .filter(|&&occ| occ != pos.position)
+            .map(|&occ| {
+                let dist = pos.position.distance(occ);
+                if dist > 0.0 { 1.0 / dist } else { f32::MAX }
+            })
+            .sum();
+    }
+}
+
+
+fn cleanup_dead_units(bot: &mut Nikolaj) {
+    let living_tags: Vec<u64> = bot.units.my.units.iter().map(|u| u.tag()).collect();
+    for choke in &mut bot.map_manager.choke_points {
+        for pos in &mut choke.tank_positions {
+            if let Some(tag) = pos.occupied_by {
+                if !living_tags.contains(&tag) {
+                    pos.occupied_by = None;
+                }
+            }
+        }
+        for pos in &mut choke.bio_positions {
+            if let Some(tag) = pos.occupied_by {
+                if !living_tags.contains(&tag) {
+                    pos.occupied_by = None;
+                }
+            }
+        }
+    }
 }

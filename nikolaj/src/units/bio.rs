@@ -7,6 +7,7 @@ use rust_sc2::prelude::*;
 
 pub fn bio_control(bot: &mut Nikolaj, unit: &Unit) {
     let surroundings = get_surroundings_info(bot, unit, SurroundingsOptions::default());
+    let idle_point = bot.strategy_data.idle_point;
 
     let target = &surroundings.best_target_in_range;
     let weapon_ready = unit.weapon_cooldown() < 0.2;
@@ -27,7 +28,11 @@ pub fn bio_control(bot: &mut Nikolaj, unit: &Unit) {
         return;
     }
 
-    join_strategy(bot, unit);
+    if join_strategy(bot, unit) {
+        return;
+    }
+    
+    move_no_spam(unit, Target::Pos(idle_point));
 }
 
 
