@@ -1,4 +1,4 @@
-use crate::Nikolaj;
+use crate::{Nikolaj, consts::ARMY_TYPES};
 use rust_sc2::prelude::*;
 
 
@@ -6,6 +6,7 @@ pub fn refresh_points(bot: &mut Nikolaj) {
     refresh_idle_point(bot);
     refresh_defense_point(bot);
     refresh_attack_point(bot);
+    refresh_army_leader(bot);
     refresh_army_center(bot);
     refresh_harass_points(bot);
     refresh_repair_points(bot);
@@ -98,6 +99,27 @@ fn refresh_defense_point(bot: &mut Nikolaj) {
             bot.strategy_data.defend = false;
         }
     }
+}
+
+fn refresh_army_leader(bot: &mut Nikolaj) {
+    let army_leader_tag = bot.strategy_data.army_leader_tag;
+    
+    if bot.units.my.units.contains_tag(army_leader_tag) {
+        return;
+    }
+
+    let my_army = bot.units.my.units.of_types(&ARMY_TYPES);
+    let army_center = my_army.center();
+    let army_center = match army_center {
+        None => return,
+        Some(pos) => pos,
+    };
+
+    let army_leader = my_army.closest(army_center);
+    if let Some(army_leader) = army_leader {
+        bot.strategy_data.army_leader_tag = army_leader.tag();
+    }
+
 }
 
 fn refresh_army_center(bot: &mut Nikolaj) {

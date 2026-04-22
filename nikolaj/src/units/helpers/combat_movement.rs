@@ -1,3 +1,4 @@
+use crate::consts::ARMY_TYPES;
 use crate::units::helpers::threat_detection::*;
 use crate::units::helpers::surroundings::*;
 use crate::units::helpers::combat_info::*;
@@ -371,8 +372,7 @@ fn join_army_to_point(bot: &mut Nikolaj, unit: &Unit, point: Point2) {
     let army_leader_tag = bot.strategy_data.army_leader_tag;
     let army_center = bot.strategy_data.army_center;
     if unit.tag() == army_leader_tag {
-        join_formation(bot, unit);
-        attack_no_spam(unit, Target::Pos(point));
+        lead_army(bot, unit, point);
     } else {
         let formation_assignment = join_formation(bot, unit);
         if let Some(assignment) = formation_assignment {
@@ -430,5 +430,23 @@ pub fn join_formation(bot: &mut Nikolaj, unit: &Unit) -> Option<CombatFormationA
         })
     } else {
         None
+    }
+}
+
+
+fn lead_army(bot: &mut Nikolaj, unit: &Unit, point: Point2) {
+    join_formation(bot, unit);
+    let army = bot.units.my.units.of_types(&ARMY_TYPES);
+    let army_center = match army.center() {
+        None => {
+            attack_no_spam(unit, Target::Pos(point));
+            return;
+        },
+        Some(pos) => pos,
+    };
+    if unit.distance(army_center) > 12.0 {
+        attack_no_spam(unit, Target::Pos(army_center));
+    } else {
+        attack_no_spam(unit, Target::Pos(point));
     }
 }

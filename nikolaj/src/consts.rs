@@ -90,6 +90,17 @@ pub const FLYING_UNITS: &[UnitTypeId] = &[
     UnitTypeId::Mothership,
 ];
 
+pub const ARMY_TYPES: &[UnitTypeId] = &[
+    UnitTypeId::Marine,
+    UnitTypeId::Marauder,
+    UnitTypeId::SiegeTank,
+    UnitTypeId::SiegeTankSieged,
+    UnitTypeId::Thor,
+    UnitTypeId::ThorAP,
+    UnitTypeId::ThorAALance,
+    UnitTypeId::ThorAAWeapon
+];
+
 lazy_static! {
     pub static ref TARGETING_PRIORITIES: TargetingPrioritiesList = {
         let mut list: HashMap<UnitTypeId, TargetingPriorities> = HashMap::new();
