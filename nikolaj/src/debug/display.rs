@@ -427,7 +427,11 @@ pub fn debug_show_chokepoints(bot: &mut Nikolaj) {
     for chokepoint in chokepoints {
         bot.debug_sphere(chokepoint.position, 1.0, "red");
         bot.debug_line(chokepoint.main_line.0, chokepoint.main_line.1, "red");
-
+        
+        if let Some(bunker_pos) = chokepoint.bunker_position {
+            bot.debug_sphere(bunker_pos, 0.5, "purple");
+            bot.debug_line(chokepoint.position, bunker_pos, "purple");
+        }
         for base_pos in chokepoint.base_positions {
             bot.debug_line(chokepoint.position, base_pos, "green");
         }

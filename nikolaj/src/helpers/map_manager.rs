@@ -57,7 +57,8 @@ pub struct ChokePoint {
     pub main_line: (Point2, Point2),
     pub base_positions: Vec<Point2>,
     pub tank_positions: Vec<TacticalPosition>,
-    pub bio_positions: Vec<TacticalPosition>
+    pub bio_positions: Vec<TacticalPosition>,
+    pub bunker_position: Option<Point2>,
 }
 
 impl ChokePoint {
@@ -67,7 +68,8 @@ impl ChokePoint {
             main_line: (Point2::new(main_line_raw.0 .0, main_line_raw.0 .1), Point2::new(main_line_raw.1 .0, main_line_raw.1 .1)),
             base_positions: Vec::new(),
             tank_positions: Vec::new(),
-            bio_positions: Vec::new()
+            bio_positions: Vec::new(),
+            bunker_position: None,
         }
     }
 }
@@ -117,8 +119,10 @@ pub fn init_choke_points(bot: &mut Nikolaj) {
 pub fn map_manager_step(bot: &mut Nikolaj) {
     check_base_choke_points(bot);
     check_tank_positions(bot);
+    check_bio_positions(bot);
+    check_bunker_positions(bot);
     compute_crowd_levels(bot);
-    cleanup_dead_units(bot);
+    cleanup_tactical_positions(bot);
 }
 
 
@@ -154,18 +158,55 @@ fn get_choke_point_for_base(bot: &mut Nikolaj, base_position: Point2) -> Option<
 
 
 fn check_tank_positions(bot: &mut Nikolaj) {
+    const SIEGE_TANK_RANGE: f32 = 12.8;
     for i in 0..bot.map_manager.choke_points.len() {
         if bot.map_manager.choke_points[i].base_positions.is_empty() {
             continue;
         }
         if bot.map_manager.choke_points[i].tank_positions.is_empty() {
-            let new_positions = compute_positions_for_choke(&bot.map_manager.choke_points[i], 12.5);
+            let new_positions = compute_positions_for_choke(&bot.map_manager.choke_points[i], SIEGE_TANK_RANGE);
             let pathable_positions: Vec<TacticalPosition> = new_positions
                 .into_iter()
                 .filter(|&pos| bot.is_pathable(pos))
                 .map(|pos| TacticalPosition { position: pos, occupied_by: None, crowd_level: 0.0 })
                 .collect();
             bot.map_manager.choke_points[i].tank_positions = pathable_positions;
+        }
+    }
+}
+
+
+fn check_bio_positions(bot: &mut Nikolaj) {
+    const BIO_RANGE: f32 = 6.0;
+    for i in 0..bot.map_manager.choke_points.len() {
+        if bot.map_manager.choke_points[i].base_positions.is_empty() {
+            continue;
+        }
+        if bot.map_manager.choke_points[i].bio_positions.is_empty() {
+            let new_positions = compute_positions_for_choke(&bot.map_manager.choke_points[i], BIO_RANGE);
+            let pathable_positions: Vec<TacticalPosition> = new_positions
+                .into_iter()
+                .filter(|&pos| bot.is_pathable(pos))
+                .map(|pos| TacticalPosition { position: pos, occupied_by: None, crowd_level: 0.0 })
+                .collect();
+            bot.map_manager.choke_points[i].bio_positions = pathable_positions;
+        }
+    }
+}
+
+
+fn check_bunker_positions(bot: &mut Nikolaj) {
+    const BIO_IN_BUNKER_RANGE: f32 = 7.0;
+    for i in 0..bot.map_manager.choke_points.len() {
+        if bot.map_manager.choke_points[i].base_positions.is_empty() {
+            continue;
+        }
+        let base_pos = bot.map_manager.choke_points[i].base_positions[0];
+        if bot.map_manager.choke_points[i].bunker_position.is_none() {
+            let bunker_pos = bot.map_manager.choke_points[i].position.towards(base_pos, BIO_IN_BUNKER_RANGE);
+            if bot.can_place(UnitTypeId::Bunker, bunker_pos) {
+                bot.map_manager.choke_points[i].bunker_position = Some(bunker_pos);
+            }
         }
     }
 }
@@ -223,7 +264,17 @@ fn compute_crowd_levels_for_group(positions: &mut Vec<TacticalPosition>) {
 }
 
 
-fn cleanup_dead_units(bot: &mut Nikolaj) {
+fn cleanup_tactical_positions(bot: &mut Nikolaj) {
+    if bot.strategy_data.attack {
+        for choke in &mut bot.map_manager.choke_points {
+            for pos in &mut choke.tank_positions {
+                pos.occupied_by = None;
+            }
+            for pos in &mut choke.bio_positions {
+                pos.occupied_by = None;
+            }
+        }
+    }
     let living_tags: Vec<u64> = bot.units.my.units.iter().map(|u| u.tag()).collect();
     for choke in &mut bot.map_manager.choke_points {
         for pos in &mut choke.tank_positions {
