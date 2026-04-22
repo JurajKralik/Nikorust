@@ -425,10 +425,19 @@ pub fn debug_show_chokepoints(bot: &mut Nikolaj) {
     }
     let chokepoints = bot.map_manager.choke_points.clone();
     for chokepoint in chokepoints {
-        bot.debug_sphere(chokepoint, 1.0, "red");
-    }
-    let base_choke_points = bot.map_manager.base_choke_points.clone();
-    for (base_pos, base_choke) in base_choke_points.iter() {
-        bot.debug_line(*base_pos, *base_choke, "red");
+        bot.debug_sphere(chokepoint.position, 1.0, "red");
+        bot.debug_line(chokepoint.main_line.0, chokepoint.main_line.1, "red");
+        
+        for base_pos in chokepoint.base_positions {
+            bot.debug_line(chokepoint.position, base_pos, "green");
+        }
+        for tank_pos in chokepoint.tank_positions {
+            bot.debug_line(chokepoint.position, tank_pos, "orange");
+            bot.debug_sphere(tank_pos, 0.5, "orange");
+        }
+        for bio_pos in chokepoint.bio_positions {
+            bot.debug_line(chokepoint.position, bio_pos, "cyan");
+            bot.debug_sphere(bio_pos, 0.25, "cyan");
+        }
     }
 }
