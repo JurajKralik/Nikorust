@@ -1,4 +1,5 @@
 use crate::consts::ARMY_TYPES;
+use crate::consts::FORMATION_SPACING;
 use crate::units::helpers::threat_detection::*;
 use crate::units::helpers::surroundings::*;
 use crate::units::helpers::combat_info::*;
@@ -349,8 +350,10 @@ fn join_army_to_point(bot: &mut Nikolaj, unit: &Unit, point: Point2) {
         if let Some(assignment) = formation_assignment {
             if assignment.formation_leader != unit.tag() {
                 unit.move_to(Target::Pos(assignment.position), false);
-                return;
+            } else {
+                attack_no_spam(unit, Target::Pos(assignment.position));
             }
+            return;
         }
         if unit.position().distance(army_center) > 15.0 {
             attack_no_spam(unit, Target::Pos(army_center));
@@ -363,7 +366,6 @@ fn join_army_to_point(bot: &mut Nikolaj, unit: &Unit, point: Point2) {
 ///
 /// Returns the claimed position so the caller can decide what order to issue.
 pub fn join_formation(bot: &mut Nikolaj, unit: &Unit) -> Option<CombatFormationAssignment> {
-    // TODO: Walkable only
     // TODO: no standing on my depots
     let attack_point = bot.strategy_data.attack_point;
     let facing_angle = {
@@ -372,7 +374,6 @@ pub fn join_formation(bot: &mut Nikolaj, unit: &Unit) -> Option<CombatFormationA
         dy.atan2(dx)
     };
 
-    // Try to find a close slot in an existing formation
     for formation in bot.combat_info.formations.iter_mut() {
         if let Some(pos) = formation.closest_position(unit.position()) {
             if unit.position().distance(pos) < 10.0 {
@@ -389,8 +390,7 @@ pub fn join_formation(bot: &mut Nikolaj, unit: &Unit) -> Option<CombatFormationA
 
 
 fn create_formation(bot: &mut Nikolaj, unit: &Unit, facing_angle: f32) -> Option<CombatFormationAssignment> {
-    // No nearby formation — create a new one
-    let mut new_formation = CombatFormation::new(unit.tag(), unit.position(), facing_angle, 2.0, 5, 8);
+    let mut new_formation = CombatFormation::new(unit.tag(), unit.position(), facing_angle, FORMATION_SPACING, 5, 8);
     new_formation.retain_pathable(|(x, y)| bot.is_pathable(Point2::new(x as f32, y as f32)));
     let pos = new_formation.closest_position(unit.position());
     bot.combat_info.formations.push(new_formation.clone());
@@ -411,17 +411,15 @@ fn create_formation(bot: &mut Nikolaj, unit: &Unit, facing_angle: f32) -> Option
 
 
 fn lead_army(bot: &mut Nikolaj, unit: &Unit, point: Point2) {
-    join_formation(bot, unit);
     let army = bot.units.my.units.of_types(&ARMY_TYPES);
-    let army_center = match army.center() {
-        None => {
-            attack_no_spam(unit, Target::Pos(point));
-            return;
-        },
-        Some(pos) => pos,
-    };
-    if unit.distance(army_center) > 12.0 || should_wait_for_tanks(bot, unit) {
-        attack_no_spam(unit, Target::Pos(army_center));
+    let army_total_amount = army.len();
+    let nearby_army_amount = army.closer(12.0, unit.position()).len();
+    if nearby_army_amount < army_total_amount / 2 || should_wait_for_tanks(bot, unit) {
+        if let Some(formation_assignment) = join_formation(bot, unit) {
+            attack_no_spam(unit, Target::Pos(formation_assignment.position));
+        } else {
+            attack_no_spam(unit, Target::Pos(unit.position()));
+        }
     } else {
         attack_no_spam(unit, Target::Pos(point));
     }

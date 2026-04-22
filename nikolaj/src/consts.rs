@@ -4,6 +4,8 @@ use lazy_static::lazy_static;
 use rust_sc2::prelude::*;
 use std::collections::HashMap;
 
+pub const FORMATION_SPACING: f32 = 1.2;
+
 const WORKERS: &[UnitTypeId] = &[
     UnitTypeId::Drone,
     UnitTypeId::DroneBurrowed,

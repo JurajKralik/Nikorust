@@ -61,13 +61,14 @@ fn react_to_area(bot: &mut Nikolaj, unit: &Unit, surroundings: &SurroundingsInfo
     let medivac = get_closest_medivac(bot, unit);
     let tank_cover = get_closest_tank_cover(bot, unit);
     let standing_on_depot = get_standing_on_depot(bot, unit);
+    let no_threats = surroundings.closest_counter.is_none() && surroundings.closest_threat.is_none();
 
     if let Some(bunker) = bunker_request.and_then(|bunker_tag| bot.units.my.structures.iter().find_tag(bunker_tag)) {
         unit.smart(Target::Tag(bunker.tag()), false);
         return true;
     }
 
-    if surroundings.closest_counter.is_none() && surroundings.closest_threat.is_none() {
+    if no_threats {
         return false;
     }
 

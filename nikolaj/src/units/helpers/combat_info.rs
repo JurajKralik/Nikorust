@@ -1,5 +1,6 @@
 use crate::Nikolaj;
 use rand::Rng;
+use crate::consts::FORMATION_SPACING;
 use std::collections::HashMap;
 use std::f32::consts::PI;
 use crate::units::helpers::heatmap::{Heatmap};
@@ -10,7 +11,7 @@ pub fn combat_info_step(bot: &mut Nikolaj) {
     siege_timer_step(bot);
     bot.combat_info.detection_step(bot.time);
     bot.combat_info.heatmaps.clear();
-    bot.combat_info.formations.clear();
+    formations_step(bot);
     let structures = bot.units.enemy.structures.clone();
     bot.combat_info.cleanup_dead_bunkers(&structures);
 }
@@ -27,6 +28,24 @@ fn siege_timer_step(bot: &mut Nikolaj) {
     for timer in bot.combat_info.unsiege_timer.iter_mut() {
         timer.unsiege_in -= delta_time;
     }
+}
+
+fn formations_step(bot: &mut Nikolaj) {
+    bot.combat_info.formations.clear();
+
+    let army_leader_tag = bot.strategy_data.army_leader_tag;
+    if let Some(army_leader) = bot.units.my.units.iter().find_tag(army_leader_tag) {
+        let attack_point = bot.strategy_data.attack_point;
+        let facing_angle = {
+            let dx = attack_point.x - army_leader.position().x;
+            let dy = attack_point.y - army_leader.position().y;
+            dy.atan2(dx)
+        };
+        let mut new_formation = CombatFormation::new(army_leader_tag, army_leader.position(), facing_angle, FORMATION_SPACING, 5, 8);
+        new_formation.retain_pathable(|(x, y)| bot.is_pathable(Point2::new(x as f32, y as f32)));
+        bot.combat_info.formations.push(new_formation.clone());
+    }
+    
 }
 
 #[derive(Default, Debug, Clone)]
