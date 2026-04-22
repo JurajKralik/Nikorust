@@ -151,6 +151,18 @@ impl CombatFormation {
             self.positions.swap_remove(idx);
         }
     }
+
+    /// Removes all positions that fail the pathability check.
+    ///
+    /// Pass any closure that maps a grid coordinate to `true` when pathable,
+    /// e.g. `|pos| bot.is_pathable(pos)`.
+    pub fn retain_pathable<F>(&mut self, is_pathable: F)
+    where
+        F: Fn((usize, usize)) -> bool,
+    {
+        self.positions
+            .retain(|p| is_pathable((p.x as usize, p.y as usize)));
+    }
 }
 
 pub struct CombatFormationAssignment {

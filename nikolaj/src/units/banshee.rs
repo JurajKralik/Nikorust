@@ -66,3 +66,17 @@ pub fn banshee_control(bot: &mut Nikolaj, unit: &Unit) {
         }
     }
 }
+
+
+fn banshee_cloak(unit: &Unit, surroundings: &SurroundingsInfo) -> bool {
+    let in_danger = surroundings.clone().threat_level > ThreatLevel::None;
+    if let Some(abilities) = unit.abilities() {
+        if abilities.contains(&AbilityId::BehaviorCloakOnBanshee) && !unit.is_cloaked() {
+            if surroundings.clone().closest_threat.is_some() || in_danger {
+                unit.use_ability(AbilityId::BehaviorCloakOnBanshee, false);
+                return true;
+            }
+        }
+    }
+    false
+}

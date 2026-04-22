@@ -26,6 +26,8 @@ pub fn bio_flee(bot: &mut Nikolaj, unit: &Unit, surroundings: SurroundingsInfo) 
     let idle_point = bot.strategy_data.idle_point;
     move_no_spam(unit, Target::Pos(idle_point))
 }
+
+
 fn flee_to_bunker(units: AllUnits, unit: &Unit) -> bool {
     let bunkers = units.my.structures.of_type(UnitTypeId::Bunker).ready();
     let nearby_bunkers = bunkers.closer(12.0, unit.position());
@@ -37,6 +39,8 @@ fn flee_to_bunker(units: AllUnits, unit: &Unit) -> bool {
     }
     false
 }
+
+
 fn flee_to_mine(units: AllUnits, unit: &Unit) -> bool {
     let mines = units.my.units.of_type_including_alias(UnitTypeId::WidowMine).ready();
     let nearby_mines = mines.closer(12.0, unit.position());
@@ -54,6 +58,8 @@ fn flee_to_mine(units: AllUnits, unit: &Unit) -> bool {
     }
     false
 }
+
+
 fn flee_to_medivac(units: AllUnits, unit: &Unit) -> bool {
     let medivacs = units.my.units.of_type(UnitTypeId::Medivac);
     let nearby_medivacs = medivacs.closer(12.0, unit.position());
@@ -67,6 +73,8 @@ fn flee_to_medivac(units: AllUnits, unit: &Unit) -> bool {
     }
     false
 }
+
+
 fn flee_to_tank(units: AllUnits, unit: &Unit) -> bool {
     let tanks = units.my.units.of_type(UnitTypeId::SiegeTankSieged);
     let nearby_tanks = tanks.closer(12.0, unit.position());
@@ -81,6 +89,8 @@ fn flee_to_tank(units: AllUnits, unit: &Unit) -> bool {
     }
     false
 }
+
+
 fn flee_from_threat(bot: &mut Nikolaj, unit: &Unit, threat: Option<Unit>) -> bool {
     if let Some(threat_unit) = threat {
         // Use combat grid to find furthest point
@@ -103,6 +113,8 @@ fn flee_from_threat(bot: &mut Nikolaj, unit: &Unit, threat: Option<Unit>) -> boo
     }
     false
 }
+
+
 pub fn flee_flying_unit(bot: &mut Nikolaj, unit: &Unit, surroundings: SurroundingsInfo) {
     let in_danger = surroundings.clone().threat_level > ThreatLevel::None;
     if surroundings.clone().closest_threat.is_some()
@@ -122,12 +134,13 @@ pub fn flee_flying_unit(bot: &mut Nikolaj, unit: &Unit, surroundings: Surroundin
     move_no_spam(unit, Target::Pos(idle_point));
 }
 
-#[allow(unused)]
-pub fn should_wait_for_tanks(bot: &Nikolaj, unit: &Unit) -> bool {
+
+fn should_wait_for_tanks(bot: &Nikolaj, unit: &Unit) -> bool {
     let close_tanks = bot.units.my.units.of_type_including_alias(UnitTypeId::SiegeTank).closer(6.0, unit.position());
     let distanced_tanks = bot.units.my.units.of_type_including_alias(UnitTypeId::SiegeTank).closer(20.0, unit.position());
     close_tanks.is_empty() && !distanced_tanks.is_empty()
 }
+
 
 fn combat_grid4(position: Point2, distance: f32) -> Vec<Point2> {
     let x = position.x;
@@ -141,6 +154,7 @@ fn combat_grid4(position: Point2, distance: f32) -> Vec<Point2> {
         Point2 { x, y: y + d },
     ]
 }
+
 
 fn combat_grid8(position: Point2, distance: f32) -> Vec<Point2> {
     let mut grid = combat_grid4(position, distance);
@@ -157,10 +171,12 @@ fn combat_grid8(position: Point2, distance: f32) -> Vec<Point2> {
     grid
 }
 
+
 fn combat_grid8_pathable(bot: &mut Nikolaj, position: Point2, distance: f32) -> Vec<Point2> {
     let grid = combat_grid8(position, distance);
     grid.into_iter().filter(|p| bot.is_pathable(*p)).collect()
 }
+
 
 pub fn attack_no_spam(unit: &Unit, target: Target) {
     const DISTANCE_THRESHOLD: f32 = 4.0;
@@ -186,13 +202,6 @@ pub fn attack_no_spam(unit: &Unit, target: Target) {
     unit.attack(target, false);
 }
 
-#[allow(unused)]
-pub fn move_into_range(unit: &Unit, target: &Unit) {
-    let target_weapon_range = target.real_range_vs(unit);
-    let target_position = target.position();
-    let desired_position = target_position.towards(unit.position(), target_weapon_range + 2.0);
-    move_no_spam(unit, Target::Pos(desired_position));
-}
 
 pub fn move_no_spam(unit: &Unit, target: Target) {
     if let Target::Pos(target_position) = target {
@@ -208,6 +217,7 @@ pub fn move_no_spam(unit: &Unit, target: Target) {
     
     unit.move_to(target, false);
 }
+
 
 pub fn unsiege(bot: &mut Nikolaj, unit: &Unit) {
     let unsiege_timer = bot.combat_info.get_unsiege_timer(unit.tag());
@@ -229,6 +239,7 @@ pub fn unsiege(bot: &mut Nikolaj, unit: &Unit) {
     }
 }
 
+
 pub fn siege_up(bot: &mut Nikolaj, unit: &Unit) {
     bot.combat_info.remove_unsiege_timer(unit.tag());
     if unit.type_id() == UnitTypeId::SiegeTank {
@@ -238,6 +249,7 @@ pub fn siege_up(bot: &mut Nikolaj, unit: &Unit) {
     }
 }
 
+
 pub fn force_unsiege(bot: &mut Nikolaj, unit: &Unit) {
     bot.combat_info.remove_unsiege_timer(unit.tag());
     if unit.type_id() == UnitTypeId::SiegeTankSieged {
@@ -246,6 +258,7 @@ pub fn force_unsiege(bot: &mut Nikolaj, unit: &Unit) {
         unit.use_ability(AbilityId::BurrowUpWidowMine, false);
     }
 }
+
 
 pub fn get_closest_harass_point(bot: &Nikolaj, unit: &Unit) -> Point2 {
     let harass_points = &bot.strategy_data.harass_points;
@@ -291,6 +304,7 @@ pub fn get_harass_point_border_offset(bot: &Nikolaj, point: Point2) -> Point2 {
     }
 }
 
+
 pub fn get_closest_repair_point(bot: &Nikolaj, unit: &Unit) -> Point2 {
     let repair_points = &bot.strategy_data.repair_points;
     let idle_point = bot.strategy_data.idle_point;
@@ -305,49 +319,6 @@ pub fn get_closest_repair_point(bot: &Nikolaj, unit: &Unit) -> Point2 {
     } else {
         return idle_point;
     }
-}
-pub fn kd8_charge(bot: &Nikolaj, unit: &Unit, surroundings: &SurroundingsInfo) -> bool {
-    if let Some(threat) = surroundings.clone().closest_threat {
-        if let Some(abilities) = unit.abilities() {
-            if !abilities.contains(&AbilityId::KD8ChargeKD8Charge) {
-                return false;
-            }
-            // KD8 Charge pathfinding
-            if let Some(path) = bot.get_path(threat.position(), unit.position(), PathfindingUnitType::Ground, false, false) {
-                if let Some(target_point) = path.0.iter().nth(3) {
-                    let target_position = *target_point;
-                    unit.command(
-                        AbilityId::KD8ChargeKD8Charge,
-                        Target::Pos(target_position),
-                        false,
-                    );
-                    return true;
-                }
-            }
-            // Direct KD8 Charge
-            let target_position = threat.position().towards(unit.position(), 4.0);
-            unit.command(
-                AbilityId::KD8ChargeKD8Charge,
-                Target::Pos(target_position),
-                false,
-            );
-            return true;
-        }
-    }
-    false
-}
-
-pub fn banshee_cloak(unit: &Unit, surroundings: &SurroundingsInfo) -> bool {
-    let in_danger = surroundings.clone().threat_level > ThreatLevel::None;
-    if let Some(abilities) = unit.abilities() {
-        if abilities.contains(&AbilityId::BehaviorCloakOnBanshee) && !unit.is_cloaked() {
-            if surroundings.clone().closest_threat.is_some() || in_danger {
-                unit.use_ability(AbilityId::BehaviorCloakOnBanshee, false);
-                return true;
-            }
-        }
-    }
-    false
 }
 
 
@@ -413,9 +384,14 @@ pub fn join_formation(bot: &mut Nikolaj, unit: &Unit) -> Option<CombatFormationA
             }
         }
     }
+    create_formation(bot, unit, facing_angle)
+}
 
+
+fn create_formation(bot: &mut Nikolaj, unit: &Unit, facing_angle: f32) -> Option<CombatFormationAssignment> {
     // No nearby formation — create a new one
-    let new_formation = CombatFormation::new(unit.tag(), unit.position(), facing_angle, 2.0, 5, 8);
+    let mut new_formation = CombatFormation::new(unit.tag(), unit.position(), facing_angle, 2.0, 5, 8);
+    new_formation.retain_pathable(|(x, y)| bot.is_pathable(Point2::new(x as f32, y as f32)));
     let pos = new_formation.closest_position(unit.position());
     bot.combat_info.formations.push(new_formation.clone());
 
@@ -444,7 +420,7 @@ fn lead_army(bot: &mut Nikolaj, unit: &Unit, point: Point2) {
         },
         Some(pos) => pos,
     };
-    if unit.distance(army_center) > 12.0 {
+    if unit.distance(army_center) > 12.0 || should_wait_for_tanks(bot, unit) {
         attack_no_spam(unit, Target::Pos(army_center));
     } else {
         attack_no_spam(unit, Target::Pos(point));
