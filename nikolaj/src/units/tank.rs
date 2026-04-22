@@ -62,12 +62,13 @@ fn fortify(bot: &mut Nikolaj, unit: &Unit) {
             .partial_cmp(&b.position.distance(unit.position()))
             .unwrap_or(std::cmp::Ordering::Equal)
     });
-    if let Some(best_position) = get_best_tank_position(unit, tank_positions) {
+    if let Some(best_position) = get_best_tank_position(bot, unit, tank_positions) {
         if unit.distance(best_position) > 1.0 {
             move_no_spam(unit, Target::Pos(best_position));
         } else {
             siege_up(bot, unit);
         }
+        bot.debug_line_offset(unit.position(), best_position, "red", 1.0);
         bot.map_manager.mark_position_occupied(best_position, unit.tag());
     } else {
         move_no_spam(unit, Target::Pos(idle_point));
@@ -75,10 +76,14 @@ fn fortify(bot: &mut Nikolaj, unit: &Unit) {
 }
 
 
-fn get_best_tank_position(unit: &Unit, positions: Vec<TacticalPosition>) -> Option<Point2> {
+fn get_best_tank_position(bot: &mut Nikolaj, unit: &Unit, positions: Vec<TacticalPosition>) -> Option<Point2> {
     let mut least_crowded_position = None;
     let mut lowest_crowd_level = f32::MAX;
     for pos in positions {
+        let blocked = !bot.can_place(UnitTypeId::AutoTurret, pos.position);
+        if blocked {
+            continue;
+        }
         if let Some(tag) = pos.occupied_by {
             if tag == unit.tag() {
                 return Some(pos.position);

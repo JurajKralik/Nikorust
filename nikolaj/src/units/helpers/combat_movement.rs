@@ -349,7 +349,7 @@ fn join_army_to_point(bot: &mut Nikolaj, unit: &Unit, point: Point2) {
         let formation_assignment = join_formation(bot, unit);
         if let Some(assignment) = formation_assignment {
             if assignment.formation_leader != unit.tag() {
-                unit.move_to(Target::Pos(assignment.position), false);
+                unit.move_to(Target::Pos(point), false);
             } else {
                 attack_no_spam(unit, Target::Pos(assignment.position));
             }

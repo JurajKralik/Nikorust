@@ -253,13 +253,10 @@ fn compute_crowd_levels_for_group(positions: &mut Vec<TacticalPosition>) {
         .collect();
 
     for pos in positions.iter_mut() {
-        pos.crowd_level = occupied.iter()
+        pos.crowd_level = 0.0 - occupied.iter()
             .filter(|&&occ| occ != pos.position)
-            .map(|&occ| {
-                let dist = pos.position.distance(occ);
-                if dist > 0.0 { 1.0 / dist } else { f32::MAX }
-            })
-            .sum();
+            .map(|&occ| pos.position.distance(occ))
+            .sum::<f32>();
     }
 }
 

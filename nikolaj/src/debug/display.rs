@@ -438,6 +438,7 @@ pub fn debug_show_chokepoints(bot: &mut Nikolaj) {
         for tank_pos in chokepoint.tank_positions {
             bot.debug_line(chokepoint.position, tank_pos.position, "orange");
             bot.debug_sphere(tank_pos.position, 0.5, "orange");
+            bot.debug_text(&format!("{}", tank_pos.crowd_level), tank_pos.position, "orange", Some(12));
         }
         for bio_pos in chokepoint.bio_positions {
             bot.debug_line(chokepoint.position, bio_pos.position, "cyan");
