@@ -135,7 +135,7 @@ fn compare_targeting(surroundings: &mut SurroundingsInfo, enemy: &Unit, targetin
         return;
     }
 
-    if enemy.in_real_range_of(unit, 0.0) {
+    if enemy.in_real_range_of(unit, 0.0) || unit.type_id() == UnitTypeId::WidowMine || unit.type_id() == UnitTypeId::SiegeTank {
         surroundings.best_target_in_range = match &surroundings.best_target_in_range {
             None => Some(enemy.clone()),
             Some(current_best) => Some(better_of_targets(unit, current_best, enemy, targeting_priorities)),

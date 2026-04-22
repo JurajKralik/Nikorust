@@ -58,8 +58,10 @@ fn refresh_defense_point(bot: &mut Nikolaj) {
         if !enemy.can_attack() || enemy.type_id().is_worker() {
             continue;
         }
-        if enemy.position().distance(bot.enemy_start) < bot.enemy_start.distance(bot.start_location)/2.0 {
-            continue;
+        if let Some(distance) = bot.units.my.structures.closest_distance(enemy.position()) {
+            if distance > 25.0 {
+                continue;
+            }
         }
         if let Some(closest) = closest_enemy.as_ref() {
             let closest_structure = bot.units.my.structures.closest(closest.position());
