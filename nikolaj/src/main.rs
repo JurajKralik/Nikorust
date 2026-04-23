@@ -63,8 +63,8 @@ impl Nikolaj {
     fn time_step(&mut self) {
         self.iteration += 1;
         let time = (self.time * 10.0).round() / 10.0;
-        self.debugger.time = time;
-        self.worker_allocator.debugger.time = time;
+        self.debugger.time = format!("{:06.1}", time);
+        self.worker_allocator.debugger.time = self.debugger.time.clone();
     }
     fn start_game_report(&mut self) {
         let version_info = format!("Nikolaj version: {}", env!("CARGO_PKG_VERSION"));

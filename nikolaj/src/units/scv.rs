@@ -25,7 +25,7 @@ pub fn scv_step(bot: &mut Nikolaj) {
     let current_bases = bot.worker_allocator.bases.clone();
     bot.worker_allocator.bases = get_mining_bases(&bot.units);
     if bot.debugger.printing_bases_assignments {
-        print_new_bases_assignments(&current_bases, &bot.worker_allocator.bases.clone(), bot.debugger.time);
+        print_new_bases_assignments(&current_bases, &bot.worker_allocator.bases.clone(), &bot.debugger.time);
     }
     
     // Repair

@@ -37,7 +37,7 @@ pub fn debug_step(bot: &mut Nikolaj) {
     empty_surroundings_cache(bot);
 }
 
-pub fn print_new_bases_assignments(old_bases: &Vec<u64>, new_bases: &Vec<u64>, time: f32) {
+pub fn print_new_bases_assignments(old_bases: &Vec<u64>, new_bases: &Vec<u64>, time: &str) {
     printing::print_new_bases_assignments(old_bases, new_bases, time);
 }
 
@@ -48,7 +48,7 @@ fn empty_surroundings_cache(bot: &mut Nikolaj) {
 
 #[derive(Clone)]
 pub struct NikolajDebugger {
-    pub time: f32,
+    pub time: String,
     pub printing_full_resource_assignments: bool,
     pub printing_bases_assignments: bool,
     pub printing_workers_assignments: bool,
@@ -86,7 +86,7 @@ impl Default for NikolajDebugger {
         #[cfg(any(feature = "wine_sc2", feature = "headless"))]
         {
             Self {
-                time: 0.0,
+                time: String::from("0000.0"),
                 printing_full_resource_assignments: false,
                 printing_bases_assignments: false,
                 printing_workers_assignments: false,
@@ -122,7 +122,7 @@ impl Default for NikolajDebugger {
         #[cfg(not(any(feature = "wine_sc2", feature = "headless")))]
         {
             Self {
-                time: 0.0,
+                time: String::from("0000.0"),
                 printing_full_resource_assignments: false,
                 printing_bases_assignments: false,
                 printing_workers_assignments: false,

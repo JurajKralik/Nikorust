@@ -42,7 +42,7 @@ pub fn debug_print_resource_assignments(bot: &mut Nikolaj) {
     println!("----------------------------");
 }
 
-pub fn print_new_bases_assignments(old_bases: &Vec<u64>, new_bases: &Vec<u64>, time: f32) {
+pub fn print_new_bases_assignments(old_bases: &Vec<u64>, new_bases: &Vec<u64>, time: &str) {
     for base in new_bases {
         if !old_bases.contains(base) {
             println!("[DEBUGGER] {} New base added with tag {}", time, base);
